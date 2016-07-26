@@ -9,7 +9,7 @@ import re
 import argparse
 import ConfigParser
 from distutils import spawn
-
+blah = 'foo'
 #Context manager for changing the current working directory
 class cd:
     def __init__(self, newPath):
@@ -34,12 +34,23 @@ def dependencies():
 
 def makelist(rawCaptures):
 	try:
-		flist = []
-		for dirs, subdirs, files in os.walk(rawCaptures):
-			foo = blah
-		#walk through capture directory
-		#gather file names based on policy
-		#return dictionary of [endfilename : 'startfile1','startfile2','startfie3']
+		flist = {}
+		#regex = re.compile("*")#.
+		
+		accessionlist = []
+		for dirs, subdirs, files in os.walk(rawCaptures): #walk through capture directory
+			for f in files:
+				ayear, acc, rest = f.split("_",2)
+				if not acc in accessionlist:
+					accessionlist.append(acc)
+			for a in accessionlist:
+				result = []
+				for f in files:
+					match = re.search(r"A\d{4}_" + acc + "_\d{3}_\d{3}.mov",f)#
+					if match:
+						result.append(match.group(0))
+				flist[a] = result	
+		print flist
 	except:
 		foo = blah
 		#send email to THM staff
@@ -106,9 +117,9 @@ def main():
 	
 	args = vars(parser.parse_args())
 	
-	
+
 	#make a list of things to work on
-	#flist = makelist(rawCaptures)
+	flist = makelist(rawCaptures)
 
 	#ffprocess
 	#ffprocess(flist,watermark)
