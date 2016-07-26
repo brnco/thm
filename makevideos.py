@@ -10,6 +10,7 @@ import argparse
 import ConfigParser
 from distutils import spawn
 blah = 'foo'
+
 #Context manager for changing the current working directory
 class cd:
     def __init__(self, newPath):
@@ -32,41 +33,43 @@ def dependencies():
 			sys.exit()
 	return
 
-def makelist(rawCaptures):
-	try:
-		flist = {}
-		#regex = re.compile("*")#.
-		
-		accessionlist = []
-		for dirs, subdirs, files in os.walk(rawCaptures): #walk through capture directory
-			for f in files: #for each file found
-				if f.endswith(".mov"): #if it's a mov
-					ayear, acc, rest = f.split("_",2) #split the file name into 3 parts, the year, the accession#, everything else
-					if not acc in accessionlist: #if the accession# isn't already in our list of accession#s
-						accessionlist.append(acc) #appens the accession# to the list of accession#s
-			for a in accessionlist: #for each acession# in our list of accession#s
-				result = [] #init a list for the files found that are part of this accession
-				for f in files: #iterate thru the file list again
-					match = re.search(r"A\d{4}_" + acc + "_\d{3}_\d{3}.mov",f) #file matches the naming convention, with the accession# in it
-					if match: #if yes the above ^^ did work
-						result.append(match.group(0)) #write it to a list of matches
-				flist[a] = result.sorted() #sort the list, append to a dictionary of {'acc#' : 'list of files for the accession'} pairs
-	except:
-		foo = blah
+def makelist(harddrive):
+	#try:
+	flist = {}
+	accessionlist = []
+	rawfs = []
+	for dirs, subdirs, files in os.walk(harddrive): #walk through capture directory
+		for f in files: #for each file found
+			if f.endswith(".mov"): #if it's a mov
+				rawfs.append(f)
+				ayear, acc, rest = f.split("_",2) #split the file name into 3 parts, the year, the accession#, everything else
+				if not acc in accessionlist: #if the accession# isn't already in our list of accession#s
+					accessionlist.append(acc) #appens the accession# to the list of accession#s
+	for acc in accessionlist: #for each acession# in our list of accession#s
+		result = [] #init a list for the files found that are part of this accession
+		for f in rawfs: #iterate thru the file list again
+			match = re.search(r"A\d{4}_" + acc + "_\d{3}_\d{3}.mov",f) #file matches the naming convention, with the accession# in it
+			if match: #if yes the above ^^ did work
+				result.append(match.group()) #write it to a list of matches	
+		flist[acc] = sorted(result) #sort the list, append to a dictionary of {'acc#' : 'list of files for the accession'} pairs
+	#except:
+		#foo = blah
 		#send email to THM staff
 	return flist
 
-def ffproces(flist):
-	try:
-		foo = blah
-		#iterate thru flist
-		#concatenate startfiles into endfile.mov
-		#transcode endfiles
-			#endfile.flv + HistoryMakers watermark
-			#endfile.mpeg + timecode
-			#endfile.mp4 + timecode
-	except:
-		foo = blah
+def ffprocess(flist,watermark):
+	print flist
+	#try:
+	#iterate thru flist
+	for f in flist:
+		print flist[f]
+	#concatenate startfiles into endfile.mov
+	#transcode endfiles
+		#endfile.flv + HistoryMakers watermark
+		#endfile.mpeg + timecode
+		#endfile.mp4 + timecode
+	#except:
+		#foo = blah
 		#send email to THM staff
 	return
 
@@ -107,22 +110,21 @@ def main():
 	#fileMakerpwd = config.get('fileMaker','password')
 	#fmConfig = [fileMakerLoc,fileMakerlogin,FileMakerpwd]
 	emailaddy = config.get('global','email')
+	harddrive = config.get('fileDestinations','hardDrivePath')
 	sunnas = config.get('fileDestinations','sunnas')
 	xendata = config.get('fileDestinations','xendata')
 	
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmvoes videos")
-	parser.add_argument("-i","--ignore",action="store_true",default=False,help="ignore policy errors")
-	parser.add_argument("-s","--single",help="single mode, only process a single accession takes full canonical filename as arg e.g.A2016_012_034_056")
-	
+	#parser.add_argument("-i","--ignore",action="store_true",default=False,help="ignore policy errors")
+	parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
 	args = vars(parser.parse_args())
 	
-
 	#make a list of things to work on
-	flist = makelist(rawCaptures)
-	print flist
+	flist = makelist(harddrive)
+
 	#ffprocess
-	#ffprocess(flist,watermark)
+	ffprocess(flist,watermark)
 
 	#hashmove
 	#hashmove(flist,sunnas,xendata)
