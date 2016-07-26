@@ -39,18 +39,18 @@ def makelist(rawCaptures):
 		
 		accessionlist = []
 		for dirs, subdirs, files in os.walk(rawCaptures): #walk through capture directory
-			for f in files:
-				ayear, acc, rest = f.split("_",2)
-				if not acc in accessionlist:
-					accessionlist.append(acc)
-			for a in accessionlist:
-				result = []
-				for f in files:
-					match = re.search(r"A\d{4}_" + acc + "_\d{3}_\d{3}.mov",f)#
-					if match:
-						result.append(match.group(0))
-				flist[a] = result	
-		print flist
+			for f in files: #for each file found
+				if f.endswith(".mov"): #if it's a mov
+					ayear, acc, rest = f.split("_",2) #split the file name into 3 parts, the year, the accession#, everything else
+					if not acc in accessionlist: #if the accession# isn't already in our list of accession#s
+						accessionlist.append(acc) #appens the accession# to the list of accession#s
+			for a in accessionlist: #for each acession# in our list of accession#s
+				result = [] #init a list for the files found that are part of this accession
+				for f in files: #iterate thru the file list again
+					match = re.search(r"A\d{4}_" + acc + "_\d{3}_\d{3}.mov",f) #file matches the naming convention, with the accession# in it
+					if match: #if yes the above ^^ did work
+						result.append(match.group(0)) #write it to a list of matches
+				flist[a] = result.sorted() #sort the list, append to a dictionary of {'acc#' : 'list of files for the accession'} pairs
 	except:
 		foo = blah
 		#send email to THM staff
@@ -120,7 +120,7 @@ def main():
 
 	#make a list of things to work on
 	flist = makelist(rawCaptures)
-
+	print flist
 	#ffprocess
 	#ffprocess(flist,watermark)
 
