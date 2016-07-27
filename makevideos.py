@@ -66,7 +66,7 @@ def hashmove1(flist,scriptRepo,harddrive,xcluster):
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),mov,xcldirpath,"-c"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return
 
-def makefflist(xcluster,watermark):
+def makefflist(xcluster):
 	#try:
 	fflist = {}
 	
@@ -90,24 +90,50 @@ def printconcats(fflist):
 			txtfile.close
 	return 
 
-def ffprocess(fflist):
+def ffprocess(fflist,watermark):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist:
-		output = fflist[acc][0]
-		output = output.replace(".mov","-concat.mov")
-		print output
-		foo = raw_input("eh")
+		canonicalname = fflist[acc][0]
+		canonicalname = canonicalname.replace(".mov","")
+		flv = canonicalname + ".flv"
+		mpeg = canonicalname + ".mpeg"
+		mp4 = canonicalname + ".mp4"
 		with cd(acc):
-			print os.getcwd()
-			output = subprocess.Popen(["ffmpeg","-f","concat","-i","concat.txt","-c","copy",output],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			foo,err = output.communicate()
+			print "concatenating raw captures"
+			try:
+				output = subprocess.check_output(["ffmpeg","-f","concat","-i","concat.txt","-c","copy","concat.mov"])
+				returncode = 0
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				print "concat fail"
+			if returncode == 0:
+				for rawmov in fflist[acc]:
+					os.remove(rawmov)
+				os.remove("concat.txt")
+			#output = subprocess.check_output(('grep', 'unknown'), stdin=ps.stdout)
+			#foo = ps.communicate()
+			print output
+			#transcode endfiles
+			#endfile.flv + HistoryMakers watermark
+			print "transcoding to flv with HM watermark"
+			#output = subprocess.Popen(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/1.2","-c:v","libx264","-preset","fast","-c:a","copy",flv],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			#foo,err = output.communicate()
 			#print foo
 			#print err
-	#transcode endfiles
-		#endfile.flv + HistoryMakers watermark
-		#endfile.mpeg + timecode
-		#endfile.mp4 + timecode
-	foo = blah
+			#endfile.mpeg + timecode
+			print "transcoding to mpeg with timecode"
+			#fontfile = "/Library/Fonts/Arial.ttf"
+			#drawtext= "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
+			#subprocess.call(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-vf",drawtext,"-c:a","copy",mpeg])
+			#foo,err = output.communicate()
+			#print foo
+			#print err
+			#endfile.mp4 + timecode
+			print "transcoding to mp4 with timecode"
+			#subprocess.call(["ffmpeg","-i","concat.mov","-c:v","libx264","-preset","fast","-vf",drawtext,"-c:a","copy",mp4])
+
 	return	
 
 def hashmove2(flist,sunnas,xendata):
@@ -161,12 +187,12 @@ def main():
 		hashmove1(flist,scriptRepo,harddrive,xcluster)
 
 	#ffprocess
-	fflist = makefflist(xcluster,watermark)
+	fflist = makefflist(xcluster)
 	
 	#print the concat.txt files in each accession dir, via fflsit
 	printconcats(fflist)
 
-	ffprocess(fflist)
+	ffprocess(fflist,watermark)
 
 	#hashmove
 	#hashmove2(flist,sunnas,xendata)
