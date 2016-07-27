@@ -2,6 +2,7 @@
 #concatenates, transcodes, moves videos for The History Makers
 
 import os
+import sys
 import subprocess
 import sys
 import glob
@@ -42,7 +43,7 @@ def makemovelist(harddrive):
 	for dirs, subdirs, files in os.walk(harddrive): #walk through capture directory
 		for f in files: #for each file found
 			if f.endswith(".mov"): #if it's a mov
-				rawfs.append(os.path.join(dirs,f))
+				rawfs.append(os.path.join(dirs,f)) #append the full path to the raw files to the rawfs list
 				ayear, acc, rest = f.split("_",2) #split the file name into 3 parts, the year, the accession#, everything else
 				if not acc in accessionlist: #if the accession# isn't already in our list of accession#s
 					accessionlist.append(ayear + "_" + acc) #appens the Ayear_accession# to the list of accession#s
@@ -59,63 +60,62 @@ def makemovelist(harddrive):
 	return flist
 
 def hashmove1(flist,scriptRepo,harddrive,xcluster):
-	hm1list = {}
-	for f in flist:
-		ayear,acc = f.split("_")
-		xcldirpath = os.path.join(xcluster,ayear,acc)
-		for mov in flist[f]:
+	for f in flist: #loop thru list of files on the hard drive
+		ayear,acc = f.split("_") #split the ayear and accession# values at the underscore
+		xcldirpath = os.path.join(xcluster,ayear,acc) #make a string for the directory path on xcluster that these files will soon inhabit
+		for mov in flist[f]: #flist[f] returns a list of files, loop thru that
+			#use hashmove to move them to xcluster
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),mov,xcldirpath,"-c"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return
 
 def makefflist(xcluster):
-	#try:
-	fflist = {}
-	
-	for dirs, subdirs,files in os.walk(xcluster):
-		for acc in subdirs:
-			if not acc.startswith("A"):
-				with cd(os.path.join(dirs,acc)):
-					rawcaplist = []
-					for rawmov in os.listdir(os.getcwd()):
-						if rawmov.endswith(".mov"):
-							rawcaplist.append(rawmov)
-					fflist[os.path.join(dirs,acc)] = sorted(rawcaplist)
+	fflist = {} #initialize a list of files for ffmpeg to transcode
+	for dirs, subdirs,files in os.walk(xcluster): #loop thru holding dir on xcluster
+		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
+			if not acc.startswith("A"): #don't worry about the Ayear dirs
+				with cd(os.path.join(dirs,acc)): #cd into accession dir
+					rawcaplist = [] #init a list that will contain raw captures in each dir
+					for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
+						if rawmov.endswith(".mov"): #if it is a mov
+							rawcaplist.append(rawmov) #append it to our list of raw captures
+					fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
 	return fflist
 
 def printconcats(fflist):	
-	for acc in fflist:
-		with cd(acc):
-			txtfile = open("concat.txt","w")
-			for rawmov in fflist[acc]:
-				txtfile.write("file " + rawmov + "\n")
-			txtfile.close
+	for acc in fflist: #for each accession full path on xcluster
+		with cd(acc): #cd into it
+			txtfile = open("concat.txt","w") #initialize a txt file that we'll use to concat
+			for rawmov in fflist[acc]: #for each file name in the lsit of filenames associated with this accession#
+				txtfile.write("file " + rawmov + "\n") #append the filename to the txt file with a newline
+			txtfile.close #housekeeping
 	return 
 
 def ffprocess(fflist,watermark,fontfile):
 	#concatenate startfiles into endfile.mov
-	for acc in fflist:
-		canonicalname = fflist[acc][0]
-		canonicalname = canonicalname.replace(".mov","")
-		flv = canonicalname + ".flv"
-		mpeg = canonicalname + ".mpeg"
-		mp4 = canonicalname + ".mp4"
-		with cd(acc):
+	for acc in fflist: #for each accession full path on xcluster
+		canonicalname = fflist[acc][0] #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
+		canonicalname = canonicalname.replace(".mov","") #drop the extension
+		flv = canonicalname + ".flv" #filename for flv
+		mpeg = canonicalname + ".mpeg" #filename for mpeg
+		mp4 = canonicalname + ".mp4" #filename for mp4
+		with cd(acc): #ok, cd into the accession dir
 			print "concatenating raw captures"
 			try:
-				output = subprocess.check_output(["ffmpeg","-f","concat","-i","concat.txt","-c","copy","concat.mov"])
+				output = subprocess.check_output(["ffmpeg","-f","concat","-i","concat.txt","-c","copy","concat.mov"]) #concatenate them
 				returncode = 0
-			except subprocess.CalledProcessError,e:
+			except subprocess.CalledProcessError,e: #check for an error
 				output = e.output
 				returncode = e.returncode
-			if returncode > 0:
-				print "concat fail"
+			if returncode > 0: #if there was an error
+				print "concat fail" #tell the user
 				#send email to staff
-			if returncode == 0:
-				for rawmov in fflist[acc]:
-					os.remove(rawmov)
-					if os.path.exists(rawmov + ".md5"):
+				sys.exit() #quit now because this concat is really important
+			if returncode == 0: #if there wasn't an error
+				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
+					os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
+					if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
 						os.remove(rawmov + ".md5")
-				os.remove("concat.txt")
+				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
 
 			#transcode endfiles
 			#endfile.flv + HistoryMakers watermark
@@ -132,6 +132,7 @@ def ffprocess(fflist,watermark,fontfile):
 
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
+			#easier to init this var here rather than include it in the ffmpeg call
 			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
 			try:
 				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-vf",drawtext,"-c:a","copy",mpeg])
@@ -176,18 +177,13 @@ def hashmove2(flist,sunnas,xendata):
 
 
 def main():
-	#initialize a buncha stuff
-
+	#initialize a buncha paaths to various resources
 	scriptRepo = os.path.dirname(os.path.abspath(__file__))
 	config = ConfigParser.ConfigParser()
 	config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
 	watermark = config.get('transcode','watermark')
 	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
-	#fileMakerLoc = config.get('fileMaker','location')
-	#fileMakerlogin = config.get('fileMaker','login')
-	#fileMakerpwd = config.get('fileMaker','password')
-	#fmConfig = [fileMakerLoc,fileMakerlogin,FileMakerpwd]
 	emailaddy = config.get('global','email')
 	harddrive = config.get('fileDestinations','hardDrivePath')
 	sunnas = config.get('fileDestinations','sunnas')
@@ -196,26 +192,29 @@ def main():
 	
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
-	#parser.add_argument("-i","--ignore",action="store_true",default=False,help="ignore policy errors")
-	parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
+	#parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
 	parser.add_argument("-skiphd","--skipharddrive",dest="shd",action="store_true",default=False,help="skip the step of moving things from the hard drive, process from xcluster only")
 	args = vars(parser.parse_args())
 	
+	#if we're grabbing files from the hard drive, start here
 	if args['shd'] is False:
 		#make a list of things to work on
 		flist = makemovelist(harddrive)
 
 		#move files from hard drive to xcluster
 		hashmove1(flist,scriptRepo,harddrive,xcluster)
-	#gives teh registry a couple seconds to understand what just happened
-	time.sleep(2)
+		
+		#gives teh registry a couple seconds to understand what just happened
+		time.sleep(2)
 	
-	#ffprocess
+
+	#makes a list of files for ffmpeg to transcode
 	fflist = makefflist(xcluster)
 	
-	#print the concat.txt files in each accession dir, via fflsit
+	#print the concat.txt files in each accession dir, via fflist
 	printconcats(fflist)
 
+	#actually transcode the files
 	ffprocess(fflist,watermark,fontfile)
 
 	#hashmove
