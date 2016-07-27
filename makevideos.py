@@ -6,6 +6,7 @@ import subprocess
 import sys
 import glob
 import re
+import time
 import argparse
 import ConfigParser
 from distutils import spawn
@@ -90,7 +91,7 @@ def printconcats(fflist):
 			txtfile.close
 	return 
 
-def ffprocess(fflist,watermark):
+def ffprocess(fflist,watermark,fontfile):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist:
 		canonicalname = fflist[acc][0]
@@ -108,32 +109,52 @@ def ffprocess(fflist,watermark):
 				returncode = e.returncode
 			if returncode > 0:
 				print "concat fail"
+				#send email to staff
 			if returncode == 0:
 				for rawmov in fflist[acc]:
 					os.remove(rawmov)
+					if os.path.exists(rawmov + ".md5"):
+						os.remove(rawmov + ".md5")
 				os.remove("concat.txt")
-			#output = subprocess.check_output(('grep', 'unknown'), stdin=ps.stdout)
-			#foo = ps.communicate()
-			print output
+
 			#transcode endfiles
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
-			#output = subprocess.Popen(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/1.2","-c:v","libx264","-preset","fast","-c:a","copy",flv],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			#foo,err = output.communicate()
-			#print foo
-			#print err
+			try:
+				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/1.2","-c:v","libx264","-preset","fast","-c:a","copy",flv])
+				returncode = 0
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				print "flv transcode fail"
+				#send email to staff
+
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
-			#fontfile = "/Library/Fonts/Arial.ttf"
-			#drawtext= "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
-			#subprocess.call(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-vf",drawtext,"-c:a","copy",mpeg])
-			#foo,err = output.communicate()
-			#print foo
-			#print err
+			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
+			try:
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-vf",drawtext,"-c:a","copy",mpeg])
+				returncode = 0
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				print "mpeg transcode fail"
+				#send email to staff
+			
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
-			#subprocess.call(["ffmpeg","-i","concat.mov","-c:v","libx264","-preset","fast","-vf",drawtext,"-c:a","copy",mp4])
-
+			try:
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","libx264","-preset","fast","-vf",drawtext,"-c:a","copy",mp4])
+				returncode = 0
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				print "mp4 transcode fail"
+				#send email to staff
+			os.rename("concat.mov",flist[acc][0])
 	return	
 
 def hashmove2(flist,sunnas,xendata):
@@ -161,6 +182,7 @@ def main():
 	config = ConfigParser.ConfigParser()
 	config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
 	watermark = config.get('transcode','watermark')
+	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
 	#fileMakerLoc = config.get('fileMaker','location')
 	#fileMakerlogin = config.get('fileMaker','login')
@@ -173,7 +195,7 @@ def main():
 	xcluster = config.get('fileDestinations','xcluster')
 	
 	#grab args fromCLI
-	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmvoes videos")
+	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
 	#parser.add_argument("-i","--ignore",action="store_true",default=False,help="ignore policy errors")
 	parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
 	parser.add_argument("-skiphd","--skipharddrive",dest="shd",action="store_true",default=False,help="skip the step of moving things from the hard drive, process from xcluster only")
@@ -185,14 +207,16 @@ def main():
 
 		#move files from hard drive to xcluster
 		hashmove1(flist,scriptRepo,harddrive,xcluster)
-
+	#gives teh registry a couple seconds to understand what just happened
+	time.sleep(2)
+	
 	#ffprocess
 	fflist = makefflist(xcluster)
 	
 	#print the concat.txt files in each accession dir, via fflsit
 	printconcats(fflist)
 
-	ffprocess(fflist,watermark)
+	ffprocess(fflist,watermark,fontfile)
 
 	#hashmove
 	#hashmove2(flist,sunnas,xendata)
