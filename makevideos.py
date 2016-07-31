@@ -35,18 +35,16 @@ def dependencies():
 			sys.exit()
 	return
 
-def makefflist(xcluster):
+def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	for dirs, subdirs,files in os.walk(xcluster): #loop thru holding dir on xcluster
+	for dirs, subdirs,files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
-
-			if not acc.startswith("A"): #don't worry about the Ayear dirs
-				with cd(os.path.join(dirs,acc)): #cd into accession dir
-					rawcaplist = [] #init a list that will contain raw captures in each dir
-					for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
-						if rawmov.endswith(".mov"): #if it is a mov
-							rawcaplist.append(rawmov) #append it to our list of raw captures
-					fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
+			with cd(os.path.join(dirs,acc)): #cd into accession dir
+				rawcaplist = [] #init a list that will contain raw captures in each dir
+				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
+					if rawmov.endswith(".mov"): #if it is a mov
+						rawcaplist.append(rawmov) #append it to our list of raw captures
+				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
 	return fflist
 
 def printconcats(fflist):	
@@ -60,7 +58,7 @@ def printconcats(fflist):
 
 def ffprocess(fflist,watermark,fontfile,scriptrepo):
 	#concatenate startfiles into endfile.mov
-	for acc in fflist: #for each accession full path on xcluster
+	for acc in fflist: #for each accession full path on xcluster/IncomingQT
 		canonicalname = fflist[acc][0] #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
 		canonicalname = canonicalname.replace(".mov","") #drop the extension
 		flv = canonicalname + ".flv" #filename for flv
@@ -77,7 +75,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0: #if there was an error
 				print "concat fail" #tell the user
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", gmtime())])
 				sys.exit() #quit now because this concat is really important
 			if returncode == 0: #if there wasn't an error
 				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
@@ -91,7 +89,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2","-c:v","libx264","-preset","fast","-b:v","700k","-r","29.97","-vf","scale=320:180","-c:a","aac","-ar","44100","-ac","2","-map_metadata","0",flv])
+				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","scale=320:180,overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2","-c:v","libx264","-preset","fast","-b:v","700k","-r","29.97","-c:a","aac","-ar","44100","-ac","2","-map_metadata","0",flv])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -99,7 +97,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "flv transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
 			
 
 			#endfile.mpeg + timecode
@@ -115,7 +113,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mpeg transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
 			
 
 			#endfile.mp4 + timecode
@@ -129,7 +127,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mp4 transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
 			os.rename("concat.mov",flist[acc][0])
 	return	
 
@@ -159,8 +157,6 @@ def main():
 	watermark = config.get('transcode','watermark')
 	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
-	emailaddy = config.get('global','email')
-	harddrive = config.get('fileDestinations','hardDrivePath')
 	sunnas = config.get('fileDestinations','sunnas')
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
@@ -174,13 +170,13 @@ def main():
 	
 
 	#makes a list of files for ffmpeg to transcode
-	fflist = makefflist(xcluster)
+	fflist = makefflist(rawCaptures)
 	
 	#print the concat.txt files in each accession dir, via fflist
 	printconcats(fflist)
 
 	#actually transcode the files
-	ffprocess(fflist,watermark,fontfile,scriptrepo)
+	ffprocess(fflist,watermark,fontfile,scriptRepo)
 
 	#hashmove
 	#hashmove2(flist,sunnas,xendata)

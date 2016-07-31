@@ -50,3 +50,19 @@ ffmpeg -i [concatenatedMOV].mov -map 0:1 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt
 **mp4**
 
 ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -vtag xvid -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=" + [fontfile].ttf + ": timecode='09\:57\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -vf scale=420:270 -c:a aac -ar 44100 -ac 2 [name].mp4
+
+**test input*
+
+if you want to generate a test input file for this situation here's how
+
+first, make a video file in the usual way
+
+ffmpeg -f lavfi -i "testsrc=duration=10:size=1920x1080:rate=29.97" -c:v mpeg2video [vout].mov
+
+then make an audio file and wrap it in a mov
+
+ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=10" -c:a pcm_s24be [aout].mov
+
+then warp the video file with the audio file mapped to two different streams
+
+ffmpeg -i 01836001.mov -i [vout].mov -i [aout].mov -c:v copy -c:a pcm_s24be -map 0:v:0 -map 1:a:0 -map 2:a:0 [out].mov

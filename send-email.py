@@ -23,7 +23,7 @@ to = config.get('email','recipientlist') #comma delimited list of email addresse
 senderaddy = config.get('email','senderaddress') #email address of sender
 senderpwd = config.get('email','senderpwd') #pwd for email acct of sender
 emailserver = config.get('email','server') #the server and port for the sender, e.g. smtp.gmail.com:587
-emailport = config.get('email','port')
+#emailport = config.get('email','port')
 
 commaspace = ', ' #helpful later
 msg = MIMEMultipart() #init the message
