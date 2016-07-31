@@ -91,7 +91,7 @@ def printconcats(fflist):
 			txtfile.close #housekeeping
 	return 
 
-def ffprocess(fflist,watermark,fontfile):
+def ffprocess(fflist,watermark,fontfile,scriptrepo):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist: #for each accession full path on xcluster
 		canonicalname = fflist[acc][0] #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
@@ -110,12 +110,14 @@ def ffprocess(fflist,watermark,fontfile):
 			if returncode > 0: #if there was an error
 				print "concat fail" #tell the user
 				#send email to staff
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
 				sys.exit() #quit now because this concat is really important
 			if returncode == 0: #if there wasn't an error
 				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
 					os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
 					if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
 						os.remove(rawmov + ".md5")
+	
 				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
 
 			#transcode endfiles
@@ -130,7 +132,7 @@ def ffprocess(fflist,watermark,fontfile):
 			if returncode > 0:
 				print "flv transcode fail"
 				#send email to staff
-
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
 			#easier to init this var here rather than include it in the ffmpeg call
@@ -144,7 +146,7 @@ def ffprocess(fflist,watermark,fontfile):
 			if returncode > 0:
 				print "mpeg transcode fail"
 				#send email to staff
-			
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
 			try:
@@ -156,6 +158,7 @@ def ffprocess(fflist,watermark,fontfile):
 			if returncode > 0:
 				print "mp4 transcode fail"
 				#send email to staff
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
 			os.rename("concat.mov",flist[acc][0])
 	return	
 
@@ -217,7 +220,7 @@ def main():
 	printconcats(fflist)
 
 	#actually transcode the files
-	ffprocess(fflist,watermark,fontfile)
+	ffprocess(fflist,watermark,fontfile,scriptrepo)
 
 	#hashmove
 	#hashmove2(flist,sunnas,xendata)
