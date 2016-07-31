@@ -59,11 +59,12 @@ def printconcats(fflist):
 def ffprocess(fflist,watermark,fontfile,scriptrepo):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist: #for each accession full path on xcluster/IncomingQT
-		canonicalname = fflist[acc][0] #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
-		canonicalname = canonicalname.replace(".mov","") #drop the extension
+		canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
+		#canonicalname = canonicalname.replace(".mov","") #drop the extension
 		flv = canonicalname + ".flv" #filename for flv
 		mpeg = canonicalname + ".mpeg" #filename for mpeg
 		mp4 = canonicalname + ".mp4" #filename for mp4
+		mov = canonicalname + ".mov"
 		with cd(acc): #ok, cd into the accession dir
 			print "concatenating raw captures"
 			try:
@@ -89,7 +90,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","scale=320:180,overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2","-c:v","libx264","-preset","fast","-b:v","700k","-r","29.97","-c:a","aac","-ar","44100","-ac","2","-map_metadata","0",flv])
+				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180","-c:v","libx264","-preset","fast","-b:v","700k","-r","29.97","-c:a","aac","-ar","44100","-ac","2","-map_metadata","0",flv])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -103,9 +104,9 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
 			#easier to init this var here rather than include it in the ffmpeg call
-			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
+			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='00\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099"
 			try:
-				subprocess.check_output(["ffmpeg","-i","concat.mov","-map","0:1","-map","0:0","-c:a","mp2","-ar","48000","-sample_fmt","s16","-ac","2","-c:v","mpeg2video","-pix_fmt","yuv420p","-r","29.97","-vtag","xvid","-vf",drawtext,"-vf","scale=720:480",mpeg])
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-map","0:1","-map","0:0","-c:a","mp2","-ar","48000","-sample_fmt","s16","-ac","2","-c:v","mpeg2video","-pix_fmt","yuv420p","-r","29.97","-vtag","xvid","-vf", drawtext + ",scale=720:480",mpeg])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -119,7 +120,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
 			try:
-				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-b:v","372k","-pix_fmt","yuv420p","-r29.97","-vf",drawtext,"-vf","scale=420:270","-c:a","aac","-ar","44100","-ac","2",mp4])
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-b:v","372k","-pix_fmt","yuv420p","-r","29.97","-vf", drawtext + ",scale=420:270","-c:a","aac","-ar","44100","-ac","2",mp4])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -128,10 +129,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 				print "mp4 transcode fail"
 				#send email to staff
 				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
-			os.rename("concat.mov",flist[acc][0])
+			os.rename("concat.mov",mov)
 	return	
 
-def hashmove2(flist,sunnas,xendata):
+def hashmove2(fflist,sunnas,xendata):
 	try:
 		foo = blah
 		#iterate thru flist
