@@ -72,6 +72,7 @@ def makefflist(xcluster):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs,files in os.walk(xcluster): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
+
 			if not acc.startswith("A"): #don't worry about the Ayear dirs
 				with cd(os.path.join(dirs,acc)): #cd into accession dir
 					rawcaplist = [] #init a list that will contain raw captures in each dir
@@ -193,19 +194,20 @@ def main():
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
 	#parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
-	parser.add_argument("-skiphd","--skipharddrive",dest="shd",action="store_true",default=False,help="skip the step of moving things from the hard drive, process from xcluster only")
+	#parser.add_argument("-skiphd","--skipharddrive",dest="shd",action="store_true",default=False,help="skip the step of moving things from the hard drive, process from xcluster only")
+	#put options for both white and black watermarks (white defaults)
 	args = vars(parser.parse_args())
 	
 	#if we're grabbing files from the hard drive, start here
-	if args['shd'] is False:
+	#if args['shd'] is False:
 		#make a list of things to work on
-		flist = makemovelist(harddrive)
+		#flist = makemovelist(harddrive)
 
 		#move files from hard drive to xcluster
-		hashmove1(flist,scriptRepo,harddrive,xcluster)
+		#hashmove1(flist,scriptRepo,harddrive,xcluster)
 		
 		#gives teh registry a couple seconds to understand what just happened
-		time.sleep(2)
+		#time.sleep(2)
 	
 
 	#makes a list of files for ffmpeg to transcode
