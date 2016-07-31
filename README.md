@@ -45,8 +45,8 @@ ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(mai
 
 **mpeg**
 
-ffmpeg -i [concatenatedMOV].mov -map 0:1 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -ac 2 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf "drawtext=fontfile=" + [fontfile].ttf + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -vf scale=720:480 [name].mpeg
+ffmpeg -i [concatenatedMOV].mov -map 0:1 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -ac 2 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf "drawtext=fontfile=" + [fontfile].ttf + ": timecode='09\:57\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -vf scale=720:480 [name].mpeg
 
 **mp4**
 
-ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -vtag xvid -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=" + [fontfile].ttf + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -vf scale=420:270 -c:a aac -ar 44100 -ac 2 [name].mp4
+ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -vtag xvid -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=" + [fontfile].ttf + ": timecode='09\:57\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099" -vf scale=420:270 -c:a aac -ar 44100 -ac 2 [name].mp4

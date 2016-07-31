@@ -117,14 +117,14 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 					os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
 					if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
 						os.remove(rawmov + ".md5")
-	
 				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
+			
 
 			#transcode endfiles
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/1.2","-c:v","libx264","-preset","fast","-c:a","copy",flv])
+				output = subprocess.check_output(["ffmpeg","-i","concat.mov","-i",watermark,"-filter_complex","overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2","-c:v","libx264","-preset","fast","-b:v","700k","-r","29.97","-vf","scale=320:180","-c:a","aac","-ar","44100","-ac","2","-map_metadata","0",flv])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -133,12 +133,14 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 				print "flv transcode fail"
 				#send email to staff
 				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+			
+
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
 			#easier to init this var here rather than include it in the ffmpeg call
-			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=23.976: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
+			drawtext = "drawtext=fontfile=" + fontfile + ": timecode='09\:57\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
 			try:
-				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-vf",drawtext,"-c:a","copy",mpeg])
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-map","0:1","-map","0:0","-c:a","mp2","-ar","48000","-sample_fmt","s16","-ac","2","-c:v","mpeg2video","-pix_fmt","yuv420p","-r","29.97","-vtag","xvid","-vf",drawtext,"-vf","scale=720:480",mpeg])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -147,10 +149,12 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 				print "mpeg transcode fail"
 				#send email to staff
 				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + strftime("%Y-%m-%d %H:%M:%S", gmtime())])
+			
+
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
 			try:
-				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","libx264","-preset","fast","-vf",drawtext,"-c:a","copy",mp4])
+				subprocess.check_output(["ffmpeg","-i","concat.mov","-c:v","mpeg4","-vtag","xvid","-b:v","372k","-pix_fmt","yuv420p","-r29.97","-vf",drawtext,"-vf","scale=420:270","-c:a","aac","-ar","44100","-ac","2",mp4])
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
