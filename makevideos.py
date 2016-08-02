@@ -36,6 +36,8 @@ def dependencies():
 	return
 
 def makefflist(rawCaptures):
+	print "in makefflist"
+	print rawCaptures
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		print "in os walk loop"
