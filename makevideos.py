@@ -36,17 +36,14 @@ def dependencies():
 	return
 
 def makefflist(rawCaptures):
-	print "in makefflist"
-	print rawCaptures
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	for dirs, subdirs, files in os.walk('/Volumes/G-SPEED Q/Titan-HD/HM/Queue'): #loop thru holding dir on xcluster
-		print "in os walk loop"
+	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
 			with cd(os.path.join(dirs,acc)): #cd into accession dir
 				rawcaplist = [] #init a list that will contain raw captures in each dir
 				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
-					if rawmov.endswith(".mov"): #if it is a mov
+					if rawmov.endswith(".mov") or rawmov.endswith(".MOV"): #if it is a mov
 						print rawmov
 						rawcaplist.append(rawmov) #append it to our list of raw captures
 				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
