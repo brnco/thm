@@ -39,7 +39,7 @@ def makefflist(rawCaptures):
 	print "in makefflist"
 	print rawCaptures
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
+	for dirs, subdirs, files in os.walk('/Volumes/G-SPEED Q/Titan-HD/HM/Queue'): #loop thru holding dir on xcluster
 		print "in os walk loop"
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
@@ -180,7 +180,7 @@ def main():
 	fflist = makefflist(rawCaptures)
 	
 	print fflist
-
+	fubar = raw_input("eh")
 	#print the concat.txt files in each accession dir, via fflist
 	printconcats(fflist)
 
