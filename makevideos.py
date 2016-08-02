@@ -37,6 +37,7 @@ def dependencies():
 
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
+	print rawCaptures
 	for dirs, subdirs, files in os.walk('/Volumes/G-SPEED Q/Titan-HD/HM/Queue'): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
