@@ -162,6 +162,10 @@ def main():
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
 	
+	print watermark
+	print fontfile
+	print rawCaptures
+
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
 	#parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
