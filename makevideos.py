@@ -39,10 +39,12 @@ def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs,files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
+			print acc
 			with cd(os.path.join(dirs,acc)): #cd into accession dir
 				rawcaplist = [] #init a list that will contain raw captures in each dir
 				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
 					if rawmov.endswith(".mov"): #if it is a mov
+						print rawmov
 						rawcaplist.append(rawmov) #append it to our list of raw captures
 				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
 	return fflist
@@ -162,9 +164,6 @@ def main():
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
 	
-	print watermark
-	print fontfile
-	print rawCaptures
 
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
@@ -177,6 +176,8 @@ def main():
 	#makes a list of files for ffmpeg to transcode
 	fflist = makefflist(rawCaptures)
 	
+	print fflist
+
 	#print the concat.txt files in each accession dir, via fflist
 	printconcats(fflist)
 
