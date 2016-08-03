@@ -40,7 +40,7 @@ ffmpeg -f concat -i concat.txt -c copy [concatenatedMOV].mov
 
 **flv**
 
-ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" -c:v libx264 -preset fast -b:v 700k -r 29.97 -vf scale=320:180 -c:a aac -ar 44100 -ac 2 -map_metadata 0 [name]flv
+ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180" -c:v libx264 -preset fast -b:v 700k -r 29.97 -c:a aac -ar 44100 -ac 2 -map_metadata 0 [name].flv
 
 
 **mpeg**
