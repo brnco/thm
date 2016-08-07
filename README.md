@@ -1,6 +1,6 @@
 # thm
 video post-processing for The History Makers
-=======
+
 # hashmove
 better file movement
 
@@ -40,11 +40,10 @@ ffmpeg -f concat -i concat.txt -c copy -map 0 [concatenatedMOV].mov
 
 **flv**
 
-<<<<<<< HEAD
+
 this is actually a two-three step process
-=======
+
 ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180" -c:v libx264 -preset fast -b:v 700k -r 29.97 -c:a aac -ar 44100 -ac 2 -map_metadata 0 [name].flv
->>>>>>> 045917f5291173c05ed3f8ceb2312d7f9fb91e31
 
 first, export just the timecode track to a new mov wrapper
 
