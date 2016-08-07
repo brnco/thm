@@ -35,13 +35,24 @@ these aren't implemented quite as they are written here but if you wanted to mak
 
 **concatenate**
 
-ffmpeg -f concat -i concat.txt -c copy [concatenatedMOV].mov
+ffmpeg -f concat -i concat.txt -c copy -map 0 [concatenatedMOV].mov
 
 
 **flv**
 
-ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" -c:v libx264 -preset fast -b:v 700k -r 29.97 -vf scale=320:180 -c:a aac -ar 44100 -ac 2 -map_metadata 0 [name]flv
+this is actually a two-three step process
 
+first, export just the timecode track to a new mov wrapper
+
+ffmpeg -i [concatenatedMOV].mov -map 0:3 -c:d copy concat-tmcd.mov
+
+second, do the audio and video trasncodes, pop the THM watermark on the video
+
+ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 concat-va2.mov
+
+third, using -map and streamcopy, re-wrap everything in the flv
+
+ffmpeg -i concat-va2.mov -i concat-tmcd.mov -map 0:0 -map 0:1 -map 1:0 -c:v copy -c:a copy -c:d copy [name].flv
 
 **mpeg**
 
@@ -53,7 +64,7 @@ ffmpeg -i A2017_004_001_004.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -
 
 **test input*
 
-if you want to generate a test input file for this situation here's how
+if you want to generate a test input file for this situation here's how. Note, ffmpeg cannot generate timecode tracks at this time.
 
 first, make a video file in the usual way
 
