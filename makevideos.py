@@ -36,8 +36,9 @@ def dependencies():
 
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	print rawCaptures
+	rawCaptures = "/Volumes/G-SPEED Q/Titan-HD/HM/Queue"
 	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
+		print "in loop"
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
 			with cd(os.path.join(dirs,acc)): #cd into accession dir
@@ -70,7 +71,9 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 		with cd(acc): #ok, cd into the accession dir
 			print "concatenating raw captures"
 			try:
-				output = subprocess.check_output('ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00.0 concat.mov') #concatenate them
+				concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00.0 concat.mov'
+				print concatstr
+				output = subprocess.check_output(concatstr, shell=True) #concatenate them
 				returncode = 0
 			except subprocess.CalledProcessError,e: #check for an error
 				output = e.output
@@ -92,9 +95,9 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				flvstr = 'ffmpeg -i concat.mov -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00.0 ' + flv
+				flvstr = 'ffmpeg -i concat.mov -i "' + watermark + '"' + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00.0 ' + flv
 				print flvstr
-				output = subprocess.check_output(flvstr)
+				output = subprocess.check_output(flvstr, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -108,12 +111,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
 			#easier to init this var here rather than include it in the ffmpeg call
-			drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='04\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
+			drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='" + segment[-2:] + "\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
 			try:
 				mpegstr = 'ffmpeg -i concat.mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf ' + drawtext + ',scale=720:480" ' + mpeg
-				print mpegstr
-				foo = raw_input("eh")
-				subprocess.check_output(mpegstr)
+				subprocess.check_output(mpegstr, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -128,9 +129,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			print "transcoding to mp4 with timecode"
 			try:
 				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
-				print mp4str
-				foo = raw_input("eh")
-				subprocess.check_output(mp4str)
+				subprocess.check_output(mp4str, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
@@ -180,6 +179,7 @@ def main():
 	#put options for both white and black watermarks (white defaults)
 	args = vars(parser.parse_args())
 	
+	print rawCaptures
 
 	#makes a list of files for ffmpeg to transcode
 	fflist = makefflist(rawCaptures)
