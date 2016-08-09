@@ -71,7 +71,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 		with cd(acc): #ok, cd into the accession dir
 			print "concatenating raw captures"
 			try:
-				concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00.0 concat.mov'
+				concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
 				print concatstr
 				output = subprocess.check_output(concatstr, shell=True) #concatenate them
 				returncode = 0
@@ -95,7 +95,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				flvstr = 'ffmpeg -i concat.mov -i "' + watermark + '"' + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00.0 ' + flv
+				flvstr = 'ffmpeg -i concat.mov -i "' + watermark + '"' + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + flv
 				print flvstr
 				output = subprocess.check_output(flvstr, shell=True)
 				returncode = 0
