@@ -31,7 +31,7 @@ python hashmove.py -v "/home/path to/dir/you question" /home/path/to/dir/with/ha
 
 
 ##ffmpeg strings
-these aren't implemented quite as they are written here but if you wanted to make each of these derivatives with ffmpeg, this is what you would use:
+these aren't implemented quite as they are written here, everything in brackets is a variable for example, but if you wanted to make each of these derivatives with ffmpeg, this is what you would use:
 
 **concatenate**
 
@@ -40,30 +40,15 @@ ffmpeg -f concat -i concat.txt -c copy -map 0 [concatenatedMOV].mov
 
 **flv**
 
-
-this is actually a two-three step process
-
-ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180" -c:v libx264 -preset fast -b:v 700k -r 29.97 -c:a aac -ar 44100 -ac 2 -map_metadata 0 [name].flv
-
-first, export just the timecode track to a new mov wrapper
-
-ffmpeg -i [concatenatedMOV].mov -map 0:3 -c:d copy concat-tmcd.mov
-
-second, do the audio and video trasncodes, pop the THM watermark on the video
-
-ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2,scale=320:180" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 concat-va2.mov
-
-third, using -map and streamcopy, re-wrap everything in the flv
-
-ffmpeg -i concat-va2.mov -i concat-tmcd.mov -map 0:0 -map 0:1 -map 1:0 -c:v copy -c:a copy -c:d copy [name].flv
+ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode [segmentNumber]:00:00:00 [canonicalName].flv
 
 **mpeg**
 
-ffmpeg -i [concatenatedMOV].mov -map 0:1 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -ac 2 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='00\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=720:480" [name].mpeg
+ffmpeg -i [concatenatedMOV].mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -ac 2 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='[segmentNumber]\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=720:480" [canonicalName].mpeg
 
 **mp4**
 
-ffmpeg -i A2017_004_001_004.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='00\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=420:270" -c:a aac -ar 44100 -ac 2 out1.mp4
+ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='[segmentNumber]\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 [canonicalName].mp4
 
 **test input*
 
@@ -77,6 +62,6 @@ then make an audio file and wrap it in a mov
 
 ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=10" -c:a pcm_s24be [aout].mov
 
-then warp the video file with the audio file mapped to two different streams
+then warp the video file with the audio file mapped to two different streams, with timecode track
 
-ffmpeg -i 01836001.mov -i [vout].mov -i [aout].mov -c:v copy -c:a pcm_s24be -map 0:v:0 -map 1:a:0 -map 2:a:0 [out].mov
+ffmpeg -i [vout].mov -i [aout].mov -c:v copy -c:a pcm_s24be -map 0:v:0 -map 1:a:0 -map 2:a:0 -timecode 00:00:00:00 [out].mov
