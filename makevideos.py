@@ -36,8 +36,7 @@ def dependencies():
 
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	rawCaptures = "/Volumes/G-SPEED Q/Titan-HD/HM/Queue"
-	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
+	for dirs, subdirs, files in os.walk('"' + rawCaptures + '"'): #loop thru holding dir on xcluster
 		print "in loop"
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
@@ -128,7 +127,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
 			try:
-				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
+				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 441000 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
 				subprocess.check_output(mp4str, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
@@ -164,7 +163,7 @@ def main():
 	scriptRepo = os.path.dirname(os.path.abspath(__file__))
 	config = ConfigParser.ConfigParser()
 	config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
-	watermark = config.get('transcode','watermark')
+	watermark = config.get('transcode','whitewatermark')
 	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
 	sunnas = config.get('fileDestinations','sunnas')
