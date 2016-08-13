@@ -40,7 +40,7 @@ ffmpeg -f concat -i concat.txt -c copy -map 0 [concatenatedMOV].mov
 
 **flv**
 
-ffmpeg -i [concatenatedMOV].mov -i watermark.png -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode [segmentNumber]:00:00:00 [canonicalName].flv
+ffmpeg -i [concatenatedMOV].mov -i [/path/to/watermark].png -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode [segmentNumber]:00:00:00 [canonicalName].flv
 
 **mpeg**
 
