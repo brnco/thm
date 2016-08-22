@@ -147,23 +147,70 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			os.rename("concat.mov",mov)
 	return	
 
-def hashmove2(fflist,sunnas,xendata):
-	try:
-		foo = 'blah'
-		#iterate thru flist
-			#hashmove endfile.mov and endfile.mpeg to LTO
-				#send SHA1 hashes to FileMaker
-			#hashmove endfile.mp4 to SUNNAS/Proxy
-				#send SHA1 hash to FileMaker
-			#hashmove endfile.flv to "SUNNAS/Digital Archive"
-				#send SHA1 hash to FileMaker
-	except:
-		foo = 'blah'
-		
-		#send email to THM staff
+def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
+	hashlist = {}
+	extlist = [".mov",".flv",".mp4",".mpeg"]
+	for dirs, subdirs, files in os.walk(rawCaptures):
+		for s in subdirs:
+			with cd(s):
+				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + exlist[3]): #if each file extension exists in there
+					#move the mov files
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[0]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					hashes,err = output.communicate()
+					print hashes
+					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
+					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					dh = desthash.group()
+					sh = sourcehash.group()
+					if sh[-32:] == dh[-32:]:
+						hashlist[s + extlist[0]] = sh
+
+					#move the flv file
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[1]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					hashes,err = output.communicate()
+					print hashes
+					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
+					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					dh = desthash.group()
+					sh = sourcehash.group()
+					if sh[-32:] == dh[-32:]:
+						hashlist[s + extlist[1]] = sh
+					
+					#move the mp4 file
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[2]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					hashes,err = output.communicate()
+					print hashes
+					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
+					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					dh = desthash.group()
+					sh = sourcehash.group()
+					if sh[-32:] == dh[-32:]:
+						hashlist[s + extlist[2]] = sh
+						
+					#move the mpeg file
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[3]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					hashes,err = output.communicate()
+					print hashes
+					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
+					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					dh = desthash.group()
+					sh = sourcehash.group()
+					if sh[-32:] == dh[-32:]:
+						hashlist[s + extlist[3]] = sh
+				else:
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			#ok so the accession dir in the capture folder should be empty
+			try:
+				os.remove(s)
+			#if it's not empty let's move it to a toubleshooting folder
+			except:
+				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return
 
-
+def updateFM(hashlist):
+	for file,hash in hashlist:
+		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",file,"-hash",hash),shell=True)
+	return
 
 def main():
 	#initialize a buncha paaths to various resources
@@ -176,7 +223,7 @@ def main():
 	sunnas = config.get('fileDestinations','sunnas')
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
-	pid = os.path.join(scriptrepo,"processing.pid")
+	pid = os.path.join(scriptRepo,"processing.pid")
 	
 	if not os.path.exists(pid): #make sure this process isn't already running
 		#initialize a process id (pid) file to check that this script isn't already running
@@ -192,7 +239,10 @@ def main():
 		ffprocess(fflist,watermark,fontfile,scriptRepo)
 
 		#hashmove
-		#hashmove2(flist,sunnas,xendata)
+		hashlist = movevids(rawCaptures,sunnas,xendata,scriptRepo)
+		
+		#send to filemaker
+		updateFM(hashlist)
 		
 		#if we got this far it means we're successful and we can delete the process id file
 		os.remove(pid)
