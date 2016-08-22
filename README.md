@@ -1,6 +1,21 @@
 # thm
 video post-processing for The History Makers
 
+# makevideos
+this is the main script which is triggered by cron every 15 minutes, M-f, 7am-9pm local time
+
+this script takes the raw video captures delivered by THM perosnnel and:
+
+1. concatenates the < 4GB files into 1 long file
+
+2. transcodes that file to flv, mp4, and mpeg
+
+3. embeds timecod eand watermarks where appropriate
+
+4. hashmoves (see below) them to their destiantions
+
+5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog 
+
 # hashmove
 better file movement
 
