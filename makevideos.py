@@ -8,6 +8,7 @@ import sys
 import glob
 import re
 import time
+import random
 import argparse
 import ConfigParser
 from distutils import spawn
@@ -34,6 +35,12 @@ def dependencies():
 			sys.exit()
 	return
 
+def makepid(pid):
+	txtfile = open(pid, "wb"):
+	txtfile.write("makevideos - " + time.strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " \n")
+	txtfile.close()
+	return
+	
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs, files in os.walk('"' + rawCaptures + '"'): #loop thru holding dir on xcluster
@@ -169,29 +176,26 @@ def main():
 	sunnas = config.get('fileDestinations','sunnas')
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
+	pid = os.path.join(scriptrepo,"processing.pid")
 	
+	if not os.path.exists(pid): #make sure this process isn't already running
+		#initialize a process id (pid) file to check that this script isn't already running
+		makepid(pid)
+		
+		#makes a list of files for ffmpeg to transcode
+		fflist = makefflist(rawCaptures)
+		
+		#print the concat.txt files in each accession dir, via fflist
+		printconcats(fflist)
 
-	#grab args fromCLI
-	parser = argparse.ArgumentParser(description="concatenates, transcodes, hashmoves videos")
-	#parser.add_argument("-s","--single",help="single mode, only process a single accession. takes canonical foldername as arg e.g.A2016_012_001_000")
-	#parser.add_argument("-skiphd","--skipharddrive",dest="shd",action="store_true",default=False,help="skip the step of moving things from the hard drive, process from xcluster only")
-	#put options for both white and black watermarks (white defaults)
-	args = vars(parser.parse_args())
-	
-	print rawCaptures
+		#actually transcode the files
+		ffprocess(fflist,watermark,fontfile,scriptRepo)
 
-	#makes a list of files for ffmpeg to transcode
-	fflist = makefflist(rawCaptures)
-	
-	#print the concat.txt files in each accession dir, via fflist
-	printconcats(fflist)
-
-	#actually transcode the files
-	ffprocess(fflist,watermark,fontfile,scriptRepo)
-
-	#hashmove
-	#hashmove2(flist,sunnas,xendata)
-
+		#hashmove
+		#hashmove2(flist,sunnas,xendata)
+		
+		#if we got this far it means we're successful and we can delete the process id file
+		os.remove(pid)
 	return
 
 dependencies()
