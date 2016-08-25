@@ -158,8 +158,8 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[0]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
-					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
-					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
+					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
 					if sh[-32:] == dh[-32:]:
@@ -169,8 +169,8 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[1]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
-					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
-					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
+					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
 					if sh[-32:] == dh[-32:]:
@@ -180,8 +180,8 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[2]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
-					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
-					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
+					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
 					if sh[-32:] == dh[-32:]:
@@ -191,8 +191,8 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[3]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
-					sourcehash = re.search('srce\s\S+\s\w{32}',hashes)
-					desthash = re.search('dest\s\S+\s\w{32}',hashes)
+					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
+					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
 					if sh[-32:] == dh[-32:]:
@@ -209,7 +209,9 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 
 def updateFM(hashlist):
 	for file,hash in hashlist:
-		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",file,"-hash",hash),shell=True)
+		fname,ext = os.path.splitext(file)
+		fdigi = ext.replace(".","")
+		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hash,"-fdigi",fdigi),shell=True)
 	return
 
 def main():
