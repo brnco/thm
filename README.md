@@ -67,11 +67,11 @@ ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -
 
 **test input*
 
-if you want to generate a test input file for this situation here's how. Note, ffmpeg cannot generate timecode tracks at this time.
+if you want to generate a test input file for this situation here's how.
 
 first, make a video file in the usual way
 
-ffmpeg -f lavfi -i "testsrc=duration=10:size=1920x1080:rate=29.97" -c:v mpeg2video [vout].mov
+ffmpeg -f lavfi -i "testsrc=duration=10:size=1920x1080:rate=29.97" -c:v mpeg2video -timecode 00:00:00.0 [vout].mov
 
 then make an audio file and wrap it in a mov
 
