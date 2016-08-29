@@ -150,9 +150,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 	hashlist = {}
 	extlist = [".mov",".flv",".mp4",".mpeg"]
-	ayear,accNum,intNum,segment = canonicalname.split("_")
+	
 	for dirs, subdirs, files in os.walk(rawCaptures):
 		for s in subdirs:
+			ayear,accNum,intNum,segment = s.split("_")
 			with cd(os.path.join(dirs,s)):
 				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
 					#move the mov files
