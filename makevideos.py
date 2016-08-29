@@ -36,14 +36,14 @@ def dependencies():
 	return
 
 def makepid(pid):
-	txtfile = open(pid, "wb"):
-	txtfile.write("makevideos - " + time.strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " \n")
+	txtfile = open(pid, "wb")
+	txtfile.write("makevideos - " + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " \n")
 	txtfile.close()
 	return
 	
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
-	for dirs, subdirs, files in os.walk('"' + rawCaptures + '"'): #loop thru holding dir on xcluster
+	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		print "in loop"
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			print acc
@@ -101,7 +101,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.flv + HistoryMakers watermark
 			print "transcoding to flv with HM watermark"
 			try:
-				flvstr = 'ffmpeg -i concat.mov -i "' + watermark + '"' + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + flv
+				flvstr = 'ffmpeg -i concat.mov -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + flv
 				print flvstr
 				output = subprocess.check_output(flvstr, shell=True)
 				returncode = 0
@@ -134,7 +134,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
 			try:
-				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 441000 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
+				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
 				subprocess.check_output(mp4str, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
@@ -147,15 +147,15 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			os.rename("concat.mov",mov)
 	return	
 
-def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
+def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 	hashlist = {}
 	extlist = [".mov",".flv",".mp4",".mpeg"]
 	for dirs, subdirs, files in os.walk(rawCaptures):
 		for s in subdirs:
-			with cd(s):
-				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + exlist[3]): #if each file extension exists in there
+			with cd(os.path.join(dirs,s)):
+				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
 					#move the mov files
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[0]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -166,7 +166,7 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[0]] = sh
 
 					#move the flv file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[1]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnasDA)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -177,7 +177,7 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[1]] = sh
 					
 					#move the mp4 file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[2]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),os.path.join(sunnasPH)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -188,7 +188,7 @@ def movevids(rawCaptures,sunnas,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[2]] = sh
 						
 					#move the mpeg file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s,s + extlist[3]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -211,7 +211,7 @@ def updateFM(hashlist):
 	for file,hash in hashlist:
 		fname,ext = os.path.splitext(file)
 		fdigi = ext.replace(".","")
-		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hash,"-fdigi",fdigi),shell=True)
+		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hash,"-fdigi",fdigi],shell=True)
 	return
 
 def main():
@@ -222,18 +222,22 @@ def main():
 	watermark = config.get('transcode','whitewatermark')
 	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
-	sunnas = config.get('fileDestinations','sunnas')
+	sunnasDA = config.get('fileDestinations','sunnasDA')
+	sunnasPH = config.get('fileDestinations','sunnasPH')
 	xendata = config.get('fileDestinations','xendata')
 	xcluster = config.get('fileDestinations','xcluster')
 	pid = os.path.join(scriptRepo,"processing.pid")
 	
+	rawCaptures = rawCaptures.strip('"')
+	
 	if not os.path.exists(pid): #make sure this process isn't already running
 		#initialize a process id (pid) file to check that this script isn't already running
-		makepid(pid)
+		#makepid(pid)
+
 		
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures)
-		
+
 		#print the concat.txt files in each accession dir, via fflist
 		printconcats(fflist)
 
@@ -241,13 +245,13 @@ def main():
 		ffprocess(fflist,watermark,fontfile,scriptRepo)
 
 		#hashmove
-		hashlist = movevids(rawCaptures,sunnas,xendata,scriptRepo)
+		hashlist = movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo)
 		
 		#send to filemaker
 		updateFM(hashlist)
 		
 		#if we got this far it means we're successful and we can delete the process id file
-		os.remove(pid)
+		#os.remove(pid)
 	return
 
 dependencies()

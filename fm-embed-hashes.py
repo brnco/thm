@@ -18,7 +18,7 @@ def main():
 	#whole string in () needs to be enclosed in double quotes
 	#values for SQL commands need to be enclosed in single quotes
 	updatestr = "update PBCoreInstantiation set ShaDigest='" + args['hash'] + "' where identifier='" + args['id'] + "' AND formatDigital='" + args['fdigi'] + "'"
-	print updatestr
+	#print updatestr
 	cursor.execute(updatestr) 
 	
 	cursor.commit()
