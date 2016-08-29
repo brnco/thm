@@ -164,8 +164,8 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					if sh[-32:] == dh[-32:]:
-						hashlist[s + extlist[0]] = sh
+					if sh[-40:] == dh[-40:]:
+						hashlist[s + extlist[0]] = sh[-40:]
 
 					#move the flv file
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnasDA,ayear,accNum)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -175,8 +175,8 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					if sh[-32:] == dh[-32:]:
-						hashlist[s + extlist[1]] = sh
+					if sh[-40:] == dh[-40:]:
+						hashlist[s + extlist[1]] = sh[-40:]
 					
 					#move the mp4 file
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),os.path.join(sunnasPH)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -186,8 +186,8 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					if sh[-32:] == dh[-32:]:
-						hashlist[s + extlist[2]] = sh
+					if sh[-40:] == dh[-40:]:
+						hashlist[s + extlist[2]] = sh[-40:]
 						
 					#move the mpeg file
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -197,8 +197,8 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					if sh[-32:] == dh[-32:]:
-						hashlist[s + extlist[3]] = sh
+					if sh[-40:] == dh[-40:]:
+						hashlist[s + extlist[3]] = sh[-40:]
 				else:
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			#ok so the accession dir in the capture folder should be empty
@@ -207,13 +207,15 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
 				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	return
+	return hashlist
 
-def updateFM(hashlist):
-	for file,hash in hashlist:
-		fname,ext = os.path.splitext(file)
+def updateFM(hashlist,scriptRepo):
+	for fh in hashlist:
+		print fh
+		print hashlist[fh]
+		fname,ext = os.path.splitext(fh)
 		fdigi = ext.replace(".","")
-		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hash,"-fdigi",fdigi],shell=True)
+		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi])
 	return
 
 def main():
@@ -250,7 +252,7 @@ def main():
 		hashlist = movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo)
 		
 		#send to filemaker
-		updateFM(hashlist)
+		updateFM(hashlist,scriptRepo)
 		
 		#if we got this far it means we're successful and we can delete the process id file
 		#os.remove(pid)
