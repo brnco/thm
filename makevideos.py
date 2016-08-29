@@ -150,6 +150,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 	hashlist = {}
 	extlist = [".mov",".flv",".mp4",".mpeg"]
+	ayear,accNum,intNum,segment = canonicalname.split("_")
 	for dirs, subdirs, files in os.walk(rawCaptures):
 		for s in subdirs:
 			with cd(os.path.join(dirs,s)):
@@ -166,7 +167,7 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[0]] = sh
 
 					#move the flv file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnasDA)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnasDA,ayear,accNum)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
