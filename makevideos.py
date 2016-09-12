@@ -9,6 +9,7 @@ import glob
 import re
 import time
 import random
+import shutil
 import argparse
 import ConfigParser
 from distutils import spawn
@@ -147,7 +148,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			os.rename("concat.mov",mov)
 	return	
 
-def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
+def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,,xcluster,scriptRepo):
 	hashlist = {}
 	extlist = [".mov",".flv",".mp4",".mpeg"]
 	
@@ -156,6 +157,12 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 			ayear,accNum,intNum,segment = s.split("_")
 			with cd(os.path.join(dirs,s)):
 				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
+					#copy the files to various copytos
+					shutil.copy2(os.path.join(dirs,s,s + extlist[0]),os.path.join(xendatacopyto,s)) #copy the mov to xendata/copyto
+					shutil.copy2(os.path.join(dirs,s,s + extlist[3]),os.path.join(xendatacopyto,s)) #copy the mpeg to xendata/copyto
+					shutil.copy2(os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnascopyto,s)) #copy the flv to sunnas/copyto
+					shutil.copy2(os.path.join(dirs,s,s + extlist[2]),os.path.join(sunnascopyto,s)) #copy the mp4 to sunnas/copyto
+					
 					#move the mov files
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),os.path.join(xendata,s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
@@ -168,7 +175,7 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[0]] = sh[-40:]
 
 					#move the flv file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnasDA,ayear,accNum)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),os.path.join(sunnas,ayear,accNum)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -179,7 +186,7 @@ def movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo):
 						hashlist[s + extlist[1]] = sh[-40:]
 					
 					#move the mp4 file
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),os.path.join(sunnasPH)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),os.path.join(sunnas)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -226,9 +233,10 @@ def main():
 	watermark = config.get('transcode','whitewatermark')
 	fontfile = config.get('transcode','timecodefont')
 	rawCaptures = config.get('transcode','rawCaptureDir')
-	sunnasDA = config.get('fileDestinations','sunnasDA')
-	sunnasPH = config.get('fileDestinations','sunnasPH')
+	sunnascopyto = config.get('fileDestinations','sunnascopyto')
+	sunnas = config.get('fileDestinations','sunnas')
 	xendata = config.get('fileDestinations','xendata')
+	xendatacopyto = config.get('fileDestinations','xendatacopyto')
 	xcluster = config.get('fileDestinations','xcluster')
 	pid = os.path.join(scriptRepo,"processing.pid")
 	
@@ -249,7 +257,7 @@ def main():
 		ffprocess(fflist,watermark,fontfile,scriptRepo)
 
 		#hashmove
-		hashlist = movevids(rawCaptures,sunnasDA,sunnasPH,xendata,xcluster,scriptRepo)
+		hashlist = movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo)
 		
 		#send to filemaker
 		updateFM(hashlist,scriptRepo)
