@@ -36,11 +36,6 @@ def dependencies():
 			sys.exit()
 	return
 
-def makepid(pid):
-	txtfile = open(pid, "wb")
-	txtfile.write("makevideos - " + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " \n")
-	txtfile.close()
-	return
 	
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
@@ -222,7 +217,7 @@ def updateFM(hashlist,scriptRepo):
 		print hashlist[fh]
 		fname,ext = os.path.splitext(fh)
 		fdigi = ext.replace(".","")
-		subprocess.call(["python",os.path.join(scriptRepo,"fm-embed-hashes.py"),"-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi])
+		subprocess.call(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi])
 	return
 
 def main():
@@ -243,9 +238,6 @@ def main():
 	rawCaptures = rawCaptures.strip('"')
 	
 	if not os.path.exists(pid): #make sure this process isn't already running
-		#initialize a process id (pid) file to check that this script isn't already running
-		#makepid(pid)
-
 		
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures)
@@ -262,8 +254,6 @@ def main():
 		#send to filemaker
 		updateFM(hashlist,scriptRepo)
 		
-		#if we got this far it means we're successful and we can delete the process id file
-		#os.remove(pid)
 	return
 
 dependencies()
