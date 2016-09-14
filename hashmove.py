@@ -125,6 +125,8 @@ def deletefiles(sflist,sfhflist,matches,startObjIsDir):
 		delhfiles.extend([a for a in sfhflist if match in a])
 		#print delfiles
 	delfiles = list(set(delfiles)) #de-dupe
+	print delfiles
+	foo = raw_input("eh")
 	delhfiles = list(set(delhfiles)) #de-dupe
 	if startObjIsDir is True:
 		for d in delfiles:
