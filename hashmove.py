@@ -112,6 +112,7 @@ def copyfiles(flist,startObjIsDir):
 	return
 	
 def deletefiles(sflist,sfhflist,matches,startObjIsDir):
+	print "in delfiles"
 	#initialize some lists
 	delfiles = []
 	delhfiles = []
@@ -125,8 +126,6 @@ def deletefiles(sflist,sfhflist,matches,startObjIsDir):
 		delhfiles.extend([a for a in sfhflist if match in a])
 		#print delfiles
 	delfiles = list(set(delfiles)) #de-dupe
-	print delfiles
-	foo = raw_input("eh")
 	delhfiles = list(set(delhfiles)) #de-dupe
 	if startObjIsDir is True:
 		for d in delfiles:
@@ -225,7 +224,9 @@ def main():
 	#print the hashes
 	if args.np is False:
 		sfhflist = printhashes(sflist,shd,eflist,ehd,args.a)
-	
+	else:
+		sfhflist = [] #if "no print" arg is true we won't have any start file hash files
+		
 	#compare the dict values and provide feedback
 	matches, mismatches = compare(shd, ehd)
 	for m in mismatches:
