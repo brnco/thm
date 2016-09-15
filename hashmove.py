@@ -218,8 +218,9 @@ def main():
 		copyfiles(flist, startObjIsDir)
 	
 	#make dicts of filenames : hashes
-	shd = makehlist(sflist, args.a, True)
 	ehd = makehlist(eflist, args.a, grip)
+	shd = makehlist(sflist, args.a, True)
+	
 
 	#print the hashes
 	if args.np is False:

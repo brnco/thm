@@ -36,6 +36,128 @@ def dependencies():
 			sys.exit()
 	return
 
+#make sure that everything is where it should be
+def init(watermark,fontfile,rawCaptures,sunnas,sunnascopyto,xendata,xendatacopyto,pid):
+	watermark = watermark.strip('"')
+	if os.path.exists(pid):
+		with open(pid,"rb") as txtfile:
+			last = None
+			for line in (line for line in txtfile if line.rstrip('\n')):
+				#for line in txtfile:
+				last = line
+		if "running" in last:
+			sys.exit()
+		elif "crashed" in last:
+    		#check that watermarks and fontfiles are where they should be
+			if not os.path.exists(watermark):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The white-watermark file cannot be found. Please put the white watermark file at " + watermark])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")
+				sys.exit()
+			if not os.path.exists(fontfile):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The fontfile cannot be found. Please put the fontfile at " + fontfile])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")
+				sys.exit()
+    		#test that everything is plugged in
+			if not os.path.exists(sunnas):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnas])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")
+				sys.exit()
+			if not os.path.exists(sunnascopyto):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnascopyto])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")
+				sys.exit()
+			if not os.path.exists(xendata):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendata])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")
+				sys.exit()
+			if not os.path.exists(xendatacopyto):
+				if not "no email" in last:
+					subprocess.call(["python","send-email.py","-txt","The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendatacopyto])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email\n")			
+				sys.exit()
+    		
+    		#if we make it this far, everything is where it should be, we're gonna try running it again
+			startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
+    	
+    	#if it worked last time let's do it again
+		elif "success" in last:
+			startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
+	else:
+		startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
+	return
+
+def startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto):
+	if os.path.exists(pid):
+		os.remove(pid)
+	txtfile = open(pid, "wb")
+	txtfile.write("makevideos - " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " \n")
+	txtfile.write("running\n")
+	txtfile.close()
+	
+	#check that there's stuff to work on even
+	rawCapList = []
+	for f in os.listdir(rawCaptures):
+		if not f.startswith('.'):
+			rawCapList.append(f)
+	print rawCapList
+	if not rawCapList:
+		with open(pid,"ab") as txtfile:
+			txtfile.write("success\n")
+		sys.exit()
+
+	#check that watermarks and fontfiles are where they should be
+	if not os.path.exists(watermark):
+		subprocess.call(["python","send-email.py","-txt","The white-watermark file cannot be found. Please put the white watermark file at " + watermark])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")
+		sys.exit()
+	if not os.path.exists(fontfile):
+		subprocess.call(["python","send-email.py","-txt","The fontfile cannot be found. Please put the fontfile at " + fontfile])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")
+		sys.exit()
+	#check that everything is plugged in
+	if not os.path.exists(sunnas):
+		subprocess.call(["python","send-email.py","-txt","The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnas])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")
+		sys.exit()
+	if not os.path.exists(sunnascopyto):
+		subprocess.call(["python","send-email.py","-txt","The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnascopyto])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")
+		sys.exit()
+	if not os.path.exists(xendata):
+		subprocess.call(["python","send-email.py","-txt","The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendata])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")
+		sys.exit()
+	if not os.path.exists(xendatacopyto):
+		subprocess.call(["python","send-email.py","-txt","The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendatacopyto])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed - no email\n")	
+		sys.exit()
+	#check that a filemaker record exists for each accession
+	for dirs,subdirs,files in os.walk(rawCaptures):
+			for s in subdirs:
+				output = subprocess.Popen(["python","fm-stuff.py","-query","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+				#output,err = output.communicate()
+				if not output:
+					subprocess.call(["python","send-email.py","-txt","The video script is unable to run because there is not an accession record for " + s])
+					with open(pid,"a") as txtfile:	
+						txtfile.write("crashed - no email\n")	
+					sys.exit()
 	
 def makefflist(rawCaptures):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
@@ -83,7 +205,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0: #if there was an error
 				print "concat fail" #tell the user
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 				sys.exit() #quit now because this concat is really important
 			if returncode == 0: #if there wasn't an error
 				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
@@ -107,8 +229,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "flv transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
-			
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email - flv tanscode fail\n")
+				sys.exit()
 
 			#endfile.mpeg + timecode
 			print "transcoding to mpeg with timecode"
@@ -124,8 +248,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mpeg transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
-			
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email - mpeg transcode fail\n")
+				sys.exit()
 
 			#endfile.mp4 + timecode
 			print "transcoding to mp4 with timecode"
@@ -139,7 +265,10 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mp4 transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())])
+				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				with open(pid,"a") as txtfile:
+					txtfile.write("crashed - no email - mp4 transcode fail\n")
+				sys.exit()
 			os.rename("concat.mov",mov)
 	return	
 
@@ -153,6 +282,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 			with cd(os.path.join(dirs,s)):
 				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
 					#copy the files to various copytos
+					print "copying files"
 					shutil.copy2(os.path.join(dirs,s,s + extlist[0]),xendatacopyto) #copy the mov to xendata/copyto
 					shutil.copy2(os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC")) #copy the mov to xendata/copyto
 					shutil.copy2(os.path.join(dirs,s,s + extlist[3]),xendatacopyto) #copy the mpeg to xendata/copyto
@@ -160,6 +290,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					shutil.copy2(os.path.join(dirs,s,s + extlist[2]),sunnascopyto) #copy the mp4 to sunnas/copyto
 					
 					#move the mov files
+					print "moving mov file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),xendata],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
@@ -171,6 +302,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 						hashlist[s + extlist[0]] = sh[-40:]
 
 					#move the flv file
+					print "moving flv file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),sunnas],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
@@ -182,6 +314,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 						hashlist[s + extlist[1]] = sh[-40:]
 					
 					#move the mp4 file
+					print "moving mp4 file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),sunnas],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
@@ -193,6 +326,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 						hashlist[s + extlist[2]] = sh[-40:]
 						
 					#move the mpeg file
+					print "moving mpeg file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),xendata],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
@@ -238,25 +372,31 @@ def main():
 	
 	rawCaptures = rawCaptures.strip('"')
 	xcluster = xcluster.strip('"')
-		
-	#makes a list of files for ffmpeg to transcode
-	fflist = makefflist(rawCaptures)
-
-	#print the concat.txt files in each accession dir, via fflist
-	printconcats(fflist)
-
-	#actually transcode the files
-	ffprocess(fflist,watermark,fontfile,scriptRepo)
-
-	#hashmove
-	hashlist = movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo)
-		
-	#send to filemaker
-	updateFM(hashlist,scriptRepo)
 	
-	with open(pid,"ab") as txtfile:
-		txtfile.write("success\n")
+	try:
+		init(watermark,fontfile,rawCaptures,sunnas,sunnascopyto,xendata,xendatacopyto,pid)
 		
+		#makes a list of files for ffmpeg to transcode
+		fflist = makefflist(rawCaptures)
+
+		#print the concat.txt files in each accession dir, via fflist
+		printconcats(fflist)
+
+		#actually transcode the files
+		ffprocess(fflist,watermark,fontfile,scriptRepo)
+
+		#hashmove
+		hashlist = movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo)
+		
+		#send to filemaker
+		updateFM(hashlist,scriptRepo)
+	
+		with open(pid,"a") as txtfile:
+			txtfile.write("success\n")
+	except:
+		subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The script crashed due to an internal error (Traceback, AttributeError, etc. Please check Terminal output and adjsut as necessary\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+		with open(pid,"a") as txtfile:
+			txtfile.write("crashed")	
 	return
 
 dependencies()
