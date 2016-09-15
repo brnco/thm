@@ -3,7 +3,7 @@ video post-processing for The History Makers
 
 # makevideos
 
-this script takes the raw video captures delivered by THM perosnnel and:
+this script takes the raw video captures delivered by THM personnel and:
 
 1. concatenates the < 4GB files into 1 long file
 
