@@ -1,2 +1,4 @@
 *.txt
 fm-embed-hashes.py
+processing.pid
+.DS_Store
