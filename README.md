@@ -2,7 +2,6 @@
 video post-processing for The History Makers
 
 # makevideos
-this is the main script which is triggered by cron every 15 minutes, M-f, 7am-9pm local time
 
 this script takes the raw video captures delivered by THM perosnnel and:
 
@@ -10,11 +9,17 @@ this script takes the raw video captures delivered by THM perosnnel and:
 
 2. transcodes that file to flv, mp4, and mpeg
 
-3. embeds timecod eand watermarks where appropriate
+3. embeds timecode and watermarks where appropriate
 
 4. hashmoves (see below) them to their destiantions
 
 5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog 
+
+makevideos also checks to make sure that everything is plugged in and that all necessary files (like watermarks) are in their expected locations.
+
+makevideos is triggered every 15minutes, M-F, 7am-9pm local time by cron
+
+makevideos can also be run manually by cd'ing into the repo directory (look for that in the config.txt file) and running "python makevideos.py"
 
 # hashmove
 better file movement
