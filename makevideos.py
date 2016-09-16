@@ -183,7 +183,7 @@ def printconcats(fflist):
 			txtfile.close #housekeeping
 	return 
 
-def ffprocess(fflist,watermark,fontfile,scriptrepo):
+def ffprocess(fflist,watermark,fontfile,scriptRepo):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist: #for each accession full path on xcluster/IncomingQT
 		canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
@@ -205,7 +205,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0: #if there was an error
 				print "concat fail" #tell the user
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The concatenation of  ' + canonicalname + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 				sys.exit() #quit now because this concat is really important
 			if returncode == 0: #if there wasn't an error
 				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
@@ -229,7 +229,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "flv transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The transcode to ' + flv + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 				with open(pid,"a") as txtfile:
 					txtfile.write("crashed - no email - flv tanscode fail\n")
 				sys.exit()
@@ -248,7 +248,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mpeg transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The transcode to ' + mpeg + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 				with open(pid,"a") as txtfile:
 					txtfile.write("crashed - no email - mpeg transcode fail\n")
 				sys.exit()
@@ -265,7 +265,7 @@ def ffprocess(fflist,watermark,fontfile,scriptrepo):
 			if returncode > 0:
 				print "mp4 transcode fail"
 				#send email to staff
-				subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The transcode to ' + mp4 + ' was unsuccessful\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 				with open(pid,"a") as txtfile:
 					txtfile.write("crashed - no email - mp4 transcode fail\n")
 				sys.exit()
@@ -394,7 +394,7 @@ def main():
 		with open(pid,"a") as txtfile:
 			txtfile.write("success\n")
 	except:
-		subprocess.call(['python',os.path.join(scriptrepo,"send-email.py"),'-txt','The script crashed due to an internal error (Traceback, AttributeError, etc. Please check Terminal output and adjsut as necessary\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
+		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The script crashed due to an internal error (Traceback, AttributeError, etc. Please check Terminal output and adjsut as necessary\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 		with open(pid,"a") as txtfile:
 			txtfile.write("crashed")	
 	return
