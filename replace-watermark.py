@@ -39,14 +39,17 @@ def main ():
 	config = ConfigParser.ConfigParser()
 	config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
 	watermark = config.get('transcode','blackwatermark')
+	watermark = watermark.strip('"')
 	#grab args fromCLI
 	parser = argparse.ArgumentParser(description="replaces default white watermark with a black one")
 	parser.add_argument("input",help='the full path to the input file whose watermark youd like to replace, e.g. "/Volumes/ProxyHolding/copyto/A2016_001_001_001.flv"')
 	args = vars(parser.parse_args())
-	name = os.path.basename(args.input)
+	name = os.path.basename(args['input']).strip('"')
 	ayear,acc,interview,segment = name.split("_")
-	ffstring = 'ffmpeg -i ' + args.input + ' -i "' + blackwatermark + '" -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + name + ".flv"
-	subprocess.call(ffstring,shell=True)
+	with cd(os.path.dirname(args['input'].strip('"'))):
+		ffstring = 'ffmpeg -i ' + name + ' -i "' + watermark + '" -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a copy -timecode ' + segment[-2:] + ':00:00:00 ' + name + "-blackwatermark.flv"
+		print ffstring
+		subprocess.call(ffstring,shell=True)
 	return
 
 dependencies()
