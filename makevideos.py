@@ -187,7 +187,8 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo):
 	#concatenate startfiles into endfile.mov
 	for acc in fflist: #for each accession full path on xcluster/IncomingQT
 		canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
-		ayear,accNum,intNum,segment = canonicalname.split("_")
+		#ayear,accNum,intNum,segment = canonicalname.split("_")
+		segment = canonicalname.split("_")[-1]
 		flv = canonicalname + ".flv" #filename for flv
 		mpeg = canonicalname + ".mpeg" #filename for mpeg
 		mp4 = canonicalname + ".mp4" #filename for mp4
@@ -278,20 +279,14 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 	
 	for dirs, subdirs, files in os.walk(rawCaptures):
 		for s in subdirs:
-			ayear,accNum,intNum,segment = s.split("_")
 			with cd(os.path.join(dirs,s)):
 				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
-					#copy the files to various copytos
-					print "copying files"
-					shutil.copy2(os.path.join(dirs,s,s + extlist[0]),xendatacopyto) #copy the mov to xendata/copyto
-					shutil.copy2(os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC")) #copy the mov to xendata/copyto
-					shutil.copy2(os.path.join(dirs,s,s + extlist[3]),xendatacopyto) #copy the mpeg to xendata/copyto
-					shutil.copy2(os.path.join(dirs,s,s + extlist[1]),sunnascopyto) #copy the flv to sunnas/copyto
-					shutil.copy2(os.path.join(dirs,s,s + extlist[2]),sunnascopyto) #copy the mp4 to sunnas/copyto
+					#copy pres file to lc director
+					subprocess.call(["cp",os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC")],shell=True) #copy the mov to xendata/copyto
 					
 					#move the mov files
 					print "moving mov file"
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),xendata],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -303,7 +298,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 
 					#move the flv file
 					print "moving flv file"
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),sunnas],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -315,7 +310,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					
 					#move the mp4 file
 					print "moving mp4 file"
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),sunnas],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -327,7 +322,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 						
 					#move the mpeg file
 					print "moving mpeg file"
-					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),xendata],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
 					print hashes
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
@@ -336,11 +331,21 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					sh = sourcehash.group()
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[3]] = sh[-40:]
+				
+									#copy the files to various copytos
+					print "copying files"
+					subprocess.call(["cp",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])]) #copy the mov to xendata
+					subprocess.call(["cp",os.path.join(xendatacopyto,s + extlist[3]),os.path.join(xendata,s + extlist[3])]) #copy the mpeg to xendata
+					subprocess.call(["cp",os.path.join(sunnascopyto,s + extlist[1]),os.path.join(sunnas,s + extlist[1])]) #copy the flv to sunnas
+					subprocess.call(["cp",os.path.join(sunnascopyto,s + extlist[2]),os.path.join(sunnas,s + extlist[2])]) #copy the mp4 to sunnas
+				
 				else:
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			#ok so the accession dir in the capture folder should be empty
 			try:
-				os.remove(s)
+				#time.sleep(5)
+				os.remove(os.path.join(dirs,s,".DS_Store"))
+				os.rmdir(os.path.join(dirs,s))
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
 				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
