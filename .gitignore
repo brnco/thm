@@ -1,4 +1,5 @@
 *.txt
-fm-embed-hashes.py
+fm-stuff.py
+send-email.py
 processing.pid
 .DS_Store
