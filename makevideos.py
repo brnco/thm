@@ -282,7 +282,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 			with cd(os.path.join(dirs,s)):
 				if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
 					#copy pres file to lc director
-					subprocess.call(["cp",os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC")],shell=True) #copy the mov to xendata/copyto
+					subprocess.call(["cp",os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC",s + extlist[0])],shell=True) #copy the mov to xendata/copyto
 					
 					#move the mov files
 					print "moving mov file"
@@ -398,10 +398,11 @@ def main():
 	
 		with open(pid,"a") as txtfile:
 			txtfile.write("success\n")
-	except:
+	except Exception,e:
+		print str(e)
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The script crashed due to an internal error (Traceback, AttributeError, etc. Please check Terminal output and adjsut as necessary\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 		with open(pid,"a") as txtfile:
-			txtfile.write("crashed")	
+			#txtfile.write("crashed")	
 	return
 
 dependencies()
