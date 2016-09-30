@@ -402,7 +402,7 @@ def main():
 		print str(e)
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt','The script crashed due to an internal error (Traceback, AttributeError, etc. Please check Terminal output and adjsut as necessary\n' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())])
 		with open(pid,"a") as txtfile:
-			#txtfile.write("crashed")	
+			txtfile.write("crashed")	
 	return
 
 dependencies()
