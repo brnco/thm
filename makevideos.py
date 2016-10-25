@@ -111,7 +111,7 @@ def startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xenda
 	for f in os.listdir(rawCaptures):
 		if not f.startswith('.'):
 			rawCapList.append(f)
-	print rawCapList
+
 	if not rawCapList:
 		with open(pid,"ab") as txtfile:
 			txtfile.write("success\n")
