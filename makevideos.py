@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #the history makers makevideos.py
 #concatenates, transcodes, moves videos for The History Makers
 
@@ -240,7 +241,7 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo):
 			#easier to init this var here rather than include it in the ffmpeg call
 			drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='" + segment[-2:] + "\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
 			try:
-				mpegstr = 'ffmpeg -i concat.mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf ' + drawtext + ',scale=720:480" ' + mpeg
+				mpegstr = 'ffmpeg -i concat.mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" ' + mpeg
 				subprocess.check_output(mpegstr, shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
@@ -331,25 +332,28 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					sh = sourcehash.group()
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[3]] = sh[-40:]
-				
-									#copy the files to various copytos
+					
+					#send file hashes to filemaker
+					updateFM(hashlist,scriptRepo)
+					
+					#move the files to various copytos
 					print "copying files"
-					subprocess.call(["cp",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])]) #copy the mov to xendata
-					subprocess.call(["cp",os.path.join(xendatacopyto,s + extlist[3]),os.path.join(xendata,s + extlist[3])]) #copy the mpeg to xendata
-					subprocess.call(["cp",os.path.join(sunnascopyto,s + extlist[1]),os.path.join(sunnas,s + extlist[1])]) #copy the flv to sunnas
-					subprocess.call(["cp",os.path.join(sunnascopyto,s + extlist[2]),os.path.join(sunnas,s + extlist[2])]) #copy the mp4 to sunnas
+					subprocess.call(["mv",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])]) #copy the mov to xendata
+					subprocess.call(["mv",os.path.join(xendatacopyto,s + extlist[3]),os.path.join(xendata,s + extlist[3])]) #copy the mpeg to xendata
+					subprocess.call(["mv",os.path.join(sunnascopyto,s + extlist[1]),os.path.join(sunnas,s + extlist[1])]) #copy the flv to sunnas
+					subprocess.call(["mv",os.path.join(sunnascopyto,s + extlist[2]),os.path.join(sunnas,s + extlist[2])]) #copy the mp4 to sunnas
 				
 				else:
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			#ok so the accession dir in the capture folder should be empty
 			try:
-				#time.sleep(5)
+				time.sleep(5)
 				os.remove(os.path.join(dirs,s,".DS_Store"))
 				os.rmdir(os.path.join(dirs,s))
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
 				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	return hashlist
+	return
 
 def updateFM(hashlist,scriptRepo):
 	for fh in hashlist:
@@ -391,10 +395,10 @@ def main():
 		ffprocess(fflist,watermark,fontfile,scriptRepo)
 
 		#hashmove
-		hashlist = movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo)
+		movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo)
 		
 		#send to filemaker
-		updateFM(hashlist,scriptRepo)
+		#updateFM(hashlist,scriptRepo)
 	
 		with open(pid,"a") as txtfile:
 			txtfile.write("success\n")
