@@ -116,7 +116,18 @@ def startup(pid,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xenda
 		with open(pid,"ab") as txtfile:
 			txtfile.write("success\n")
 		sys.exit()
-
+	
+	#check that nothing is being copied currently
+	donezo = False
+	while donezo is False:
+		fs = walk(rawCaptures)
+		#print fs
+		time.sleep(120)
+		fsagain = walk(rawCaptures)
+		#print fsagain
+		donezo = compare(fs, fsagain)
+		#print donezo
+	
 	#check that watermarks and fontfiles are where they should be
 	if not os.path.exists(watermark):
 		subprocess.call(["python","send-email.py","-txt","The white-watermark file cannot be found. Please put the white watermark file at " + watermark])
@@ -175,6 +186,38 @@ def makefflist(rawCaptures):
 				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
 	return fflist
 
+def sizeloop(thing):
+	print thing
+	startsize = os.stat(thing)
+	print startsize.st_size
+	time.sleep(1)
+	endsize = os.stat(thing)
+	print endsize.st_size
+	if startsize.st_size == endsize.st_size:
+		return
+	else:
+		sizeloop(thing)
+
+def walk(pth):
+	thefiles =[]	
+	for dirs, subdirs, files in os.walk(pth):
+		for files in files:
+			fullpath = os.path.join(dirs,files)
+			thefiles.append(fullpath)
+	print thefiles
+	for f in thefiles:
+		fpath = os.path.join(pth,f)
+		sizeloop(fpath)
+	return thefiles
+
+def compare(fs, fsagain):
+	print fs
+	print fsagain
+	for f in fsagain:
+		if not f in fs:
+			return False
+	return True
+	
 def printconcats(fflist):	
 	for acc in fflist: #for each accession full path on xcluster
 		with cd(acc): #cd into it
