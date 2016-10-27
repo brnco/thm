@@ -388,7 +388,8 @@ def main():
 	
 	except Exception,e:
 		print str(e)
-		msg = "The script crashed due to an internal error (Traceback, AttributeError, etc. Please check logs at " + os.path.join(scriptRepo,"logs","log-" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + ".txt") + " and adjust as necessary\n"
+		msg = "The script crashed due to an internal error\n"
+		msg = msg + str(e)
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg])
 		log(logfile,msg)
 		log(logfile,str(e))
