@@ -50,9 +50,9 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 		msg = "completed. nothing to process"
 		log(logfile,msg)
 		sys.exit()
-	
-	#check that watermarks and fontfiles are where they should be
-	if not os.path.exists(watermark):
+
+	#check that the files are where we think thye are
+	if not os.path.exists(watermark) and not os.path.exists(watermark.strip('"')):
 		msg = "The white-watermark file cannot be found. Please put the white watermark file at " + watermark
 		subprocess.call(["python","send-email.py","-txt",msg])
 		log(logfile,msg)
@@ -334,7 +334,7 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
 				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-return
+	return
 
 def updateFM(hashlist,scriptRepo,logfile):
 	for fh in hashlist:
@@ -370,7 +370,7 @@ def main():
 	xcluster = xcluster.strip('"')
 	
 	try:
-		startup(watermark,fontfile,rawCaptures,sunnas,sunnascopyto,xendata,xendatacopyto,logfile)
+		startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
 		
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures,logfile)
