@@ -54,34 +54,46 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	#check that the files are where we think thye are
 	if not os.path.exists(watermark) and not os.path.exists(watermark.strip('"')):
 		msg = "The white-watermark file cannot be found. Please put the white watermark file at " + watermark
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	if not os.path.exists(fontfile):
 		msg = "The fontfile cannot be found. Please put the fontfile at " + fontfile
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	
 	#check that everything is plugged in
 	if not os.path.exists(sunnas):
 		msg = "The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnas
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	if not os.path.exists(sunnascopyto):
 		msg = "The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnascopyto
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	if not os.path.exists(xendata):
 		msg = "The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendata
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	if not os.path.exists(xendatacopyto):
 		msg = "The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendatacopyto
-		subprocess.call(["python","send-email.py","-txt",msg])
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 		log(logfile,msg)
 		sys.exit()
 	
@@ -90,7 +102,7 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	while donezo is False:
 		fs = walk(rawCaptures)
 		#print fs
-		time.sleep(10)
+		time.sleep(120)
 		fsagain = walk(rawCaptures)
 		#print fsagain
 		donezo = compare(fs, fsagain)
@@ -103,21 +115,20 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 				#output,err = output.communicate()
 				if not output:
 					msg = "The video script is unable to run because there is not an accession record for " + s
-					subprocess.call(["python","send-email.py","-txt",msg])
+					with open(logfile,"r+") as l:
+						theLog = l.read()
+					subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
 					log(logfile,msg)	
 					sys.exit()
 	
 def makefflist(rawCaptures,logfile):
-	print "in makefflist"
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			with cd(os.path.join(dirs,acc)): #cd into accession dir
-				print "in cd " + os.path.join(dirs,acc)
 				rawcaplist = [] #init a list that will contain raw captures in each dir
 				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
 					if rawmov.endswith(".mov") or rawmov.endswith(".MOV"): #if it is a mov
-						print rawmov
 						rawcaplist.append(rawmov) #append it to our list of raw captures
 				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
 	log(logfile,str(fflist))
@@ -166,47 +177,54 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo,logfile):
 			txtfile = open("concat.txt","w") #initialize a txt file that we'll use to concat
 			for rawmov in fflist[acc]: #for each file name in the lsit of filenames associated with this accession#
 				txtfile.write("file " + rawmov + "\n") #append the filename to the txt file with a newline
-			txtfile.close #housekeeping
-		canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
-		segment = canonicalname.split("_")[-1] #the last set of chars in the sequence is the segment number
-		flv = canonicalname + ".flv" #filename for flv
-		mpeg = canonicalname + ".mpeg" #filename for mpeg
-		mp4 = canonicalname + ".mp4" #filename for mp4
-		mov = canonicalname + ".mov"
-		with cd(acc): #ok, cd into the accession dir
-			concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
-			output = subprocess.Popen(concatstr,stdout=subprocess.PIPE,stderr=subprocess.PIPE) #concatenate them
-			out,err = output.communicate()
-			if err:
-				print err
-				#send email to staff
-				msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-				msg = msg + "\n" + err
-				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
-				log(logfile,msg)
-				sys.exit() #quit now because this concat is really important
-			if returncode == 0: #if there wasn't an error
-				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
-					os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
-					if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
-						os.remove(rawmov + ".md5")
-				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
+			txtfile.close() #housekeeping
+			canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
+			segment = canonicalname.split("_")[-1] #the last set of chars in the sequence is the segment number
+			flv = canonicalname + ".flv" #filename for flv
+			mpeg = canonicalname + ".mpeg" #filename for mpeg
+			mp4 = canonicalname + ".mp4" #filename for mp4
+			mov = canonicalname + ".mov"
 			
-			#transcode endfiles
-			#endfile.flv + HistoryMakers watermark
+			concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
 			try:
-				flvstr = 'ffmpeg -i concat.mov -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + flv
-				output = subprocess.check_output(flvstr, shell=True)
+				output = subprocess.check_output(concatstr,stderr=open(logfile,"a+"),shell=True) #concatenate them
 				returncode = 0
+				log(logfile, "concatenation of raw MOVs successful")
 			except subprocess.CalledProcessError,e:
 				output = e.output
 				returncode = e.returncode
 			if returncode > 0:
 				#send email to staff
-				msg = 'The transcode to ' + flv + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
+				msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\n'
+				with open(logfile,"r+") as l:
+					thelog = l.read()
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg + "\n" + str(thelog)])
 				log(logfile,msg)
-				log(logfile,output)
+				sys.exit() #quit now because this concat is really important
+			for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
+				os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
+				if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
+					os.remove(rawmov + ".md5")
+				if os.path.exists("concat.txt"):
+					os.remove("concat.txt") #also delete the txt file because we don't need it anymore
+			
+			#transcode endfiles
+			#endfile.flv + HistoryMakers watermark
+			try:
+				flvstr = 'ffmpeg -i concat.mov -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 ' + flv
+				output = subprocess.check_output(flvstr, stderr=open(logfile,"a+"), shell=True)
+				returncode = 0
+				log(logfile, "transcode to flv successful")
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				#send email to staff
+				msg = 'The transcode to ' + flv + ' was unsuccessful\n'
+				with open(logfile,"r+") as l:
+					thelog = l.read()
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg + "\n" + str(thelog)])
+				log(logfile,msg)
 				sys.exit()
 
 			#endfile.mpeg + timecode
@@ -214,33 +232,37 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo,logfile):
 			drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='" + segment[-2:] + "\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
 			try:
 				mpegstr = 'ffmpeg -i concat.mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" ' + mpeg
-				subprocess.check_output(mpegstr, shell=True)
+				subprocess.check_output(mpegstr,stderr=open(logfile,"a+"), shell=True)
 				returncode = 0
+				log(logfile, "transcode to mpeg successful")
 			except subprocess.CalledProcessError,e:
 				output = e.output
 				returncode = e.returncode
 			if returncode > 0:
 				#send email to staff
-				msg = 'The transcode to ' + mpeg + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
+				msg = 'The transcode to ' + mpeg + ' was unsuccessful\n'
+				with open(logfile,"r+") as l:
+					thelog = l.read()
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg + "\n" + thelog])
 				log(logfile,msg)
-				log(logfile,output)
 				sys.exit()
 
 			#endfile.mp4 + timecode
 			try:
 				mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 ' + mp4
-				subprocess.check_output(mp4str, shell=True)
+				subprocess.check_output(mp4str,stderr=open(logfile,"a+"), shell=True)
 				returncode = 0
 			except subprocess.CalledProcessError,e:
 				output = e.output
 				returncode = e.returncode
+				log(logfile,"transcode to mp4 successful")
 			if returncode > 0:
 				#send email to staff
-				msg = 'The transcode to ' + mp4 + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
+				msg = 'The transcode to ' + mp4 + ' was unsuccessful\n'
+				with open(logfile,"r+") as l:
+					thelog = l.read()
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg + "\n" + str(thelog)])
 				log(logfile,msg)
-				log(logfile,output)
 				sys.exit()
 			os.rename("concat.mov",mov)
 	return	
@@ -255,18 +277,16 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					
 					#copy pres file to lc directory
 					output = subprocess.Popen(["cp",os.path.join(dirs,s,s + extlist[0]),os.path.join(xcluster,"toLC",s + extlist[0])],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True) #copy the mov to xendata/copyto
-					log(logfile,output.communicate())
+					log(logfile,"copying archival master to lc folder\n")
 					
 					#move the mov files
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[0]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
-					print hashes
+					log(logfile,hashes)
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					log(logfile,sh)
-					log(logfile,dh)
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[0]] = sh[-40:]
 
@@ -274,13 +294,11 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					print "moving flv file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[1]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
-					print hashes
+					log(logfile, hashes)
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					log(logfile,sh)
-					log(logfile,dh)
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[1]] = sh[-40:]
 					
@@ -288,13 +306,11 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					print "moving mp4 file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[2]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
-					print hashes
+					log(logfile,hashes)
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					log(logfile,sh)
-					log(logfile,dh)
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[2]] = sh[-40:]
 						
@@ -302,34 +318,34 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					print "moving mpeg file"
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s,s + extlist[3]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 					hashes,err = output.communicate()
-					print hashes
+					log(logfile,hashes)
 					sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
 					desthash = re.search('dest\s\S+\s\w{40}',hashes)
 					dh = desthash.group()
 					sh = sourcehash.group()
-					log(logfile,sh)
-					log(logfile,dh)
 					if sh[-40:] == dh[-40:]:
 						hashlist[s + extlist[3]] = sh[-40:]
 					
 					#send file hashes to filemaker
-					updateFM(hashlist,scriptRepo)
+					updateFM(hashlist,scriptRepo,logfile)
 					
 					#move the files to various copytos
 					output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mov to xendata
-					log(logfile,output.communicate())
+					log(logfile,"moving archival master from copyto")
 					output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[3]),os.path.join(xendata,s + extlist[3])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mpeg to xendata
-					log(logfile,output.communicate())
+					log(logfile,"moving mpeg from copyto")
 					output = subprocess.Popen(["mv",os.path.join(sunnascopyto,s + extlist[1]),os.path.join(sunnas,s + extlist[1])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the flv to sunnas
-					log(logfile,output.communicate())
+					log(logfile,"moving flv from copyto")
 					output = subprocess.Popen(["mv",os.path.join(sunnascopyto,s + extlist[2]),os.path.join(sunnas,s + extlist[2])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mp4 to sunnas
-					log(logfile,output.communicate())
+					log(logfile,"moving mp4 from copyto")
 				else:
 					output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			#ok so the accession dir in the capture folder should be empty
 			try:
 				time.sleep(5)
+				log(logfile,"removing .DS_Store")
 				os.remove(os.path.join(dirs,s,".DS_Store"))
+				log(logfile,"removing accession dir from IncomingQT")
 				os.rmdir(os.path.join(dirs,s))
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
@@ -337,11 +353,11 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 	return
 
 def updateFM(hashlist,scriptRepo,logfile):
+	log(logfile,"sending hashes to filemaker")
 	for fh in hashlist:
 		fname,ext = os.path.splitext(fh)
 		fdigi = ext.replace(".","")
 		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-		log(logfile,output.communicate())
 	return
 
 def log(logfile,msg):
@@ -380,16 +396,20 @@ def main():
 
 		#hashmove
 		movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile)
-		
-		#send to filemaker
-		updateFM(hashlist,scriptRepo,logfile)
 	
-		log(logfile,"makevideos completed successfully")
+		msg = "makevideos completed successfully"
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg + "\n" + str(thelog)])
+		log(logfile,msg)
 	
 	except Exception,e:
 		print str(e)
 		msg = "The script crashed due to an internal error\n"
 		msg = msg + str(e)
+		with open(logfile,"r+") as l:
+			thelog = l.read()
+		msg = msg + "\n" + str(thelog)
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg])
 		log(logfile,msg)
 		log(logfile,str(e))
