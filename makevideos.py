@@ -174,20 +174,16 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo,logfile):
 		mp4 = canonicalname + ".mp4" #filename for mp4
 		mov = canonicalname + ".mov"
 		with cd(acc): #ok, cd into the accession dir
-			try:
-				concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
-				output = subprocess.check_output(concatstr) #concatenate them
-				returncode = 0
-			except subprocess.CalledProcessError as e: #check for an error
-				print e.cmd
-				output = e.output
-				returncode = e.returncode
-			if returncode > 0: #if there was an error
+			concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
+			output = subprocess.Popen(concatstr,stdout=subprocess.PIPE,stderr=subprocess.PIPE) #concatenate them
+			out,err = output.communicate()
+			if err:
+				print err
 				#send email to staff
 				msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-				msg = msg + "\n" + output
+				msg = msg + "\n" + err
 				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
-				log(logfile,output)
+				log(logfile,msg)
 				sys.exit() #quit now because this concat is really important
 			if returncode == 0: #if there wasn't an error
 				for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
