@@ -90,7 +90,7 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	while donezo is False:
 		fs = walk(rawCaptures)
 		#print fs
-		time.sleep(120)
+		time.sleep(10)
 		fsagain = walk(rawCaptures)
 		#print fsagain
 		donezo = compare(fs, fsagain)
@@ -108,29 +108,31 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 					sys.exit()
 	
 def makefflist(rawCaptures,logfile):
+	print "in makefflist"
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
 		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
 			with cd(os.path.join(dirs,acc)): #cd into accession dir
+				print "in cd " + os.path.join(dirs,acc)
 				rawcaplist = [] #init a list that will contain raw captures in each dir
 				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
 					if rawmov.endswith(".mov") or rawmov.endswith(".MOV"): #if it is a mov
 						print rawmov
 						rawcaplist.append(rawmov) #append it to our list of raw captures
 				fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
-	log(logfile,fflist)
+	log(logfile,str(fflist))
 	return fflist
 
 
 
 #following three functions are called in startup to check that nothing is being copied currently
 def sizeloop(thing):
-	print thing
+	#print thing
 	startsize = os.stat(thing)
-	print startsize.st_size
+	#print startsize.st_size
 	time.sleep(1)
 	endsize = os.stat(thing)
-	print endsize.st_size
+	#print endsize.st_size
 	if startsize.st_size == endsize.st_size:
 		return
 	else:
@@ -142,15 +144,15 @@ def walk(pth):
 		for files in files:
 			fullpath = os.path.join(dirs,files)
 			thefiles.append(fullpath)
-	print thefiles
+	#print thefiles
 	for f in thefiles:
 		fpath = os.path.join(pth,f)
 		sizeloop(fpath)
 	return thefiles
 
 def compare(fs, fsagain):
-	print fs
-	print fsagain
+	#print fs
+	#print fsagain
 	for f in fsagain:
 		if not f in fs:
 			return False
@@ -174,14 +176,16 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo,logfile):
 		with cd(acc): #ok, cd into the accession dir
 			try:
 				concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
-				output = subprocess.check_output(concatstr, shell=True) #concatenate them
+				output = subprocess.check_output(concatstr) #concatenate them
 				returncode = 0
-			except subprocess.CalledProcessError,e: #check for an error
+			except subprocess.CalledProcessError as e: #check for an error
+				print e.cmd
 				output = e.output
 				returncode = e.returncode
 			if returncode > 0: #if there was an error
 				#send email to staff
 				msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\nPlease check log at ' + logfile + "for more information\n" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+				msg = msg + "\n" + output
 				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg])
 				log(logfile,output)
 				sys.exit() #quit now because this concat is really important
