@@ -111,7 +111,7 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	#check that a filemaker record exists for each accession
 	for dirs,subdirs,files in os.walk(rawCaptures):
 			for s in subdirs:
-				output = subprocess.Popen(["python","fm-stuff.py","-query","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+				output = subprocess.Popen(["python","fm-stuff.py","-qExist","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 				#output,err = output.communicate()
 				if not output:
 					msg = "The video script is unable to run because there is not an accession record for " + s
@@ -343,10 +343,12 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 			#ok so the accession dir in the capture folder should be empty
 			try:
 				time.sleep(5)
-				log(logfile,"removing .DS_Store")
-				os.remove(os.path.join(dirs,s,".DS_Store"))
-				log(logfile,"removing accession dir from IncomingQT")
-				os.rmdir(os.path.join(dirs,s))
+				log(logfile,"removing " + os.path.join(dirs,s,".DS_Store"))
+				if os.path.exists(os.path.join(dirs,s,".DS_Store")):
+					os.remove(os.path.join(dirs,s,".DS_Store"))
+				log(logfile,"removing accession dir " + os.path.join(dirs,s) +  " from IncomingQT")
+				if os.path.exists(os.path.join(dirs,s)):
+					os.rmdir(os.path.join(dirs,s))
 			#if it's not empty let's move it to a toubleshooting folder
 			except:
 				output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(dirs,s),os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
