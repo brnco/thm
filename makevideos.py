@@ -11,6 +11,7 @@ import re
 import time
 import random
 import shutil
+import fcntl
 import argparse
 import ConfigParser
 from distutils import spawn
@@ -40,6 +41,14 @@ def dependencies():
 def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto):
 	log(logfile,"running")
 	
+	#see if the process is already running
+	try:
+		x = open(os.path.join(os.path.dirname(os.path.dirname(logfile)),"processing.pid"),"w+")
+		fcntl.flock(x, fcntl.LOCK_EX | fcntl.LOCK_NB)
+	except:
+		log(logfile,"quit, process already running")
+		sys.exit()
+		
 	#check that there's stuff to work on even
 	rawCapList = []
 	for f in os.listdir(rawCaptures):
@@ -102,7 +111,7 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	while donezo is False:
 		fs = walk(rawCaptures)
 		#print fs
-		time.sleep(120)
+		time.sleep(10)
 		fsagain = walk(rawCaptures)
 		#print fsagain
 		donezo = compare(fs, fsagain)
@@ -329,6 +338,8 @@ def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scri
 					#send file hashes to filemaker
 					updateFM(hashlist,scriptRepo,logfile)
 					
+					#verify hashes
+					verifyFM(hashlist,scriptRepo,logfile)
 					#move the files to various copytos
 					output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mov to xendata
 					log(logfile,"moving archival master from copyto")
@@ -359,9 +370,25 @@ def updateFM(hashlist,scriptRepo,logfile):
 	for fh in hashlist:
 		fname,ext = os.path.splitext(fh)
 		fdigi = ext.replace(".","")
-		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-uSha","-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return
 
+def verifyFM(hashlist,scriptRepo,logfile):
+	log(logfile,"verifying hashes in filemaker")
+	for fh in hashlist:
+		fname,ext=os.path.splitext(fh)
+		fdigi = ext.replace(".","")
+		sys.stdout.flush()
+		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-qSha","-id",fname,"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		fmhash = output.communicate()
+		if any(hashlist[fh] in foo for foo in fmhash):
+			log(logfile,"hash of " + str(fh) + " verified correctly as: " + str(fmhash))
+		else:
+			log(logfile,"hash of " + str(fh) + "verified incorrectly")
+			log(logfile,"makevideos calculated hash of: " + hashlist[fh])
+			log(logfile,"filemaker hash stored is: " + str(fmhash))
+	return
+	
 def log(logfile,msg):
 	with open(logfile,"ab") as txtfile:
 		txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
@@ -404,7 +431,8 @@ def main():
 			thelog = l.read()
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg + "\n" + str(thelog)])
 		log(logfile,msg)
-	
+		x = open(os.path.join(os.path.dirname(os.path.dirname(logfile)),"processing.pid"),"w+")
+		fcntl.flock(x, fcntl.LOCK_UN)
 	except Exception,e:
 		print str(e)
 		msg = "The script crashed due to an internal error\n"
