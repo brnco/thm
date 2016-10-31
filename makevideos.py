@@ -273,7 +273,8 @@ def ffprocess(fflist,watermark,fontfile,scriptRepo,logfile):
 				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg + "\n" + str(thelog)])
 				log(logfile,msg)
 				sys.exit()
-			os.rename("concat.mov",mov)
+			if os.path.exists("concat.mov"):
+				os.rename("concat.mov",mov)
 	return	
 
 def movevids(rawCaptures,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile):
