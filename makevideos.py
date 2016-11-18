@@ -428,8 +428,7 @@ def main():
 		
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures,logfile)
-		print fflist
-		foo = raw_input("eh")
+		
 		
 		for acc in sorted(fflist):
 			#actually transcode the files

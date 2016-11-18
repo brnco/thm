@@ -112,7 +112,7 @@ def copyfiles(flist,startObjIsDir):
 	return
 	
 def deletefiles(sflist,sfhflist,matches,startObjIsDir):
-	print "in delfiles"
+	#print "in delfiles"
 	#initialize some lists
 	delfiles = []
 	delhfiles = []
