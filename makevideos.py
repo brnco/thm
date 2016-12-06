@@ -121,8 +121,8 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	for dirs,subdirs,files in os.walk(rawCaptures):
 			for s in subdirs:
 				output = subprocess.Popen(["python","fm-stuff.py","-qExist","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-				#output,err = output.communicate()
-				if not output:
+				out,err = output.communicate()
+				if not out:
 					msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
 					subprocess.call(["python","send-email.py","-txt",msg,'-att',logfile])
 					log(logfile,msg)	
