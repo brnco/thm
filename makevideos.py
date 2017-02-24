@@ -192,7 +192,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 		mp4 = canonicalname + ".mp4" #filename for mp4
 		mov = canonicalname + ".mov"
 			
-		concatstr = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
+		concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
 		try:
 			output = subprocess.check_output(concatstr,stderr=open(logfile,"a+"),shell=True) #concatenate them
 			returncode = 0

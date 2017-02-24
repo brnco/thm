@@ -111,7 +111,7 @@ def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,x
 	while donezo is False:
 		fs = walk(rawCaptures)
 		#print fs
-		time.sleep(240)
+		#time.sleep(240)
 		fsagain = walk(rawCaptures)
 		#print fsagain
 		donezo = compare(fs, fsagain)
@@ -187,12 +187,43 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 		mpeg = canonicalname + ".mpeg" #filename for mpeg
 		mp4 = canonicalname + ".mp4" #filename for mp4
 		mov = canonicalname + ".mov"
-			
+		
+		#concatenate if we need to
+		concatlist = []
+		for f in os.listdir(os.getcwd()):
+			if f.endswith("MOV") or f.endswith("mov"):
+				concatlist.append(f)
+		if len(concatlist) > 1:
+			txtfile = open("concat.txt","w")
+			for f in concatlist:
+				txtfile.write("file " + f + "\n")
+			ffconcatstring = 'ffmpeg -f concat -i concat.txt -c copy -ignore_unknown -map 0 ' + mov
+			txtfile.close()			
+			try:
+				output = subprocess.check_output(ffconcatstring,stderr=open(logfile,"a+"),shell=True) #concatenate them
+				returncode = 0
+				log(logfile, "concatenation of raw MOVs successful")
+			except subprocess.CalledProcessError,e:
+				output = e.output
+				returncode = e.returncode
+			if returncode > 0:
+				#send email to staff
+				msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\n'
+				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg,'-att',logfile])
+				log(logfile,msg)
+				sys.exit() #quit now because this concat is really important
+			for rawmov in concatlist: #for each raw file name in the list of concats that are the raw captures
+				os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
+				if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
+					os.remove(rawmov + ".md5")
+				if os.path.exists("concat.txt"):
+					os.remove("concat.txt")	
+		foo = raw_input("eh")		
 			
 		#transcode endfiles
 		#endfile.flv + HistoryMakers watermark
 		try:
-			flvstr = 'ffmpeg -i ' + mov + ' -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map 0 -timecode ' + segment[-2:] + ':00:00:00 -threads 0 ' + flv
+			flvstr = 'ffmpeg -i ' + mov + ' -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -ac 2 -map 0 -map -0:d -timecode ' + segment[-2:] + ':00:00:00 -threads 0 ' + flv
 			output = subprocess.check_output(flvstr, stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
 			log(logfile, "transcode to flv successful")
@@ -210,7 +241,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 		#easier to init this var here rather than include it in the ffmpeg call
 		drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='" + segment[-2:] + "\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
 		try:
-			mpegstr = 'ffmpeg -i ' + mov + ' -target ntsc-dvd -map 0 -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
+			mpegstr = 'ffmpeg -i ' + mov + ' -target ntsc-dvd -map 0 -map -0:d -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
 			subprocess.check_output(mpegstr,stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
 			log(logfile, "transcode to mpeg successful")
@@ -226,7 +257,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 
 		#endfile.mp4 + timecode
 		try:
-			mp4str = 'ffmpeg -i ' + mov + ' -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map 0 -threads 0 ' + mp4
+			mp4str = 'ffmpeg -i ' + mov + ' -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map 0 -map -0:d -threads 0 ' + mp4
 			subprocess.check_output(mp4str,stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
 		except subprocess.CalledProcessError,e:
