@@ -1,5 +1,5 @@
 *.txt
-fm-stuff.py
+filemaker_handler.py
 send-email.py
 processing.pid
 thm-test-backups/
