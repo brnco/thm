@@ -48,7 +48,7 @@ def init():
     initialize variables and arguments
     '''
     kwargs = util.d({})
-    kwargs.catalog_number = "NFLFilms"
+    kwargs.catalog_number = "A2022_034_001_001"
     kwargs.orig_xml_dir = pathlib.Path("/tub/brendan-project-archive/TheHistoryMakers/mediaconch/original/inputs") / kwargs.catalog_number
     kwargs.norm_xml_dir = pathlib.Path(str(kwargs.orig_xml_dir).replace("original","normalized"))
     kwargs.all_tag_values = util.d({})
@@ -71,7 +71,7 @@ def main():
     for file in kwargs.orig_xml_dir.iterdir():
         print(type(file))
         print(type(kwargs.norm_xml_dir))
-        file_normalized = kwargs.norm_xml_dir / file.stem
+        file_normalized = str(kwargs.norm_xml_dir / file.stem) + ".mediaconch"
         print(str(file_normalized))
         input("eh")
         with open(file,"r+") as f:
@@ -81,7 +81,7 @@ def main():
                 if tag['value'] in [i[0] for i in tag_tracks_to_delete]:
                     if tag['tracktype'] in [i[1] for i in tag_tracks_to_delete]:
                         print(tag.prettify())
-                        soup.extract(tag)
+                        tag.decompose()
         with open(str(file_normalized),"w+") as f:
             f.write(soup.prettify())
 
