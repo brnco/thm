@@ -12,29 +12,18 @@ import time
 import random
 import shutil
 import fcntl
+import pathlib
 import argparse
-import ConfigParser
+import configparser
 from distutils import spawn
-
-#Context manager for changing the current working directory
-class cd:
-    def __init__(self, newPath):
-        self.newPath = os.path.expanduser(newPath)
-
-    def __enter__(self):
-        self.savedPath = os.getcwd()
-        os.chdir(self.newPath)
-
-    def __exit__(self, etype, value, traceback):
-		os.chdir(self.savedPath)
-
+import util
 
 #check that we have required software installed
 def dependencies():
 	depends = ['ffmpeg','ffprobe']
 	for d in depends:
 		if spawn.find_executable(d) is None:
-			print "Buddy, you gotta install " + d
+			print("Buddy, you gotta install " + d)
 			sys.exit()
 	return
 
@@ -197,7 +186,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 			output = subprocess.check_output(concatstr,stderr=open(logfile,"a+"),shell=True) #concatenate them
 			returncode = 0
 			log(logfile, "concatenation of raw MOVs successful")
-		except subprocess.CalledProcessError,e:
+		except (subprocess.CalledProcessError,e):
 			output = e.output
 			returncode = e.returncode
 		if returncode > 0:
@@ -220,7 +209,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 			output = subprocess.check_output(flvstr, stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
 			log(logfile, "transcode to flv successful")
-		except subprocess.CalledProcessError,e:
+		except (subprocess.CalledProcessError,e):
 			output = e.output
 			returncode = e.returncode
 		if returncode > 0:
@@ -238,7 +227,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 			subprocess.check_output(mpegstr,stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
 			log(logfile, "transcode to mpeg successful")
-		except subprocess.CalledProcessError,e:
+		except (subprocess.CalledProcessError,e):
 			output = e.output
 			returncode = e.returncode
 		if returncode > 0:
@@ -253,7 +242,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 			mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
 			subprocess.check_output(mp4str,stderr=open(logfile,"a+"), shell=True)
 			returncode = 0
-		except subprocess.CalledProcessError,e:
+		except (subprocess.CalledProcessError,e):
 			output = e.output
 			returncode = e.returncode
 			log(logfile,"transcode to mp4 successful")
@@ -399,27 +388,66 @@ def verifyFM(hashlist,scriptRepo,logfile):
 	return moveyn
 	
 def log(logfile,msg):
-	with open(logfile,"ab") as txtfile:
+	with open(logfile,"a") as txtfile:
 		txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 		txtfile.write("\n")
 		txtfile.write(msg)
 		txtfile.write("\n")
 
+def init_log(kwargs):
+    '''
+    initalizes log file location
+    '''
+    log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
+    log_filepath = str(kwargs.config.logs_path / log_filename)
+    print(log_filepath)
+    log(log_filepath,"initalizing script and log")
+    log(log_filepath,"kwargs object:")
+    log(log_filepath,str(kwargs))
+    return log_filepath
+
+def init_config(kwargs):
+    '''
+    initialize variables and arguments from config file
+    '''
+    kwargs.config = util.d({})
+    config = configparser.ConfigParser()
+    config.read(kwargs.script_dir / "video-post-process-config.txt")
+    kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
+    kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
+    kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
+    kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
+    kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
+    kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
+    kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
+    kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
+    kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
+    return kwargs
+    
+def init_kwargs():
+    '''
+    initialize variables and arguments from command line
+
+    "kwargs" = KeyWordArguments - this is a single object/ dictionary that stores msot of our variables
+    '''
+    parser = argparse.ArgumentParser(description='Process videos for ingest')
+    parser.add_argument('input', nargs='*', help='the input folder(s)')
+    #parser.add_argument('--sum', dest='accumulate', action='store_const', const=sum, default=max,help='sum the integers (default: find the max)')
+    args = parser.parse_args()
+    kwargs = util.d({})
+    kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
+    kwargs.input = args.input
+    return kwargs
+
 def main():
-	#initialize a buncha paaths to various resources
-	scriptRepo = os.path.dirname(os.path.abspath(__file__))
-	config = ConfigParser.ConfigParser()
-	config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
-	watermark = config.get('transcode','whitewatermark')
-	fontfile = config.get('transcode','timecodefont')
-	rawCaptures = config.get('transcode','rawCaptureDir')
-	sunnascopyto = config.get('fileDestinations','sunnascopyto')
-	sunnas = config.get('fileDestinations','sunnas')
-	xendata = config.get('fileDestinations','xendata')
-	xendatacopyto = config.get('fileDestinations','xendatacopyto')
-	xcluster = config.get('fileDestinations','xcluster')
-	logfile = os.path.join(scriptRepo,"logs","log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
-	
+    '''
+    manages the running of the script
+    '''
+    kwargs = init_kwargs()
+    kwargs = init_config(kwargs)
+    log = init_log(kwargs)
+    input("eh")
+    '''
 	rawCaptures = rawCaptures.strip('"')
 	xcluster = xcluster.strip('"')
 	
@@ -454,7 +482,8 @@ def main():
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg,'-att',logfile])
 		log(logfile,msg)
 		log(logfile,str(e))
-	return
+	'''
 
-dependencies()
-main()
+if __name__ == "__main__":
+    dependencies()
+    main()
