@@ -3,24 +3,24 @@
 
 
 [global]
-scriptRepo: "/Volumes/G-Speed Q/Titan-HD/HM/thm"
+scriptRepo: /home/brnco/code/thm/
 
 
 [transcode]
 #/Volumes/GPEED -Q/Titand-HD/HM/watermark
-whitewatermark: "/Volumes/G-SPEED Q/Titan-HD/HM/Watermark/Video WaterMark_White.png"
-blackwatermark: "/Volumes/G-SPEED Q/Titan-HD/HM/Watermark/Black Hm WaterMark.png"
-timecodefont: /Library/Fonts/Arial.ttf
+whitewatermark: /tub/brendan-project-archive/TheHistoryMakers/startup/Video WaterMark_White.png
+blackwatermark: /tub/brendan-project-archive/TheHistoryMakers/startup/Black Hm WaterMark.png
+timecodefont: /tub/brendan-project-archive/TheHistoryMakers/startup/Arial.ttf
 #this is "/Volumes/G-SPEED Q/Titan-HD/HM/Queue"
-rawCaptureDir: "/Volumes/G-SPEED Q/Titan-HD/HM/IncomingQT"
+rawCaptureDir: /tub/brendan-project-archive/TheHistoryMakers/startup/IncomingQT
 
 
 [fileDestinations]
-sunnas: /Volumes/ProxyHolding
-sunnascopyto: /Volumes/ProxyHolding/copyto
-xendata: /Volumes/Holding_Xendata
-xendatacopyto: /Volumes/Holding_Xendata/copyto
-xcluster: "/Volumes/G-SPEED Q/Titan-HD/HM/"
+sunnas: /tub/brendan-project-archive/TheHistoryMakers/startup/ProxyHolding
+sunnascopyto: /tub/brendan-project-archive/TheHistoryMakers/startup/ProxyHolding/copyto
+xendata: /tub/brendan-project-archive/TheHistoryMakers/startup/Holding_Xendata
+xendatacopyto: /tub/brendan-project-archive/TheHistoryMakers/startup/Holding_Xendata/copyto
+xcluster: /tub/brendan-project-archive/TheHistoryMakers/startup/HM
 
 [email]
 recipientlist: "dhjohnson1@gmail.com","mackeypaul1@gmail.com","bb@thehistorymakers.com","jlr@thehistorymakers.com","zs@thehistorymakers.com","brendan.emerson.coates@gmail.com"

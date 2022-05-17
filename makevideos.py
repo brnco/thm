@@ -303,14 +303,26 @@ def verifyFM(hashlist,scriptRepo,logfile):
 	return moveyn
 
 def verify_startup(kwargs):
-	'''
-	manages startup of script
-	'''
-	drives_ok = startup.verify_config_drivepaths(kwargs)
-	if not drives_ok:
-		msg = "ERROR: drives not found"
-		log(kwargs.log,msg)
-		return False
+    '''
+    manages startup of script
+    '''
+    drives_ok = startup.verify_config_drivepaths(kwargs)
+    if not drives_ok:
+        msg = "ERROR: drives not found"
+        log(kwargs.log,msg)
+        return False
+    timecode_and_watermark_files_ok = startup.verify_config_filepaths(kwargs)
+    if not timecode_and_watermark_files_ok:
+        msg = "ERROR: timecode and/or watermark files not found"
+        log(kwargs.log, msg)
+        return False
+    raw_captures_files_ok = startup.verify_raw_captures(kwargs)
+    print(raw_captures_files_ok)
+    if not raw_captures_files_ok:
+        msg = "ERROR: files not found in raw capture directory"
+        log(kwargs.log, msg)
+        return False
+    return True
 
 def log(logfile,msg,p=True):
     '''
