@@ -17,6 +17,7 @@ import argparse
 import configparser
 from distutils import spawn
 import util
+import startup
 
 #check that we have required software installed
 def dependencies():
@@ -27,96 +28,10 @@ def dependencies():
 			sys.exit()
 	return
 
-def startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto):
-	log(logfile,"running")
-	
-	#see if the process is already running
-	#try:
-		#x = open(os.path.join(os.path.dirname(os.path.dirname(logfile)),"processing.pid"))
-		#fcntl.lockf(x, fcntl.LOCK_EX | fcntl.LOCK_NB)
-	#except:
-		#log(logfile,"quit, process already running")
-		#sys.exit()
-	#time.sleep(500)
-	#check that there's stuff to work on even
-	rawCapList = []
-	for f in os.listdir(rawCaptures):
-		if not f.startswith('.'):
-			rawCapList.append(f)
 
-	if not rawCapList:
-		msg = "completed. nothing to process"
-		log(logfile,msg)
-		sys.exit()
 
-	#check that the files are where we think thye are
-	if not os.path.exists(watermark) and not os.path.exists(watermark.strip('"')):
-		msg = "The white-watermark file cannot be found. Please put the white watermark file at " + watermark
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	if not os.path.exists(fontfile):
-		msg = "The fontfile cannot be found. Please put the fontfile at " + fontfile
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	
-	#check that everything is plugged in
-	if not os.path.exists(sunnas):
-		msg = "The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnas
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	if not os.path.exists(sunnascopyto):
-		msg = "The video script is unable to run because SUNNAS is not mounted as expected. Please mount SUNNAS on XCluster at " + sunnascopyto
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	if not os.path.exists(xendata):
-		msg = "The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendata
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	if not os.path.exists(xendatacopyto):
-		msg = "The video script is unable to run because Xendata is not mounted as expected. Please mount Xendata on XCluster at " + xendatacopyto
-		with open(logfile,"r+") as l:
-			thelog = l.read()
-		subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-		log(logfile,msg)
-		sys.exit()
-	
-	#check that nothing is being copied currently
-	donezo = False
-	while donezo is False:
-		fs = walk(rawCaptures)
-		#print fs
-		time.sleep(240)
-		fsagain = walk(rawCaptures)
-		#print fsagain
-		donezo = compare(fs, fsagain)
-		#print donezo
 
-	#check that a filemaker record exists for each accession
-	for dirs,subdirs,files in os.walk(rawCaptures):
-			for s in subdirs:
-				output = subprocess.Popen(["python","fm-stuff.py","-qExist","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-				out,err = output.communicate()
-				if not out:
-					msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
-					subprocess.call(["python","send-email.py","-txt",msg,'-att',logfile])
-					log(logfile,msg)	
-					sys.exit()
-	
+
 def makefflist(rawCaptures,logfile):
 	fflist = {} #initialize a list of files for ffmpeg to transcode
 	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
@@ -147,7 +62,7 @@ def sizeloop(thing):
 		sizeloop(thing)
 
 def walk(pth):
-	thefiles =[]	
+	thefiles =[]
 	for dirs, subdirs, files in os.walk(pth):
 		for files in files:
 			fullpath = os.path.join(dirs,files)
@@ -180,7 +95,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 		mpeg = canonicalname + ".mpeg" #filename for mpeg
 		mp4 = canonicalname + ".mp4" #filename for mp4
 		mov = canonicalname + ".mov"
-			
+
 		concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
 		try:
 			output = subprocess.check_output(concatstr,stderr=open(logfile,"a+"),shell=True) #concatenate them
@@ -201,7 +116,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 				os.remove(rawmov + ".md5")
 			if os.path.exists("concat.txt"):
 				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
-			
+
 		#transcode endfiles
 		#endfile.flv + HistoryMakers watermark
 		try:
@@ -254,7 +169,7 @@ def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
 			sys.exit()
 		if os.path.exists("concat.mov"):
 			os.rename("concat.mov",mov)
-	return	
+	return
 
 def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile):
 	hashlist = {}
@@ -262,12 +177,12 @@ def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,l
 	s = os.path.basename(acc)
 	with cd(acc):
 		if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
-			
+
 			#copy pres file to lc directory
 			log(logfile,"copying archival master to lc folder\n")
 			shutil.copy2(os.path.join(acc,s + ".mov"), os.path.join(xcluster,"toLC")) #copy the mov to xendata/copyto
-			
-			
+
+
 			#move the mov files
 			sys.stdout.flush()
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[0]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -291,7 +206,7 @@ def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,l
 			sh = sourcehash.group()
 			if sh[-40:] == dh[-40:]:
 				hashlist[s + extlist[1]] = sh[-40:]
-			
+
 			#move the mp4 file
 			#print "moving mp4 file"
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[2]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -303,7 +218,7 @@ def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,l
 			sh = sourcehash.group()
 			if sh[-40:] == dh[-40:]:
 				hashlist[s + extlist[2]] = sh[-40:]
-			
+
 			#move the mpeg file
 			#print "moving mpeg file"
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[3]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -315,15 +230,15 @@ def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,l
 			sh = sourcehash.group()
 			if sh[-40:] == dh[-40:]:
 				hashlist[s + extlist[3]] = sh[-40:]
-			
+
 			#send file hashes to filemaker
 			updateFM(hashlist,scriptRepo,logfile)
-			
+
 			time.sleep(5) #give FM a chance to catch up
-			
+
 			#verify hashes
 			moveyn = verifyFM(hashlist,scriptRepo,logfile)
-			
+
 			if moveyn is True:
 				#move the files to various copytos
 				output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mov to xendata
@@ -341,7 +256,7 @@ def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,l
 				log(logfile,msg)
 		else:
 			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",acc,os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			
+
 	#cd out of accession dir
 	#ok so the accession dir in the capture folder should be empty
 	try:
@@ -386,13 +301,28 @@ def verifyFM(hashlist,scriptRepo,logfile):
 	else:
 		moveyn = True
 	return moveyn
-	
-def log(logfile,msg):
-	with open(logfile,"a") as txtfile:
-		txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-		txtfile.write("\n")
-		txtfile.write(msg)
-		txtfile.write("\n")
+
+def verify_startup(kwargs):
+	'''
+	manages startup of script
+	'''
+	drives_ok = startup.verify_config_drivepaths(kwargs)
+	if not drives_ok:
+		msg = "ERROR: drives not found"
+		log(kwargs.log,msg)
+		return False
+
+def log(logfile,msg,p=True):
+    '''
+    defines the logging function
+    '''
+    if p:
+        print(msg)
+    with open(logfile,"a") as txtfile:
+        txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        txtfile.write("\n")
+        txtfile.write(msg)
+        txtfile.write("\n")
 
 def init_log(kwargs):
     '''
@@ -402,8 +332,8 @@ def init_log(kwargs):
     log_filepath = str(kwargs.config.logs_path / log_filename)
     print(log_filepath)
     log(log_filepath,"initalizing script and log")
-    log(log_filepath,"kwargs object:")
-    log(log_filepath,str(kwargs))
+    log(log_filepath,"kwargs object:",False)
+    log(log_filepath,str(kwargs),False)
     return log_filepath
 
 def init_config(kwargs):
@@ -423,7 +353,7 @@ def init_config(kwargs):
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
     return kwargs
-    
+
 def init_kwargs():
     '''
     initialize variables and arguments from command line
@@ -445,31 +375,35 @@ def main():
     '''
     kwargs = init_kwargs()
     kwargs = init_config(kwargs)
-    log = init_log(kwargs)
+    kwargs.log = init_log(kwargs)
+    startup_ok = verify_startup(kwargs)
+    if not startup_ok:
+        msg = "ERROR: startup failed"
+        log(kwargs.log, msg)
     input("eh")
     '''
 	rawCaptures = rawCaptures.strip('"')
 	xcluster = xcluster.strip('"')
-	
+
 	try:
 		startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
-		
+
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures,logfile)
-		
-		
+
+
 		for acc in sorted(fflist):
 			#actually transcode the files
 			ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile)
 
 			#hashmove
 			movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile)
-			
+
 			#notify that it worked for single accession
 			msg = "makevideos processed accession " + str(acc) + " successfully"
 			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg])
 			log(logfile,msg)
-		
+
 		msg = "makevideos completed successfully"
 
 		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg,'-att',logfile])
