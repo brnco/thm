@@ -7,11 +7,15 @@ def verify_raw_captures(kwargs):
     '''
     checks that there are raw captures in the folder we specified
     '''
-    raw_captures = kwargs.raw_captures.glob('**/*')
-    raw_captures = [path for path in kwargs.raw_captures.glob('**/*') if 'mask' not in path.stem]
+    log(kwargs.log,"verifying there are raw captures to be processed")
+    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*') \
+            if not any(part.startswith('.') for part in path.parts) \
+            and not any(part.startswith('Thumbs.db') for part in path.parts)]
     if not raw_captures:
+        log(kwargs.log,"ERROR: no files found in raw captures folder")
         return False
     else:
+        log(kwargs.log,"raw captures ok")
         return raw_captures
 
 def verify_config_filepaths(kwargs):
@@ -20,21 +24,22 @@ def verify_config_filepaths(kwargs):
     '''
     log(kwargs.log,"verifying that there are files in raw_captures directory")
     if not kwargs.config.watermark_white.is_file():
-        msg = "The white-watermark file cannot be found. \
-            Please put the white watermark file at " + str(kwargs.config.watermark_white)
+        msg = "The white-watermark file cannot be found." \
+            "Please put the white watermark file at " + str(kwargs.config.watermark_white)
         #with open(logfile,"r+") as l:
             #thelog = l.read()
         #subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-        log(logfile,msg)
+        log(kwargs.log,msg)
         return False
     if not kwargs.config.timecode_fontfile.is_file():
-        msg = "The fontfile cannot be found. \
-            Please put the fontfile at " + kwargs.config.timecode_fontfile
+        msg = "The fontfile cannot be found." \
+            "Please put the fontfile at " + str(kwargs.config.timecode_fontfile)
             #with open(logfile,"r+") as l:
                 #thelog = l.read()
             #subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
-        log(logfile,msg)
+        log(kwargs.log,msg)
         return False
+    log(kwargs.log,"file verification ok")
     return True
 
 def verify_config_drivepaths(kwargs):
@@ -74,6 +79,7 @@ def verify_config_drivepaths(kwargs):
         #subprocess.call(["python","send-email.py","-txt",msg + "\n" + str(thelog)])
         log(kwargs.log,msg)
         return False
+    log(kwargs.log,"drives mounted ok")
     return True 
 
 def verify_not_copying_now(kwargs):
