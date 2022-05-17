@@ -27,3 +27,6 @@ recipientlist: "dhjohnson1@gmail.com","mackeypaul1@gmail.com","bb@thehistorymake
 senderaddress: thmvideoprocessing@gmail.com
 senderpwd: history1900
 server: smtp.gmail.com:587
+
+[logs]
+logs_path = /home/brnco/code/thm/logs
