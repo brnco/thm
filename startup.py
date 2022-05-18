@@ -3,6 +3,22 @@ startup functions for thm makevideos script
 '''
 from makevideos import log
 
+def verify_already_running(kwargs):
+    '''
+    returns True if logs/makevideos.lock exists
+    '''
+    if kwargs.config.lockfile.is_file():
+        log(kwargs.log,"ERROR: makevideos is already running")
+        print("Ensure that makevideos isn't ready running by typing this into terminal: ")
+        print("ps aux | grep python")
+        print("if no python processes are found, delete makevideos lock file located at:")
+        print(kwargs.config.lockfile)
+        return True
+    else:
+        log(kwargs.log,"INFO: creating lock file " + str(kwargs.config.lockfile))
+        kwargs.config.lockfile.touch()
+        return False
+
 def verify_raw_captures(kwargs):
     '''
     checks that there are raw captures in the folder we specified

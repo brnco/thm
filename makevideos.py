@@ -39,8 +39,6 @@ def get_files_for_ingest(kwargs):
     log(kwargs.log,str(ingests),False)
     return ingests
 
-
-
 #following three functions are called in startup to check that nothing is being copied currently
 def sizeloop(thing):
 	#print thing
@@ -299,6 +297,11 @@ def verify_startup(kwargs):
     '''
     manages startup of script
     '''
+    already_running = startup.verify_already_running(kwargs)
+    if already_running:
+        msg = "ERROR: makevideos is already running"
+        log(kwargs.log,msg)
+        return False
     drives_ok = startup.verify_config_drivepaths(kwargs)
     if not drives_ok:
         msg = "ERROR: drives not found"
@@ -349,6 +352,7 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
+    kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
     kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
@@ -385,8 +389,9 @@ def main():
     if not startup_ok:
         msg = "ERROR: startup failed"
         log(kwargs.log, msg)
+        kwargs.config.lockfile.unlink()
     ingests = get_files_for_ingest(kwargs)
-    print(ingests)
+    kwargs.config.lockfile.unlink()
     '''
 	try:
 
