@@ -30,3 +30,4 @@ server: smtp.gmail.com:587
 
 [logs]
 logs_path = /home/brnco/code/thm/logs
+lockfile = /home/brnco/code/thm/logs/makevideos.lock
