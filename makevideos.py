@@ -19,32 +19,25 @@ from distutils import spawn
 import util
 import startup
 
-#check that we have required software installed
-def dependencies():
-	depends = ['ffmpeg','ffprobe']
-	for d in depends:
-		if spawn.find_executable(d) is None:
-			print("Buddy, you gotta install " + d)
-			sys.exit()
-	return
-
-
-
-
-
-def makefflist(rawCaptures,logfile):
-	fflist = {} #initialize a list of files for ffmpeg to transcode
-	for dirs, subdirs, files in os.walk(rawCaptures): #loop thru holding dir on xcluster
-		for acc in subdirs: #for each accession# (subdir) in the list of subdirs
-			with cd(os.path.join(dirs,acc)): #cd into accession dir
-				rawcaplist = [] #init a list that will contain raw captures in each dir
-				for rawmov in os.listdir(os.getcwd()): #for each file in the current working directory
-					if rawmov.endswith(".mov") or rawmov.endswith(".MOV"): #if it is a mov
-						rawcaplist.append(rawmov) #append it to our list of raw captures
-				if rawcaplist:
-					fflist[os.path.join(dirs,acc)] = sorted(rawcaplist) #add the list of ['rawcapture filenames'] to a dict key of 'full path to accession# on xcluster'
-	log(logfile,str(fflist))
-	return fflist
+def get_files_for_ingest(kwargs):
+    '''
+    parses raw_captures directory for files to work on
+    '''
+    ingests = util.d({})
+    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*.*') \
+            if not any(part.startswith('.') for part in path.parts) \
+            and not any(part.startswith('Thumbs.db') for part in path.parts)]
+    for file in raw_captures:
+        print(file.name)
+        grandcestors = str(file.parents[1])
+        accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
+        try:
+            ingests[accession_number].append(str(file))
+        except:
+            ingests[accession_number] = []
+            ingests[accession_number].append(str(file))
+    log(kwargs.log,str(ingests),False)
+    return ingests
 
 
 
@@ -392,13 +385,10 @@ def main():
     if not startup_ok:
         msg = "ERROR: startup failed"
         log(kwargs.log, msg)
-    input("eh")
+    ingests = get_files_for_ingest(kwargs)
+    print(ingests)
     '''
-	rawCaptures = rawCaptures.strip('"')
-	xcluster = xcluster.strip('"')
-
 	try:
-		startup(logfile,rawCaptures,watermark,fontfile,sunnas,sunnascopyto,xendata,xendatacopyto)
 
 		#makes a list of files for ffmpeg to transcode
 		fflist = makefflist(rawCaptures,logfile)
@@ -431,5 +421,4 @@ def main():
 	'''
 
 if __name__ == "__main__":
-    dependencies()
     main()
