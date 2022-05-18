@@ -8,7 +8,7 @@ def verify_raw_captures(kwargs):
     checks that there are raw captures in the folder we specified
     '''
     log(kwargs.log,"verifying there are raw captures to be processed")
-    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*') \
+    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)]
     if not raw_captures:
