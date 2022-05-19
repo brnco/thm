@@ -18,6 +18,7 @@ import configparser
 from distutils import spawn
 import util
 import startup
+import filemaker_handler as fm
 
 def get_files_for_ingest(kwargs):
     '''
@@ -28,7 +29,6 @@ def get_files_for_ingest(kwargs):
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)]
     for file in raw_captures:
-        print(file.name)
         grandcestors = str(file.parents[1])
         accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
         try:
@@ -36,232 +36,8 @@ def get_files_for_ingest(kwargs):
         except:
             ingests[accession_number] = []
             ingests[accession_number].append(str(file))
-    log(kwargs.log,str(ingests),False)
+    log(kwargs.log,"INFO:" + str(ingests),False)
     return ingests
-
-#following three functions are called in startup to check that nothing is being copied currently
-def sizeloop(thing):
-	#print thing
-	startsize = os.stat(thing)
-	#print startsize.st_size
-	time.sleep(1)
-	endsize = os.stat(thing)
-	#print endsize.st_size
-	if startsize.st_size == endsize.st_size:
-		return
-	else:
-		sizeloop(thing)
-
-def walk(pth):
-	thefiles =[]
-	for dirs, subdirs, files in os.walk(pth):
-		for files in files:
-			fullpath = os.path.join(dirs,files)
-			thefiles.append(fullpath)
-	#print thefiles
-	for f in thefiles:
-		fpath = os.path.join(pth,f)
-		sizeloop(fpath)
-	return thefiles
-
-def compare(fs, fsagain):
-	#print fs
-	#print fsagain
-	for f in fsagain:
-		if not f in fs:
-			return False
-	return True
-
-
-def ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile):
-	#concatenate startfiles into endfile.mov
-	with cd(acc): #cd into it
-		txtfile = open("concat.txt","w") #initialize a txt file that we'll use to concat
-		for rawmov in fflist[acc]: #for each file name in the lsit of filenames associated with this accession#
-			txtfile.write("file " + rawmov + "\n") #append the filename to the txt file with a newline
-		txtfile.close() #housekeeping
-		canonicalname = os.path.basename(acc) #set the canonical name of the recording, e.g. A2016_001_001_001.mov (first entry in list fflist[acc])
-		segment = canonicalname.split("_")[-1] #the last set of chars in the sequence is the segment number
-		flv = canonicalname + ".flv" #filename for flv
-		mpeg = canonicalname + ".mpeg" #filename for mpeg
-		mp4 = canonicalname + ".mp4" #filename for mp4
-		mov = canonicalname + ".mov"
-
-		concatstr = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
-		try:
-			output = subprocess.check_output(concatstr,stderr=open(logfile,"a+"),shell=True) #concatenate them
-			returncode = 0
-			log(logfile, "concatenation of raw MOVs successful")
-		except (subprocess.CalledProcessError,e):
-			output = e.output
-			returncode = e.returncode
-		if returncode > 0:
-			#send email to staff
-			msg = 'The concatenation of  ' + canonicalname + ' was unsuccessful\n'
-			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg,'-att',logfile])
-			log(logfile,msg)
-			sys.exit() #quit now because this concat is really important
-		for rawmov in fflist[acc]: #for each raw file name in the list of concats that are the raw captures
-			os.remove(rawmov) #delete them (they've been concatted into 1 big ol file successfully)
-			if os.path.exists(rawmov + ".md5"): #if they have any associated files get rid of them
-				os.remove(rawmov + ".md5")
-			if os.path.exists("concat.txt"):
-				os.remove("concat.txt") #also delete the txt file because we don't need it anymore
-
-		#transcode endfiles
-		#endfile.flv + HistoryMakers watermark
-		try:
-			flvstr = 'ffmpeg -i concat.mov -i ' + watermark + ' -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode ' + segment[-2:] + ':00:00:00 -threads 0 ' + flv
-			output = subprocess.check_output(flvstr, stderr=open(logfile,"a+"), shell=True)
-			returncode = 0
-			log(logfile, "transcode to flv successful")
-		except (subprocess.CalledProcessError,e):
-			output = e.output
-			returncode = e.returncode
-		if returncode > 0:
-			#send email to staff
-			msg = 'The transcode to ' + flv + ' was unsuccessful\n'
-			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg,'-att',logfile])
-			log(logfile,msg)
-			sys.exit()
-
-		#endfile.mpeg + timecode
-		#easier to init this var here rather than include it in the ffmpeg call
-		drawtext = '"drawtext=fontfile=' + "'" + fontfile + "'" + ": timecode='" + segment[-2:] + "\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
-		try:
-			mpegstr = 'ffmpeg -i concat.mov -target ntsc-dvd -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
-			subprocess.check_output(mpegstr,stderr=open(logfile,"a+"), shell=True)
-			returncode = 0
-			log(logfile, "transcode to mpeg successful")
-		except (subprocess.CalledProcessError,e):
-			output = e.output
-			returncode = e.returncode
-		if returncode > 0:
-			#send email to staff
-			msg = 'The transcode to ' + mpeg + ' was unsuccessful\n'
-			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg,'-att',logfile])
-			log(logfile,msg)
-			sys.exit()
-
-		#endfile.mp4 + timecode
-		try:
-			mp4str = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
-			subprocess.check_output(mp4str,stderr=open(logfile,"a+"), shell=True)
-			returncode = 0
-		except (subprocess.CalledProcessError,e):
-			output = e.output
-			returncode = e.returncode
-			log(logfile,"transcode to mp4 successful")
-		if returncode > 0:
-			#send email to staff
-			msg = 'The transcode to ' + mp4 + ' was unsuccessful\n'
-			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt',msg,'-att',logfile])
-			log(logfile,msg)
-			sys.exit()
-		if os.path.exists("concat.mov"):
-			os.rename("concat.mov",mov)
-	return
-
-def movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile):
-	hashlist = {}
-	extlist = [".mov",".flv",".mp4",".mpeg"]
-	s = os.path.basename(acc)
-	with cd(acc):
-		if os.path.isfile(s + extlist[0]) and os.path.isfile(s + extlist[1]) and os.path.isfile(s + extlist[2]) and os.path.isfile(s + extlist[3]): #if each file extension exists in there
-
-			#copy pres file to lc directory
-			log(logfile,"copying archival master to lc folder\n")
-			shutil.copy2(os.path.join(acc,s + ".mov"), os.path.join(xcluster,"toLC")) #copy the mov to xendata/copyto
-
-
-			#move the mov files
-			sys.stdout.flush()
-			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[0]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			hashes,err = output.communicate()
-			log(logfile,hashes)
-			sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
-			desthash = re.search('dest\s\S+\s\w{40}',hashes)
-			dh = desthash.group()
-			sh = sourcehash.group()
-			if sh[-40:] == dh[-40:]:
-				hashlist[s + extlist[0]] = sh[-40:]
-
-			#move the flv file
-			#print "moving flv file"
-			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[1]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			hashes,err = output.communicate()
-			log(logfile, hashes)
-			sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
-			desthash = re.search('dest\s\S+\s\w{40}',hashes)
-			dh = desthash.group()
-			sh = sourcehash.group()
-			if sh[-40:] == dh[-40:]:
-				hashlist[s + extlist[1]] = sh[-40:]
-
-			#move the mp4 file
-			#print "moving mp4 file"
-			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[2]),sunnascopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			hashes,err = output.communicate()
-			log(logfile,hashes)
-			sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
-			desthash = re.search('dest\s\S+\s\w{40}',hashes)
-			dh = desthash.group()
-			sh = sourcehash.group()
-			if sh[-40:] == dh[-40:]:
-				hashlist[s + extlist[2]] = sh[-40:]
-
-			#move the mpeg file
-			#print "moving mpeg file"
-			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",os.path.join(acc,s + extlist[3]),xendatacopyto],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			hashes,err = output.communicate()
-			log(logfile,hashes)
-			sourcehash = re.search('srce\s\S+\s\w{40}',hashes)
-			desthash = re.search('dest\s\S+\s\w{40}',hashes)
-			dh = desthash.group()
-			sh = sourcehash.group()
-			if sh[-40:] == dh[-40:]:
-				hashlist[s + extlist[3]] = sh[-40:]
-
-			#send file hashes to filemaker
-			updateFM(hashlist,scriptRepo,logfile)
-
-			time.sleep(5) #give FM a chance to catch up
-
-			#verify hashes
-			moveyn = verifyFM(hashlist,scriptRepo,logfile)
-
-			if moveyn is True:
-				#move the files to various copytos
-				output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[0]),os.path.join(xendata,s + extlist[0])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mov to xendata
-				log(logfile,"moving archival master from copyto")
-				output = subprocess.Popen(["mv",os.path.join(xendatacopyto,s + extlist[3]),os.path.join(xendata,s + extlist[3])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mpeg to xendata
-				log(logfile,"moving mpeg from copyto")
-				output = subprocess.Popen(["mv",os.path.join(sunnascopyto,s + extlist[1]),os.path.join(sunnas,s + extlist[1])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the flv to sunnas
-				log(logfile,"moving flv from copyto")
-				output = subprocess.Popen(["mv",os.path.join(sunnascopyto,s + extlist[2]),os.path.join(sunnas,s + extlist[2])],stdout=subprocess.PIPE,stderr=subprocess.PIPE) #copy the mp4 to sunnas
-				log(logfile,"moving mp4 from copyto")
-			else:
-				msg = "hashes in FileMaker do not match hashes calculated for one or more files. Files not moved from /copyto.\nSee included log for details"
-
-				subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg,'-att',logfile])
-				log(logfile,msg)
-		else:
-			output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",acc,os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-	#cd out of accession dir
-	#ok so the accession dir in the capture folder should be empty
-	try:
-		time.sleep(5)
-		log(logfile,"removing " + os.path.join(acc,".DS_Store"))
-		if os.path.exists(os.path.join(acc,".DS_Store")):
-			os.remove(os.path.join(acc,".DS_Store"))
-		log(logfile,"removing accession dir " + acc + " from IncomingQT")
-		if os.path.exists(acc):
-			os.rmdir(acc)
-		#if it's not empty let's move it to a toubleshooting folder
-	except:
-		output = subprocess.Popen(["python",os.path.join(scriptRepo,"hashmove.py"),"-a","sha1","-np",acc,os.path.join(xcluster,"troubleshoot",s)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	return
 
 def updateFM(hashlist,scriptRepo,logfile):
 	log(logfile,"sending hashes to filemaker")
@@ -292,6 +68,154 @@ def verifyFM(hashlist,scriptRepo,logfile):
 	else:
 		moveyn = True
 	return moveyn
+
+def move_files(accession, files, kwargs):
+    '''
+    moves files from processing directory to preservation server
+    '''
+    log(kwargs.log,"INFO: moving files from processing dir to preservation")
+    '''
+    for file in files:
+    subprocess.run(rsync file prservation)
+    '''
+    return True
+
+def hash_files(files, kwargs):
+    '''
+    creates portable SHA -1 hash for file
+    '''
+    log(kwargs.log,"INFO: hashing files")
+    '''
+    dict = {}
+    for file in files:
+        hash = subprocess(shasum -p)
+        dict.file = hash
+    '''
+    return {"mov":"asdf1234","mp4":"lkjh0987"}
+
+def run_ffmpeg(cmd, kwargs):
+    '''
+    runs cmd for ffmpeg
+    '''
+    log(kwargs.log,"INFO: running ffmpeg with below command:")
+    log(kwargs.log,cmd)
+    try:
+        proc = subprocess.Popen(cmd, check=True)
+        stdout, stderr = proc.communicate()
+        log(kwargs.log,"INFO: ffmpeg completed successfully")
+        return True
+    except CalledProcessError as e:
+        log(kwargs.log,"ERROR: ffmpeg encountered an error")
+        log(kwargs.log,"ERROR: see ffmpeg stderr output below:")
+        log(kwargs.log,str(e.stderr))
+        return False
+
+def make_mpg(accession, file, kwargs):
+    '''
+    make mpg for dvd
+    '''
+    #endfile.mpeg + timecode
+    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
+    mpegstr = 'ffmpeg -i concat.mov -target ntsc-dvd -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
+
+def make_mp4_with_tc(accession, file, kwargs):
+    '''
+    creates mp4 with burned in timecode
+    '''
+    log(kwargs.log,"INFO: creating mp4 derivative with burned-in timecode")
+    mp4 = accession + ".mp4"
+    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
+    ffmpeg_cmd = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
+    return mp4
+
+def make_mp4_with_logo(accession, file, kwargs):
+    '''
+    creates mp4 derivative with logo
+    '''
+    log(kwargs.log,"INFO: creating mp4 derivative with logo")
+    return str(accession) + "-logo.mp4"
+
+def make_mxf_mezz(accession, file, kwargs):
+    '''
+    creates mxf mezzanine file
+    '''
+    log(kwargs.log,"INFO: creating mxf mezzanine file")
+    return str(accession) + ".mxf"
+
+def make_derivatives(accession, input_files, kwargs):
+    '''
+    manages derivative creation
+    '''
+    for file in input_files:
+        mp4_with_tc_ok = make_mp4_with_tc(accession, file, kwargs)
+        if not mp4_with_tc_ok:
+            log(kwargs.log,"ERROR: creation of mp4 with burned-in timecode failed")
+            return False
+        mp4_with_logo_ok = make_mp4_with_logo(accession, file, kwargs)
+        if not mp4_with_logo_ok:
+            log(kwargs.log,"ERROR: creation of mp4 with watermark failed")
+            return False
+        #make_mpg(accession, file, kwargs)
+        mxf_mezz_ok = make_mxf_mezz(accession, file, kwargs)
+        if not mxf_mezz_ok:
+            log(kwargs.log,"ERROR: creation of mxf mezzanine failed")
+            return False
+    return [mp4_with_tc_ok, mp4_with_logo_ok, mxf_mezz_ok]
+
+def concatenate_raw_captures(accession, files, kwargs):
+    '''
+    setup accession directory for ffmpeg transcode to concatenate raw captures
+    '''
+    accession_dir = files[0].parent
+    log(kwargs.log,"INFO: concatenating input files in directory " + accession_dir)
+    concat_txt_path = accession_dir / "concat.txt"
+    concat_mov = accession_dir / "concat.mov"
+    accession_mov = accession_dir / accession + ".mov"
+    with open(concat_txt_path,"a") as concat_txt:
+        for file in files:
+            concat_txt.write(str(file.name))
+    ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
+    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
+    if not ffmpeg_ok:
+        log(kwargs.log,"ERROR: ffmpeg encountered an error during concatenation")
+        return False
+    else:
+        log(kwargs.log,"INFO: concatenation completed successfully")
+        concat_mov.replace(accession_mov)
+        concat_txt_path.unlink()
+        return [accession_mov]
+        
+def process_accession(accession, files, cursor, filemaker_connection, kwargs):
+    '''
+    manages processing of single accession
+    '''
+    log(kwargs.log,"INFO: Processing accession " + accession)
+    if kwargs.concat:
+        files = concatenate_raw_captures(accession, files, kwargs)
+        if not files:
+            log(kwargs.log,"ERROR: concatenation failed")
+            return False
+    files = make_derivatives(accession, files, kwargs)
+    if not files:
+        log(kwargs.log,"ERROR: derivative creation failed")
+        return False
+    hashes = hash_files(files, kwargs)
+    if not hashes:
+        log(kwargs.log,"ERROR: file hashing failed, see log")
+        return False
+    kwargs.id = accession
+    for filetype in hashes.keys():
+        kwargs.format_digital = filetype
+        kwargs.hash = hashes[filetype]
+        fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
+        if not fm_updates_ok:
+            log(kwargs.log,"ERROR: FileMaker update for hashes failed, see log")
+            return False
+    files_moved_ok = move_files(accession, files, kwargs)
+    if not files_moved_ok:
+        log(kwargs.log,"ERROR: file transfer to preservation storage faield, see log")
+        return False
+    return True
 
 def verify_startup(kwargs):
     '''
@@ -339,8 +263,8 @@ def init_log(kwargs):
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
     print(log_filepath)
-    log(log_filepath,"initalizing script and log")
-    log(log_filepath,"kwargs object:",False)
+    log(log_filepath,"INFO: initalizing script and log")
+    log(log_filepath,"INFO: kwargs object:",False)
     log(log_filepath,str(kwargs),False)
     return log_filepath
 
@@ -371,11 +295,13 @@ def init_kwargs():
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
     parser.add_argument('input', nargs='*', help='the input folder(s)')
-    #parser.add_argument('--sum', dest='accumulate', action='store_const', const=sum, default=max,help='sum the integers (default: find the max)')
+    parser.add_argument('-c','--concat', action='store_true', default=False, help="concatenate input files")
+    parser.add_argument('--continue_on_error', action='store_true', default=False, help="continue processing accessions even if 1 fails")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
+    kwargs.concat = args.concat
     return kwargs
 
 def main():
@@ -390,21 +316,29 @@ def main():
         msg = "ERROR: startup failed"
         log(kwargs.log, msg)
         kwargs.config.lockfile.unlink()
+        quit()
     ingests = get_files_for_ingest(kwargs)
+    for accession in sorted(ingests.keys()):
+        filemaker_connection, cursor = fm.init_connection(kwargs)
+        filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
+        if not filemaker_ok:
+            log(kwargs.log,"ERROR: FileMaker record not found for " + accession)
+            kwargs.config.lockfile.unlink()
+            quit()
+        else:
+            processing_ok = process_accession(accession, ingests[accession], cursor, filemaker_connection, kwargs)
+            if not processing_ok:
+                log(kwargs.log,"ERROR: processing for accession " + accession + " failed. See log for details")
+                if kwargs.continue_on_error:
+                    pass
+                else:
+                    log(kwargs.log,"INFO: script instructed to quit on processing error. Exiting...")
+                    break
+            else:
+                log(kwargs.log,"INFO: accession " + accession + " processed successfully")
     kwargs.config.lockfile.unlink()
     '''
 	try:
-
-		#makes a list of files for ffmpeg to transcode
-		fflist = makefflist(rawCaptures,logfile)
-
-
-		for acc in sorted(fflist):
-			#actually transcode the files
-			ffprocess(acc,fflist,watermark,fontfile,scriptRepo,logfile)
-
-			#hashmove
-			movevids(acc,sunnascopyto,sunnas,xendata,xendatacopyto,xcluster,scriptRepo,logfile)
 
 			#notify that it worked for single accession
 			msg = "makevideos processed accession " + str(acc) + " successfully"
