@@ -32,9 +32,8 @@ def verify_raw_captures(kwargs):
                 if not any(part.startswith('.') for part in path.parts) \
                 and not any(part.startswith('Thumbs.db') for part in path.parts)]
     else:
-        accession_path = str(kwargs.config.raw_captures)
-        print(str(accession_path))
-        raw_captures = [path for path in accession_path.glob('/**/*.*') \
+        accession_path = kwargs.config.raw_captures
+        raw_captures = [path for path in accession_path.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)]
     if not raw_captures:

@@ -39,7 +39,7 @@ def get_files_for_ingest(kwargs):
         raw_captures = [path for path in accession_path.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)
-            and path.suffic in kwargs.config.filetypes.input]
+            and path.suffix in kwargs.config.filetypes.input]
         for file in raw_captures:
             grandcestors = str(file.parents[1])
             accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
