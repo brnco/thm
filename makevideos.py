@@ -27,25 +27,27 @@ def get_files_for_ingest(kwargs):
     ingests = util.d({})
     if kwargs.input:
         for accession in kwargs.input:
+            ingests[accession] = []
             accession_path = kwargs.config.raw_captures / accession
             raw_captures = [path for path in accession_path.glob('*.*') \
                     if not any(part.startswith('.') for part in path.parts) \
                     and not any(part.startswith('Thumbs.db') for part in path.parts)
                     and path.suffix in kwargs.config.filetypes.input]
+            ingests[accession] = raw_captures
     else:
         accession_path = kwargs.config.raw_captures
         raw_captures = [path for path in accession_path.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)
             and path.suffic in kwargs.config.filetypes.input]
-    for file in raw_captures:
-        grandcestors = str(file.parents[1])
-        accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
-        try:
-            ingests[accession_number].append(str(file))
-        except:
-            ingests[accession_number] = []
-            ingests[accession_number].append(str(file))
+        for file in raw_captures:
+            grandcestors = str(file.parents[1])
+            accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
+            try:
+                ingests[accession_number].append(str(file))
+            except:
+                ingests[accession_number] = []
+                ingests[accession_number].append(str(file))
     log(kwargs.log,"INFO:" + str(ingests),False)
     return ingests
 
@@ -359,6 +361,7 @@ def main():
             do input validation on each file, if requested
             '''
             if kwargs.input_validation:
+                log(kwargs.log,"INFO: running mediaconch policies against input files to determine valid inputs")
                 accession_mediaconch_policy, logs = file_validation.validate_input(accession, ingests[accession], kwargs)
                 for _log in logs:
                     log(kwargs.log,_log)
