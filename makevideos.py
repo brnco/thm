@@ -10,24 +10,34 @@ import glob
 import re
 import time
 import random
-import shutil
 import fcntl
 import pathlib
+import operator
 import argparse
 import configparser
-from distutils import spawn
 import util
 import startup
 import filemaker_handler as fm
+import file_validation
 
 def get_files_for_ingest(kwargs):
     '''
     parses raw_captures directory for files to work on
     '''
     ingests = util.d({})
-    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*.*') \
+    if kwargs.input:
+        for accession in kwargs.input:
+            accession_path = kwargs.config.raw_captures / accession
+            raw_captures = [path for path in accession_path.glob('*.*') \
+                    if not any(part.startswith('.') for part in path.parts) \
+                    and not any(part.startswith('Thumbs.db') for part in path.parts)
+                    and path.suffix in kwargs.config.filetypes.input]
+    else:
+        accession_path = kwargs.config.raw_captures
+        raw_captures = [path for path in accession_path.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
-            and not any(part.startswith('Thumbs.db') for part in path.parts)]
+            and not any(part.startswith('Thumbs.db') for part in path.parts)
+            and path.suffic in kwargs.config.filetypes.input]
     for file in raw_captures:
         grandcestors = str(file.parents[1])
         accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
@@ -285,6 +295,8 @@ def init_config(kwargs):
     kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
+    kwargs.config.mediaconchas = pathlib.Path(config.get('mediaconch','folder'))
+    kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
     return kwargs
 
 def init_kwargs():
@@ -297,16 +309,27 @@ def init_kwargs():
     parser.add_argument('input', nargs='*', help='the input folder(s)')
     parser.add_argument('-c','--concat', action='store_true', default=False, help="concatenate input files")
     parser.add_argument('--continue_on_error', action='store_true', default=False, help="continue processing accessions even if 1 fails")
+    parser.add_argument('--mediaconch_policy', default="", help="run input/output validation against specified mediaconch policy at path")
+    parser.add_argument('--no_input_validation', action='store_true', default=False, help="disable mediaconch file validation on input files")
+    parser.add_argument('--no_output_validation', action='store_true', default=False, help="disable mediaconch file validation on output files")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
     kwargs.concat = args.concat
+    #next two lines flip the boolean values for input/ output validation
+    #makes the code more readable in main()
+    kwargs.input_validation = operator.not_(args.no_input_validation)
+    kwargs.output_validation = operator.not_(args.no_output_validation)
+    kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     return kwargs
 
 def main():
     '''
     manages the running of the script
+    '''
+    '''
+    initialization
     '''
     kwargs = init_kwargs()
     kwargs = init_config(kwargs)
@@ -318,7 +341,13 @@ def main():
         kwargs.config.lockfile.unlink()
         quit()
     ingests = get_files_for_ingest(kwargs)
+    '''
+    loop through ingest list
+    '''
     for accession in sorted(ingests.keys()):
+        '''
+        check filemaker records for each accession
+        '''
         filemaker_connection, cursor = fm.init_connection(kwargs)
         filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
         if not filemaker_ok:
@@ -326,6 +355,22 @@ def main():
             kwargs.config.lockfile.unlink()
             quit()
         else:
+            '''
+            do input validation on each file, if requested
+            '''
+            if kwargs.input_validation:
+                accession_mediaconch_policy, logs = file_validation.validate_input(accession, ingests[accession], kwargs)
+                for _log in logs:
+                    log(kwargs.log,_log)
+                if not accession_mediaconch_policy:
+                    log(kwargs.log,"ERROR: mediainfo input validation failed for accession " + str(accession) + ", quitting")
+                    kwargs.config.lockfile.unlink()
+                    quit()
+                else:
+                    kwargs.accession_mediaconch_policy = accession_mediaconch_policy
+            '''
+            actually process/ transcode/ hash the files
+            '''
             processing_ok = process_accession(accession, ingests[accession], cursor, filemaker_connection, kwargs)
             if not processing_ok:
                 log(kwargs.log,"ERROR: processing for accession " + accession + " failed. See log for details")
@@ -335,29 +380,14 @@ def main():
                     log(kwargs.log,"INFO: script instructed to quit on processing error. Exiting...")
                     break
             else:
+                '''
+                do output validation on each file, if requested
+                '''
+                if kwargs.output_validation:
+                    outputs_ok = file_validation.validate_output(accession, ingests[accession], kwargs)
                 log(kwargs.log,"INFO: accession " + accession + " processed successfully")
-    kwargs.config.lockfile.unlink()
-    '''
-	try:
-
-			#notify that it worked for single accession
-			msg = "makevideos processed accession " + str(acc) + " successfully"
-			subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg])
-			log(logfile,msg)
-
-		msg = "makevideos completed successfully"
-
-		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg,'-att',logfile])
-		log(logfile,msg)
-
-	except Exception,e:
-		print str(e)
-		msg = "The script crashed due to an internal error\n"
-		msg = msg + str(e)
-		subprocess.call(['python',os.path.join(scriptRepo,"send-email.py"),'-txt', msg,'-att',logfile])
-		log(logfile,msg)
-		log(logfile,str(e))
-	'''
+    kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":
     main()
+
