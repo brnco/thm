@@ -24,7 +24,17 @@ def verify_raw_captures(kwargs):
     checks that there are raw captures in the folder we specified
     '''
     log(kwargs.log,"INFO: verifying there are raw captures to be processed")
-    raw_captures = [path for path in kwargs.config.raw_captures.glob('**/*.*') \
+    raw_captures = []
+    if kwargs.input:
+        for accession in kwargs.input:
+            accession_path = kwargs.config.raw_captures / accession
+            raw_captures = [path for path in accession_path.glob('*.*') \
+                if not any(part.startswith('.') for part in path.parts) \
+                and not any(part.startswith('Thumbs.db') for part in path.parts)]
+    else:
+        accession_path = str(kwargs.config.raw_captures)
+        print(str(accession_path))
+        raw_captures = [path for path in accession_path.glob('/**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)]
     if not raw_captures:
@@ -38,7 +48,7 @@ def verify_config_filepaths(kwargs):
     '''
     checks that files defined in config file exist
     '''
-    log(kwargs.log,"INFO: verifying that there are files in raw_captures directory")
+    log(kwargs.log,"INFO: verifying watermark and timecode font files exist")
     if not kwargs.config.watermark_white.is_file():
         msg = "ERROR: The white-watermark file cannot be found." \
             "Please put the white watermark file at " + str(kwargs.config.watermark_white)

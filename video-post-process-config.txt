@@ -1,10 +1,8 @@
 #configuration file for THM video post-processing
 #save as video-post-process-config.txt in the same dir as the script
 
-
-[global]
-scriptRepo: /home/brnco/code/thm/
-
+[filetypes]
+input = ".mov",".MOV",".mp4",".MP4"
 
 [transcode]
 #/Volumes/GPEED -Q/Titand-HD/HM/watermark
@@ -12,7 +10,7 @@ whitewatermark: /tub/brendan-project-archive/TheHistoryMakers/startup/Video Wate
 blackwatermark: /tub/brendan-project-archive/TheHistoryMakers/startup/Black Hm WaterMark.png
 timecodefont: /tub/brendan-project-archive/TheHistoryMakers/startup/Arial.ttf
 #this is "/Volumes/G-SPEED Q/Titan-HD/HM/Queue"
-rawCaptureDir: /tub/brendan-project-archive/TheHistoryMakers/startup/IncomingQT
+rawCaptureDir: /tub/brendan-project-archive/TheHistoryMakers/samples/inputs
 
 
 [fileDestinations]
@@ -31,3 +29,6 @@ server: smtp.gmail.com:587
 [logs]
 logs_path = /home/brnco/code/thm/logs
 lockfile = /home/brnco/code/thm/logs/makevideos.lock
+
+[mediaconch]
+folder = /tub/brendan-project-archive/TheHistoryMakers/mediaconch
