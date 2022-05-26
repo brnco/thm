@@ -45,7 +45,7 @@ this section contains filepaths for assets which are required in order to transc
 
 #### raw_captures
 
-specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see Usage section of this document)
+specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see [Usage](https://github.com/brnco/thm#usage) section of this document)
 
 Example folder setup, tree view
 
