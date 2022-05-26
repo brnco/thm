@@ -1,7 +1,115 @@
-# thm
-video post-processing for The History Makers
+# The History Makers
 
-# makevideos
+This repository contains scripts and configurations to process preservation files, generate checksums, and create and move derivatives of The History Makers oral history interviews.
+
+# Installation
+
+clone the repository to your local machine
+
+# Configuration
+
+1. open video-post-processing-config.txt in the text editor of your choice
+
+2. fill out fields per your local specifications
+
+## General Configuration Notes
+
+general format is:
+
+`[section_header]
+
+variable_name = variable value`
+
+do not enclose paths with quotes, even if they have spaces - do not escape whitespace either
+
+## Configuration Fields Reference
+
+### Filetypes
+
+#### Input
+
+comma-separated list of acceptable file extensions for input files, each extension is enclosed in quotes
+
+e.g. ".mov",".MOV"
+
+### Transcode
+
+this section contains filepaths for assets which are required in order to transcode derivative files
+
+#### White Watermark
+
+#### Black Watermark
+
+#### Timecode Font
+
+#### raw_captures
+
+specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see Usage section of this document)
+
+Example folder setup, tree view
+`/raw_captures
+├── A2022_034_001_001
+│   ├── DOH_HEJ_006_000.mov
+│   ├── DOH_HEJ_006_001.mov
+│   ├── DOH_HEJ_006_002.mov
+│   └── DOH_HEJ_006.XML
+├── A2022_034_001_002
+│   ├── DOH_HEJ_007_000.mov
+│   ├── DOH_HEJ_007_001.mov
+│   ├── DOH_HEJ_007_002.mov
+│   └── DOH_HEJ_007.XML
+├── A2022_047_001_001
+│   ├── 01275001.MOV
+│   ├── 01275002.MOV
+│   ├── 01275003.MOV
+│   └── 01275004.MOV
+├── An Evening with Valerie Jarrett
+│   ├── AEWVJA CAM1_1.mov
+│   └── AEWVJA CAM1_2.mov`
+
+### File Destinations
+
+This section describes folder paths for derivatives
+
+### Email
+
+This section contains info for email notifications from the script
+
+### Logs
+
+This section contains folder paths for the directory containing the logs, as well as the path of the lockfile that makevideos creates in order to only one a single instance of the script at a time
+
+### MediaConch
+
+This section delineates the folderpath for MediaConch policies
+
+# Usage
+
+## General
+
+`makevideos.py --options accession_number(s)`
+
+## Help
+
+`makevideos.py -h`
+
+## Examples
+
+ingest everything in raw_captures directory, as configured in config file
+
+`makevideos.py`
+
+ingest a single accession, A2022_012_001_001
+
+`makevideos.py A2022_012_001_001`
+
+ingest multiple accessions
+
+`makevideos.py A2022_012_001_001 A2022_033_001_001`
+
+# Script Descriptions
+
+## makevideos
 
 this script takes the raw video captures delivered by THM personnel and:
 
@@ -21,67 +129,26 @@ makevideos is triggered every 15minutes, M-F, 7am-9pm local time by cron
 
 makevideos can also be run manually by cd'ing into the repo directory (look for that in the config.txt file) and running "python makevideos.py"
 
-# hashmove
-better file movement
+## startup
 
-**General Usage**
+this script checks the values in the config file against the configuration currently present on the workstation running the script. Predominantly, it verifies that filepaths specified in the config actually exist.
 
-python hashmove.py [source file or directory full path] [destination parent directory full path] [flags]
+## file_validation
 
-**to move a file**
+this script uses [MediaConch](https://mediaarea.net/MediaConch) validation to ensure that only valid input files are passed to the script for preservation/ transcode. MediaConch policies are managed in the directory specified in the config file. For each input file, this script checks it against available file policies in the MediaConch policies folder - if a match is found, that policy is used to validate all other input and output files for tha accession.
 
-python hashmove.py C:/path/to/file.ext C:/path/to/parent/dir
+## filemaker_handler
 
-**to move a directory**
+this script handles all calls to FileMaker database, requires ODBC
 
-python hashmove.py /home/path/to/dir/a /home/path/to/dir/b
+## send_email
 
-**to copy a file**
+this script sends emails per info in config file
 
-python hashmove.py -c C:/path/to/file.ext C:/path/to/parent/dir
+## util
 
-**log the transfer**
+utility functions required by other scripts in this repository
 
-python hashmove.py -l /home/path/to/dir/a /home/path/to/dir/b
+## venv
 
-**verify against another hash or set of hashes**
-
-python hashmove.py -v "/home/path to/dir/you question" /home/path/to/dir/with/hashes
-
-
-
-##ffmpeg strings
-these aren't implemented quite as they are written here, everything in brackets is a variable for example, but if you wanted to make each of these derivatives with ffmpeg, this is what you would use:
-
-**concatenate**
-
-ffmpeg -f concat -i concat.txt -c copy -map 0 [concatenatedMOV].mov
-
-
-**flv**
-
-ffmpeg -i [concatenatedMOV].mov -i [/path/to/watermark].png -filter_complex "scale=320:180,overlay=0:0" -c:v libx264 -preset fast -pix_fmt yuv420p -b:v 700k -r 29.97 -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -timecode [segmentNumber]:00:00:00 [canonicalName].flv
-
-**mpeg**
-
-ffmpeg -i [concatenatedMOV].mov -map_channel 0.1.0:0.0 -map_channel 0.2.0:0.0 -map 0:0 -c:a mp2 -ar 48000 -sample_fmt s16 -ac 2 -c:v mpeg2video -pix_fmt yuv420p -r 29.97 -vtag xvid -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='[segmentNumber]\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=720:480" [canonicalName].mpeg
-
-**mp4**
-
-ffmpeg -i [concatenatedMOV].mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf "drawtext=fontfile=[/path/to/fontfile].ttf: timecode='[segmentNumber]\:00\:00\:00': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontsize=72: fontcolor=white: box=1: boxcolor=0x00000099,scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 [canonicalName].mp4
-
-**test input*
-
-if you want to generate a test input file for this situation here's how.
-
-first, make a video file in the usual way
-
-ffmpeg -f lavfi -i "testsrc=duration=10:size=1920x1080:rate=29.97" -c:v mpeg2video -timecode 00:00:00.0 [vout].mov
-
-then make an audio file and wrap it in a mov
-
-ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=10" -c:a pcm_s24be [aout].mov
-
-then warp the video file with the audio file mapped to two different streams, with timecode track
-
-ffmpeg -i [vout].mov -i [aout].mov -c:v copy -c:a pcm_s24be -map 0:v:0 -map 1:a:0 -map 2:a:0 -timecode 00:00:00:00 [out].mov
+This script uses Python's [venv](https://docs.python.org/3/library/venv.html) module to create a virutal environment, the venv folder contains configuration info for this virtual environment, and should not need to be modified
