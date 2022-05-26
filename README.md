@@ -18,7 +18,6 @@ general format is:
 
 ```
 [section_header]
-
 variable_name = variable value
 ```
 
