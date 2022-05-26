@@ -16,9 +16,11 @@ clone the repository to your local machine
 
 general format is:
 
-`[section_header]
+```
+[section_header]
 
-variable_name = variable value`
+variable_name = variable value
+```
 
 do not enclose paths with quotes, even if they have spaces - do not escape whitespace either
 
@@ -47,7 +49,9 @@ this section contains filepaths for assets which are required in order to transc
 specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see Usage section of this document)
 
 Example folder setup, tree view
-`/raw_captures
+
+```
+/raw_captures
 ├── A2022_034_001_001
 │   ├── DOH_HEJ_006_000.mov
 │   ├── DOH_HEJ_006_001.mov
@@ -65,7 +69,8 @@ Example folder setup, tree view
 │   └── 01275004.MOV
 ├── An Evening with Valerie Jarrett
 │   ├── AEWVJA CAM1_1.mov
-│   └── AEWVJA CAM1_2.mov`
+│   └── AEWVJA CAM1_2.mov
+```
 
 ### File Destinations
 
