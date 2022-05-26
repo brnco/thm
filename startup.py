@@ -28,6 +28,7 @@ def verify_raw_captures(kwargs):
     if kwargs.input:
         for accession in kwargs.input:
             accession_path = kwargs.config.raw_captures / accession
+            print(accession_path)
             raw_captures = [path for path in accession_path.glob('*.*') \
                 if not any(part.startswith('.') for part in path.parts) \
                 and not any(part.startswith('Thumbs.db') for part in path.parts)]
@@ -37,7 +38,8 @@ def verify_raw_captures(kwargs):
             if not any(part.startswith('.') for part in path.parts) \
             and not any(part.startswith('Thumbs.db') for part in path.parts)]
     if not raw_captures:
-        log(kwargs.log,"ERROR: no files found in raw captures folder")
+        log(kwargs.log,"ERROR: no files found in raw captures folder: " + \
+                str(accession_path))
         return False
     else:
         log(kwargs.log,"INFO: raw captures ok")

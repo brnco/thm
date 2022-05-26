@@ -229,6 +229,12 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
         return False
     return True
 
+def make_test_files(kwargs):
+    '''
+    creates test video files conforming to output standards, using ffmpeg
+    '''
+    print("make test videos")
+
 def verify_startup(kwargs):
     '''
     manages startup of script
@@ -249,7 +255,6 @@ def verify_startup(kwargs):
         log(kwargs.log, msg)
         return False
     raw_captures_files_ok = startup.verify_raw_captures(kwargs)
-    print(raw_captures_files_ok)
     if not raw_captures_files_ok:
         msg = "ERROR: files not found in raw capture directory"
         log(kwargs.log, msg)
@@ -274,7 +279,6 @@ def init_log(kwargs):
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
-    print(log_filepath)
     log(log_filepath,"INFO: initalizing script and log")
     log(log_filepath,"INFO: kwargs object:",False)
     log(log_filepath,str(kwargs),False)
@@ -314,11 +318,13 @@ def init_kwargs():
     parser.add_argument('--mediaconch_policy', default="", help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--no_input_validation', action='store_true', default=False, help="disable mediaconch file validation on input files")
     parser.add_argument('--no_output_validation', action='store_true', default=False, help="disable mediaconch file validation on output files")
+    parser.add_argument('--make_test_files', action='store_true', default=False, help="create test output file susing ffmpeg")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
     kwargs.concat = args.concat
+    kwargs.mtf = args.make_test_files
     #next two lines flip the boolean values for input/ output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
@@ -342,6 +348,15 @@ def main():
         log(kwargs.log, msg)
         kwargs.config.lockfile.unlink()
         quit()
+    '''
+    determine if script is running in test mode
+    '''
+    if kwargs.mtf:
+        make_test_files(kwargs)
+        quit()
+    '''
+    create ingest list
+    '''
     ingests = get_files_for_ingest(kwargs)
     '''
     loop through ingest list
