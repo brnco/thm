@@ -124,6 +124,7 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with timecode
         accession_tc.mp4
         '''
+        log(kwargs.log,"INFO: creating mp4 with burned-in timecode")
         mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
             log(kwargs.log,"ERROR: creation of mp4 with burned-in timecode failed")
@@ -132,6 +133,7 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with watermark
         accession_wm.mp4
         '''
+        log(kwargs.log,"INFO: creating mp4 with burned-in watermark")
         mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
         if not mp4_with_logo_ok:
             log(kwargs.log,"ERROR: creation of mp4 with watermark failed")
@@ -140,6 +142,7 @@ def make_derivatives(accession, input_files, kwargs):
         mpeg file for DVD
         accession_dvd.mpeg
         '''
+        log(kwargs.log,"INFO: creating mpeg DVD file")
         mpeg_dvd_ok = transcodes.make_mpeg(accession, file, kwargs)
         if not mpeg_dvd_ok:
             log(kwargs.log,"ERROR: creation of mpeg DVD file failed")
@@ -148,6 +151,7 @@ def make_derivatives(accession, input_files, kwargs):
         mezzanine mxf
         mezz.mxf
         '''
+        log(kwargs.log,"INFO: creating mxf mezzanine")
         mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
         if not mxf_mezz_ok:
             log(kwargs.log,"ERROR: creation of mxf mezzanine failed")
@@ -168,8 +172,8 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     output is list of single concatenated file, named for accession_pres.mov
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
-    with util.cd(str(accession_fullpath)):
-        if kwargs.input_concatenation:
+    if kwargs.input_concatenation and len(files) > 1:
+        with util.cd(str(accession_fullpath)):
             log(kwargs.log,"INFO: concatenating raw files in accession dir: " + str(accession_fullpath))
             files, logs = transcodes.concatenate_raw_captures(accession, files, kwargs)
             for _log in logs:
@@ -249,11 +253,10 @@ def log(logfile,msg,p=True,e=False):
     defines the logging function
     '''
     with open(logfile,"a") as txtfile:
-        txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        txtfile.write(msg)
+        txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " - " + str(msg))
         txtfile.write("\n")
     if p:
-        print(msg)
+        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " - " + str(msg))
     if e:
         print("send email goes here")
         #send email.py
