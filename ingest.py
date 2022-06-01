@@ -168,7 +168,8 @@ def make_derivatives(accession, input_files, kwargs):
             log(kwargs.log,"ERROR: creation of mp4 with watermark failed")
             return False
         #make_mpg(accession, file, kwargs)
-        mxf_mezz_ok = make_mxf_mezz(accession, file, kwargs)
+        mxf_mezz_ok = make_mxf_mezz(w
+                accession, file, kwargs)
         if not mxf_mezz_ok:
             log(kwargs.log,"ERROR: creation of mxf mezzanine failed")
             return False
@@ -202,19 +203,38 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     manages processing of single accession
     '''
     log(kwargs.log,"INFO: Processing accession " + accession)
-    if kwargs.concat:
+    '''
+    concatenates files by default
+    flag for --no_concatenation evaluated here
+    '''
+    if kwargs.input_concatenation:
         files = concatenate_raw_captures(accession, files, kwargs)
         if not files:
             log(kwargs.log,"ERROR: concatenation failed")
             return False
+    '''
+    make derivatives in transcode script
+    _dvd.mpeg
+    _mezz.mxf
+    _tc.mp4
+    _wm.mp4
+    _pres.mov
+    '''
     files = make_derivatives(accession, files, kwargs)
     if not files:
         log(kwargs.log,"ERROR: derivative creation failed")
         return False
+    '''
+    create checksums for each derivative
+    '''
     hashes = hash_files(files, kwargs)
     if not hashes:
         log(kwargs.log,"ERROR: file hashing failed, see log")
         return False
+    '''
+    send checksums to filemaker
+    file transfers are validated post-ingest by Mark Strecker's Java script
+    '''
     kwargs.id = accession
     for filetype in hashes.keys():
         kwargs.format_digital = filetype
@@ -223,9 +243,12 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
         if not fm_updates_ok:
             log(kwargs.log,"ERROR: FileMaker update for hashes failed, see log")
             return False
+    '''
+    send file data to various places
+    '''
     files_moved_ok = move_files(accession, files, kwargs)
     if not files_moved_ok:
-        log(kwargs.log,"ERROR: file transfer to preservation storage faield, see log")
+        log(kwargs.log,"ERROR: file transfer to preservation storage failed, see log")
         return False
     return True
 
@@ -261,17 +284,18 @@ def verify_startup(kwargs):
         return False
     return True
 
-def log(logfile,msg,p=True):
+def log(logfile,msg,p=True,e=False):
     '''
     defines the logging function
     '''
-    if p:
-        print(msg)
     with open(logfile,"a") as txtfile:
         txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        txtfile.write("\n")
         txtfile.write(msg)
         txtfile.write("\n")
+    if p:
+        print(msg)
+    if e:
+        #send email.py
 
 def init_log(kwargs):
     '''
@@ -313,22 +337,23 @@ def init_kwargs():
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
     parser.add_argument('input', nargs='*', help='the input folder(s)')
-    parser.add_argument('-c','--concat', action='store_true', default=False, help="concatenate input files")
+    parser.add_argument('--no_concat', action='store_true', default=False, help="disable concatenation of input files")
     parser.add_argument('--continue_on_error', action='store_true', default=False, help="continue processing accessions even if 1 fails")
     parser.add_argument('--mediaconch_policy', default="", help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--no_input_validation', action='store_true', default=False, help="disable mediaconch file validation on input files")
     parser.add_argument('--no_output_validation', action='store_true', default=False, help="disable mediaconch file validation on output files")
-    parser.add_argument('--make_test_files', action='store_true', default=False, help="create test output file susing ffmpeg")
+    parser.add_argument('--make_test_files', action='store_true', default=False, help="create test output files using ffmpeg")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
     kwargs.concat = args.concat
     kwargs.mtf = args.make_test_files
-    #next two lines flip the boolean values for input/ output validation
+    #next two lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.output_validation = operator.not_(args.no_output_validation)
+    kwargs.input_concatenation = operator.not_(args.no_concatenation)
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     return kwargs
 
