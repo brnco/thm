@@ -1,11 +1,13 @@
 #!/usr/bin/python
-#the history makers makevideos.py
-#concatenates, transcodes, moves videos for The History Makers
+#the history makers ingest.py
+#processes videos for The History Makers
 
+'''
+import official python libraries
+'''
 import os
 import sys
 import subprocess
-import sys
 import glob
 import re
 import time
@@ -15,11 +17,19 @@ import pathlib
 import operator
 import argparse
 import configparser
+
+'''
+import microservice scripts
+'''
 import util
 import startup
 import filemaker_handler as fm
 import file_validation
+import transcodes
 
+'''
+functions
+'''
 def get_files_for_ingest(kwargs):
     '''
     parses raw_captures directory for files to work on
@@ -105,99 +115,45 @@ def hash_files(files, kwargs):
     '''
     return {"mov":"asdf1234","mp4":"lkjh0987"}
 
-def run_ffmpeg(cmd, kwargs):
-    '''
-    runs cmd for ffmpeg
-    '''
-    log(kwargs.log,"INFO: running ffmpeg with below command:")
-    log(kwargs.log,cmd)
-    try:
-        proc = subprocess.Popen(cmd, check=True)
-        stdout, stderr = proc.communicate()
-        log(kwargs.log,"INFO: ffmpeg completed successfully")
-        return True
-    except CalledProcessError as e:
-        log(kwargs.log,"ERROR: ffmpeg encountered an error")
-        log(kwargs.log,"ERROR: see ffmpeg stderr output below:")
-        log(kwargs.log,str(e.stderr))
-        return False
-
-def make_mpg(accession, file, kwargs):
-    '''
-    make mpg for dvd
-    '''
-    #endfile.mpeg + timecode
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
-    mpegstr = 'ffmpeg -i concat.mov -target ntsc-dvd -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
-
-def make_mp4_with_tc(accession, file, kwargs):
-    '''
-    creates mp4 with burned in timecode
-    '''
-    log(kwargs.log,"INFO: creating mp4 derivative with burned-in timecode")
-    mp4 = accession + ".mp4"
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
-    ffmpeg_cmd = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
-    return mp4
-
-def make_mp4_with_logo(accession, file, kwargs):
-    '''
-    creates mp4 derivative with logo
-    '''
-    log(kwargs.log,"INFO: creating mp4 derivative with logo")
-    return str(accession) + "-logo.mp4"
-
-def make_mxf_mezz(accession, file, kwargs):
-    '''
-    creates mxf mezzanine file
-    '''
-    log(kwargs.log,"INFO: creating mxf mezzanine file")
-    return str(accession) + ".mxf"
-
 def make_derivatives(accession, input_files, kwargs):
     '''
     manages derivative creation
     '''
     for file in input_files:
-        mp4_with_tc_ok = make_mp4_with_tc(accession, file, kwargs)
+        '''
+        mp4 with timecode
+        accession_tc.mp4
+        '''
+        mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
             log(kwargs.log,"ERROR: creation of mp4 with burned-in timecode failed")
             return False
-        mp4_with_logo_ok = make_mp4_with_logo(accession, file, kwargs)
+        '''
+        mp4 with watermark
+        accession_wm.mp4
+        '''
+        mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
         if not mp4_with_logo_ok:
             log(kwargs.log,"ERROR: creation of mp4 with watermark failed")
             return False
-        #make_mpg(accession, file, kwargs)
-        mxf_mezz_ok = make_mxf_mezz(w
-                accession, file, kwargs)
+        '''
+        mpeg file for DVD
+        accession_dvd.mpeg
+        '''
+        mpeg_dvd_ok = transcodes.make_mpeg(accession, file, kwargs)
+        if not mpeg_dvd_ok:
+            log(kwargs.log,"ERROR: creation of mpeg DVD file failed")
+            return False
+        '''
+        mezzanine mxf
+        mezz.mxf
+        '''
+        mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
         if not mxf_mezz_ok:
             log(kwargs.log,"ERROR: creation of mxf mezzanine failed")
             return False
     return [mp4_with_tc_ok, mp4_with_logo_ok, mxf_mezz_ok]
 
-def concatenate_raw_captures(accession, files, kwargs):
-    '''
-    setup accession directory for ffmpeg transcode to concatenate raw captures
-    '''
-    accession_dir = files[0].parent
-    log(kwargs.log,"INFO: concatenating input files in directory " + accession_dir)
-    concat_txt_path = accession_dir / "concat.txt"
-    concat_mov = accession_dir / "concat.mov"
-    accession_mov = accession_dir / accession + ".mov"
-    with open(concat_txt_path,"a") as concat_txt:
-        for file in files:
-            concat_txt.write(str(file.name))
-    ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0:0 -map 0:1 -map 0:2 -c:v copy -c:a copy -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
-    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
-    if not ffmpeg_ok:
-        log(kwargs.log,"ERROR: ffmpeg encountered an error during concatenation")
-        return False
-    else:
-        log(kwargs.log,"INFO: concatenation completed successfully")
-        concat_mov.replace(accession_mov)
-        concat_txt_path.unlink()
-        return [accession_mov]
-        
 def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     manages processing of single accession
@@ -206,19 +162,23 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     concatenates files by default
     flag for --no_concatenation evaluated here
+
+    files variable changes value based on output from transcodes:
+    input is list of raw files in accession directory
+    output is list of single concatenated file, named for accession_pres.mov
     '''
-    if kwargs.input_concatenation:
-        files = concatenate_raw_captures(accession, files, kwargs)
-        if not files:
-            log(kwargs.log,"ERROR: concatenation failed")
-            return False
+    accession_fullpath = kwargs.config.raw_captures / accession
+    with util.cd(str(accession_fullpath)):
+        if kwargs.input_concatenation:
+            log(kwargs.log,"INFO: concatenating raw files in accession dir: " + str(accession_fullpath))
+            files, logs = transcodes.concatenate_raw_captures(accession, files, kwargs)
+            for _log in logs:
+                log(kwargs.log,_log)
+            if not files:
+                log(kwargs.log,"ERROR: concatenation failed")
+                return False
     '''
     make derivatives in transcode script
-    _dvd.mpeg
-    _mezz.mxf
-    _tc.mp4
-    _wm.mp4
-    _pres.mov
     '''
     files = make_derivatives(accession, files, kwargs)
     if not files:
@@ -295,6 +255,7 @@ def log(logfile,msg,p=True,e=False):
     if p:
         print(msg)
     if e:
+        print("send email goes here")
         #send email.py
 
 def init_log(kwargs):
@@ -347,13 +308,12 @@ def init_kwargs():
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
-    kwargs.concat = args.concat
     kwargs.mtf = args.make_test_files
     #next two lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.output_validation = operator.not_(args.no_output_validation)
-    kwargs.input_concatenation = operator.not_(args.no_concatenation)
+    kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     return kwargs
 
@@ -433,4 +393,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
