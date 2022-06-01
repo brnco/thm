@@ -37,7 +37,11 @@ def validate_input(accession, files, kwargs):
     logs = []
     for policy in mediaconch_policies:
         for file in files:
-            output = subprocess.run(['mediaconch','-p','"' + str(policy) + '"',file], capture_output=True)
+            print("testing " + str(file) + " against " + str(policy))
+            output = subprocess.run(['mediaconch','-p',policy,file], capture_output=True)
+            print(output.returncode)
+            print(output.stdout)
+            print(output.stderr)
             if not output.returncode == 0:
                 logs.append("ERROR: mediaconch returned a non-zero exit code")
                 return False, logs
