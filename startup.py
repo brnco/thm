@@ -1,7 +1,7 @@
 '''
 startup functions for thm makevideos script
 '''
-from ingest import log
+#from ingest import log
 
 def verify_already_running(kwargs):
     '''

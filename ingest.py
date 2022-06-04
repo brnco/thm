@@ -11,6 +11,7 @@ import subprocess
 import glob
 import re
 import time
+import logging
 import random
 import fcntl
 import pathlib
@@ -248,29 +249,18 @@ def verify_startup(kwargs):
         return False
     return True
 
-def log(logfile,msg,p=True,e=False):
-    '''
-    defines the logging function
-    '''
-    with open(logfile,"a") as txtfile:
-        txtfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " - " + str(msg))
-        txtfile.write("\n")
-    if p:
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + " - " + str(msg))
-    if e:
-        print("send email goes here")
-        #send email.py
-
 def init_log(kwargs):
     '''
     initalizes log file location
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
-    log(log_filepath,"INFO: initalizing script and log")
-    log(log_filepath,"INFO: kwargs object:",False)
-    log(log_filepath,str(kwargs),False)
-    return log_filepath
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',\
+            datefmt='%Y-%m-%d %H:%M:%S', filename=log_filepath, \
+            encoding='utf-8', level=logging.DEBUG)
+    logging.info("initializing script and log")
+    logging.info("kwargs object: %s", str(kwargs))
+    input("eh")
 
 def init_config(kwargs):
     '''
