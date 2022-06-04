@@ -18,15 +18,12 @@ import pathlib
 import operator
 import argparse
 import configparser
-
 '''
 import microservice scripts
 '''
 import util
-import startup
 import filemaker_handler as fm
 import file_validation
-import transcodes
 
 '''
 functions
@@ -59,44 +56,44 @@ def get_files_for_ingest(kwargs):
             except:
                 ingests[accession_number] = []
                 ingests[accession_number].append(str(file))
-    log(kwargs.log,"INFO:" + str(ingests),False)
+    logging.debug("%s",str(ingests))
     return ingests
 
 def updateFM(hashlist,scriptRepo,logfile):
-	log(logfile,"sending hashes to filemaker")
-	for fh in hashlist:
-		fname,ext = os.path.splitext(fh)
-		fdigi = ext.replace(".","")
-		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-uSha","-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	return
+    logging.info("sending hashes to filemaker")
+    for fh in hashlist:
+        fname,ext = os.path.splitext(fh)
+        fdigi = ext.replace(".","")
+        output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-uSha","-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    return
 
 def verifyFM(hashlist,scriptRepo,logfile):
-	log(logfile,"verifying hashes in filemaker")
-	verifiedwrong = []
-	for fh in hashlist:
-		fname,ext=os.path.splitext(fh)
-		fdigi = ext.replace(".","")
-		sys.stdout.flush()
-		output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-qSha","-id",fname,"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		fmhash = output.communicate()
-		if any(hashlist[fh] in foo for foo in fmhash):
-			log(logfile,"hash of " + str(fh) + " verified correctly as: " + str(fmhash))
-		else:
-			log(logfile,"hash of " + str(fh) + " verified incorrectly")
-			log(logfile,"makevideos calculated hash of: " + hashlist[fh])
-			log(logfile,"filemaker hash stored is: " + str(fmhash))
-			verifiedwrong.append(str(fh))
-	if verifiedwrong:
-		moveyn = False
-	else:
-		moveyn = True
-	return moveyn
+    logging.info("verifying hashes in filemaker")
+    verifiedwrong = []
+    for fh in hashlist:
+        fname,ext=os.path.splitext(fh)
+        fdigi = ext.replace(".","")
+        sys.stdout.flush()
+        output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-qSha","-id",fname,"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        fmhash = output.communicate()
+        if any(hashlist[fh] in foo for foo in fmhash):
+            logging.info("hash of %s verified correctly as: %s", str(fh), str(fmhash))
+        else:
+            logging.error("hash of %s verified incorrectly", str(fh))
+            logging.error("makevideos calculated hash of: %s", hashlist[fh])
+            logging.error("filemaker hash stored is: %s", str(fmhash))
+            verifiedwrong.append(str(fh))
+    if verifiedwrong:
+        moveyn = False
+    else:
+        moveyn = True
+    return moveyn
 
 def move_files(accession, files, kwargs):
     '''
     moves files from processing directory to preservation server
     '''
-    log(kwargs.log,"INFO: moving files from processing dir to preservation")
+    logging.info("moving files from processing dir to preservation")
     '''
     for file in files:
     subprocess.run(rsync file prservation)
@@ -107,7 +104,7 @@ def hash_files(files, kwargs):
     '''
     creates portable SHA -1 hash for file
     '''
-    log(kwargs.log,"INFO: hashing files")
+    logging.info("hashing files")
     '''
     dict = {}
     for file in files:
@@ -120,42 +117,43 @@ def make_derivatives(accession, input_files, kwargs):
     '''
     manages derivative creation
     '''
+    import transcodes
     for file in input_files:
         '''
         mp4 with timecode
         accession_tc.mp4
         '''
-        log(kwargs.log,"INFO: creating mp4 with burned-in timecode")
+        logging("creating mp4 with burned-in timecode")
         mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
-            log(kwargs.log,"ERROR: creation of mp4 with burned-in timecode failed")
+            logging.error("creation of mp4 with burned-in timecode failed")
             return False
         '''
         mp4 with watermark
         accession_wm.mp4
         '''
-        log(kwargs.log,"INFO: creating mp4 with burned-in watermark")
+        logging.info("creating mp4 with burned-in watermark")
         mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
         if not mp4_with_logo_ok:
-            log(kwargs.log,"ERROR: creation of mp4 with watermark failed")
+            logging.error("creation of mp4 with watermark failed")
             return False
         '''
         mpeg file for DVD
         accession_dvd.mpeg
         '''
-        log(kwargs.log,"INFO: creating mpeg DVD file")
+        logging.info("creating mpeg DVD file")
         mpeg_dvd_ok = transcodes.make_mpeg(accession, file, kwargs)
         if not mpeg_dvd_ok:
-            log(kwargs.log,"ERROR: creation of mpeg DVD file failed")
+            logging.error("creation of mpeg DVD file failed")
             return False
         '''
         mezzanine mxf
         mezz.mxf
         '''
-        log(kwargs.log,"INFO: creating mxf mezzanine")
+        logging.info("creating mxf mezzanine")
         mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
         if not mxf_mezz_ok:
-            log(kwargs.log,"ERROR: creation of mxf mezzanine failed")
+            logging.error("creation of mxf mezzanine failed")
             return False
     return [mp4_with_tc_ok, mp4_with_logo_ok, mxf_mezz_ok]
 
@@ -163,7 +161,7 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     manages processing of single accession
     '''
-    log(kwargs.log,"INFO: Processing accession " + accession)
+    logging.info("Processing accession %s", accession)
     '''
     concatenates files by default
     flag for --no_concatenation evaluated here
@@ -172,33 +170,32 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     input is list of raw files in accession directory
     output is list of single concatenated file, named for accession_pres.mov
     '''
+    import transcodes
     accession_fullpath = kwargs.config.raw_captures / accession
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
-            log(kwargs.log,"INFO: concatenating raw files in accession dir: " + str(accession_fullpath))
-            files, logs = transcodes.concatenate_raw_captures(accession, files, kwargs)
-            for _log in logs:
-                log(kwargs.log,_log)
+            logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
+            files = transcodes.concatenate_raw_captures(accession, files, kwargs)
             if not files:
-                log(kwargs.log,"ERROR: concatenation failed")
+                logging.error("concatenation failed")
                 return False
     '''
     make derivatives in transcode script
     '''
     files = make_derivatives(accession, files, kwargs)
     if not files:
-        log(kwargs.log,"ERROR: derivative creation failed")
+        logging.error("derivative creation failed")
         return False
     '''
     create checksums for each derivative
     '''
     hashes = hash_files(files, kwargs)
     if not hashes:
-        log(kwargs.log,"ERROR: file hashing failed, see log")
+        logging.error("file hashing failed")
         return False
     '''
     send checksums to filemaker
-    file transfers are validated post-ingest by Mark Strecker's Java script
+    file transfers are validated post-ingest by Mark Strecker's Java app
     '''
     kwargs.id = accession
     for filetype in hashes.keys():
@@ -206,14 +203,14 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
         kwargs.hash = hashes[filetype]
         fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
         if not fm_updates_ok:
-            log(kwargs.log,"ERROR: FileMaker update for hashes failed, see log")
+            logging.error("FileMaker update for hashes failed")
             return False
     '''
     send file data to various places
     '''
     files_moved_ok = move_files(accession, files, kwargs)
     if not files_moved_ok:
-        log(kwargs.log,"ERROR: file transfer to preservation storage failed, see log")
+        logging.error("file transfer to preservation storage failed")
         return False
     return True
 
@@ -227,40 +224,57 @@ def verify_startup(kwargs):
     '''
     manages startup of script
     '''
+    import startup
     already_running = startup.verify_already_running(kwargs)
     if already_running:
-        msg = "ERROR: makevideos is already running"
-        log(kwargs.log,msg)
+        logging.error("makevideos is already running")
         return False
     drives_ok = startup.verify_config_drivepaths(kwargs)
     if not drives_ok:
-        msg = "ERROR: drives not found"
-        log(kwargs.log,msg)
+        logging.error("drives not found")
         return False
     timecode_and_watermark_files_ok = startup.verify_config_filepaths(kwargs)
     if not timecode_and_watermark_files_ok:
-        msg = "ERROR: timecode and/or watermark files not found"
-        log(kwargs.log, msg)
+        logging.error("timecode and/or watermark files not found")
         return False
     raw_captures_files_ok = startup.verify_raw_captures(kwargs)
     if not raw_captures_files_ok:
-        msg = "ERROR: files not found in raw capture directory"
-        log(kwargs.log, msg)
+        logging.error("files not found in raw capture directory")
         return False
     return True
 
 def init_log(kwargs):
     '''
-    initalizes log file location
+    initalizes log actions
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
+    message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
+            datefmt='%Y-%m-%d %H:%M:%S')
+    global logger
+    logger = logging.getLogger()
+    '''
+    make a handler for log file, add to logger
+    '''
+    log_handler = logging.FileHandler(log_filepath)
+    log_handler.setFormatter(message_format)
+    log_handler.setLevel(logging.DEBUG)
+    logger.addHandler(log_handler)
+    '''
+    make a handler for printing to terminal screen, add to logger
+    '''
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(message_format)
+    stream_handler.setLevel(kwargs.print_loglevel)
+    logger.addHandler(stream_handler)
+    logger.setLevel(logging.DEBUG)
+    '''
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',\
             datefmt='%Y-%m-%d %H:%M:%S', filename=log_filepath, \
-            encoding='utf-8', level=logging.DEBUG)
-    logging.info("initializing script and log")
-    logging.info("kwargs object: %s", str(kwargs))
-    input("eh")
+            stream=sys.stdout, encoding='utf-8', level=logging.DEBUG)
+    '''
+    logger.info("initializing script and log")
+    logger.debug("kwargs object: %s", str(kwargs))
 
 def init_config(kwargs):
     '''
@@ -290,13 +304,24 @@ def init_kwargs():
     "kwargs" = KeyWordArguments - this is a single object/ dictionary that stores msot of our variables
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
-    parser.add_argument('input', nargs='*', help='the input folder(s)')
-    parser.add_argument('--no_concat', action='store_true', default=False, help="disable concatenation of input files")
-    parser.add_argument('--continue_on_error', action='store_true', default=False, help="continue processing accessions even if 1 fails")
-    parser.add_argument('--mediaconch_policy', default="", help="run input/output validation against specified mediaconch policy at path")
-    parser.add_argument('--no_input_validation', action='store_true', default=False, help="disable mediaconch file validation on input files")
-    parser.add_argument('--no_output_validation', action='store_true', default=False, help="disable mediaconch file validation on output files")
-    parser.add_argument('--make_test_files', action='store_true', default=False, help="create test output files using ffmpeg")
+    parser.add_argument('-v','--verbose', action='store_true',default=False,\
+            help="verbose mode, print debug messages to terminal screen")
+    parser.add_argument('-q','--quiet',action='store_true',default=False,\
+            help="quiet mode, only report errors to terminal screen")
+    parser.add_argument('input', nargs='*',\
+            help='the input folder(s)')
+    parser.add_argument('--no_concat', action='store_true', default=False,\
+            help="disable concatenation of input files")
+    parser.add_argument('--continue_on_error', action='store_true', default=False,\
+            help="continue processing accessions even if 1 fails")
+    parser.add_argument('--mediaconch_policy', default="",\
+            help="run input/output validation against specified mediaconch policy at path")
+    parser.add_argument('--no_input_validation', action='store_true',\
+            default=False, help="disable mediaconch file validation on input files")
+    parser.add_argument('--no_output_validation', action='store_true', default=False,\
+            help="disable mediaconch file validation on output files")
+    parser.add_argument('--make_test_files', action='store_true', default=False,\
+            help="create test output files using ffmpeg")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
@@ -308,6 +333,17 @@ def init_kwargs():
     kwargs.output_validation = operator.not_(args.no_output_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+    '''
+    next lines set console output verbosity
+    running script with both -qv is possible, but the -v will override the -q
+    log file unaffected by either choice, logs debug and up
+    '''
+    if args.verbose:
+        kwargs.print_loglevel = logging.DEBUG
+    elif args.quiet:
+        kwargs.print_loglevel = logging.WARNING
+    else:
+        kwargs.print_loglevel = logging.INFO
     return kwargs
 
 def main():
@@ -319,11 +355,10 @@ def main():
     '''
     kwargs = init_kwargs()
     kwargs = init_config(kwargs)
-    kwargs.log = init_log(kwargs)
+    init_log(kwargs)
     startup_ok = verify_startup(kwargs)
     if not startup_ok:
-        msg = "ERROR: startup failed"
-        log(kwargs.log, msg)
+        logging.error("startup failed")
         kwargs.config.lockfile.unlink()
         quit()
     '''
@@ -346,7 +381,7 @@ def main():
         filemaker_connection, cursor = fm.init_connection(kwargs)
         filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
         if not filemaker_ok:
-            log(kwargs.log,"ERROR: FileMaker record not found for " + accession)
+            logging.error("FileMaker record not found for %s", accession)
             kwargs.config.lockfile.unlink()
             quit()
         else:
@@ -354,12 +389,10 @@ def main():
             do input validation on each file, if requested
             '''
             if kwargs.input_validation:
-                log(kwargs.log,"INFO: running mediaconch policies against input files to determine valid inputs")
-                accession_mediaconch_policy, logs = file_validation.validate_input(accession, ingests[accession], kwargs)
-                for _log in logs:
-                    log(kwargs.log,_log)
+                logging.info("running mediaconch policies against input files to determine valid inputs")
+                accession_mediaconch_policy = file_validation.validate_input(accession, ingests[accession], kwargs)
                 if not accession_mediaconch_policy:
-                    log(kwargs.log,"ERROR: mediainfo input validation failed for accession " + str(accession) + ", quitting")
+                    logging.error("mediainfo input validation failed for accession %s, quitting", str(accession))
                     kwargs.config.lockfile.unlink()
                     quit()
                 else:
@@ -369,11 +402,11 @@ def main():
             '''
             processing_ok = process_accession(accession, ingests[accession], cursor, filemaker_connection, kwargs)
             if not processing_ok:
-                log(kwargs.log,"ERROR: processing for accession " + accession + " failed. See log for details")
+                logging.error("processing for accession %s failed. See log for details",str(accession))
                 if kwargs.continue_on_error:
                     pass
                 else:
-                    log(kwargs.log,"INFO: script instructed to quit on processing error. Exiting...")
+                    logging.info("script instructed to quit on processing error. Exiting...")
                     break
             else:
                 '''
@@ -381,7 +414,7 @@ def main():
                 '''
                 if kwargs.output_validation:
                     outputs_ok = file_validation.validate_output(accession, ingests[accession], kwargs)
-                log(kwargs.log,"INFO: accession " + accession + " processed successfully")
+                logging.info("accession %s processed successfully", accession)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":
