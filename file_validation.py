@@ -4,6 +4,9 @@ handles mediaconch file validation
 import pathlib
 import util
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
 
 def load_mediaconch_policies(kwargs):
     '''
@@ -16,7 +19,7 @@ def load_mediaconch_policies(kwargs):
         if str(child.parent) == str(true_parent):
             mediaconch_policies.append(child)
     if not mediaconch_policies:
-        print("ERROR: no mediaconch policies found at config path: " + str(kwargs.config.mediaconchas))
+        logger.error("no mediaconch policies found at config path: %s", str(kwargs.config.mediaconchas))
         return False
     return mediaconch_policies
 
@@ -37,31 +40,28 @@ def validate_input(accession, files, kwargs):
     logs = []
     for policy in mediaconch_policies:
         for file in files:
-            print("testing " + str(file) + " against " + str(policy))
+            logger.info("testing %s against %s", str(file), str(policy))
             output = subprocess.run(['mediaconch','-p',policy,file], capture_output=True)
-            print(output.returncode)
-            print(output.stdout)
-            print(output.stderr)
-            if not output.returncode == 0:
-                logs.append("ERROR: mediaconch returned a non-zero exit code")
-                return False, logs
-            elif not "pass" in str(output.stdout):
-                logs.append("ERROR: mediaconch input validation failed for: " + str(file))
-                logs.append(str(output.stdout))
-                return False, logs
+            logger.debug(output.returncode)
+            logger.debug(output.stdout)
+            logger.debug(output.stderr)
+            if not str(output.stdout).startswith("pass"):
+                logger.error("mediaconch input validation failed for: %s", str(file))
+                logger.error(str(output.stdout))
+                return False
             else:
-                logs.append("INFO: mediaconch input validation passed for: " + str(file))
+                logger.info("mediaconch input validation passed for: %s", str(file))
                 logs.append(str(output.stdout))
                 policy_passes.append(file)
         if policy_passes:
-            logs.append("INFO: mediaconch input validation passed for " + str(accession))
-            logs.append("INFO: input/output mediaconch policy is " + str(policy))
+            logger.info("mediaconch input validation passed for %s", str(accession))
+            logger.info("input/output mediaconch policy is %s", str(policy))
             accession_mediaconch_policy = policy
-            return accession_mediaconch_policy, logs
+            return accession_mediaconch_policy
         else:
             continue
-    logs.append("ERROR: mediaconch unable to pass input validation for accession " + str(accession))
-    return False, logs
+    logger.error("mediaconch unable to pass input validation for accession %s", str(accession))
+    return False
 
 def main():
     '''
