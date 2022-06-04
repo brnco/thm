@@ -1,16 +1,69 @@
 '''
 handles all transcodes and concatenations
 '''
+import sys
+import os
+import asyncio
+from asyncio.subprocess import PIPE
 import subprocess
 import logging
 logger = logging.getLogger(__name__)
+
+@asyncio.coroutine
+def read_stream_and_display(stream, display):
+    '''
+    read from stream line by line until EOF
+    display, capture lines
+    '''
+    output = []
+    while True:
+        line = yield from stream.readline()
+        if not line:
+            break
+        output.append(line)
+        display(line)
+    return b'\n'.join(output)
+
+@asyncio.coroutine
+def read_and_display(cmd):
+    '''
+    capture cmd stdout, stderr while also displaying them
+    '''
+    print(cmd)
+    proc = yield from asyncio.create_subprocess_shell(cmd,\
+            stdout=PIPE,stderr=PIPE)
+    try:
+        stdout, stderr = yield from asyncio.gather(\
+                read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
+                read_stream_and_display(proc.stderr, sys.stderr.buffer.write))
+    except Exception:
+        proc.kill()
+        raise
+    finally:
+        rc = yield from proc.wait()
+    return rc, stdout, stderr
 
 def run_ffmpeg(cmd):
     '''
     runs cmd for ffmpeg
     '''
     logger.info("running ffmpeg with below command:")
-    logger.info("%", cmd)
+    logger.info("%s", cmd)
+    if os.name == 'nt':
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
+    rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
+    loop.close()
+    logger.info(stderr)
+    print(type(stdout))
+    print(rc)
+    if rc == 0:
+        return True
+    else:
+        return False
+    '''
     try:
         proc = subprocess.Popen(cmd, shell=True)
         proc.communicate()
@@ -27,7 +80,7 @@ def run_ffmpeg(cmd):
         logger.error("ffmpeg encountered an error")
         logger.error("see ffmpeg stderr output below:")
         #logs.append(str(e.stdout))
-        return False
+        return False'''
 
 def make_mpeg_dvd(accession, file, kwargs):
     '''
