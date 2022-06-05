@@ -22,7 +22,7 @@ def read_stream_and_display(stream, display):
             break
         output.append(line)
         display(line)
-    return b'\n'.join(output)
+    return output
 
 @asyncio.coroutine
 def read_and_display(cmd):
@@ -56,9 +56,22 @@ def run_ffmpeg(cmd):
         loop = asyncio.get_event_loop()
     rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
     loop.close()
-    logger.info(stderr)
-    print(type(stdout))
-    print(rc)
+    #stderr = list(stderr)
+    print(type(stderr))
+    print(len(stderr))
+    print("ok parsing this output into fflog")
+    fflog = []
+    for line in stderr:
+        print(type(line))
+        input("eh")
+        if not line.startswith("frame"):
+            fflog.append(line)
+        else:
+            break
+    print(len(fflog))
+    logger.info(fflog)
+    logger.info(stderr[-1])
+    input("eh")
     if rc == 0:
         return True
     else:
@@ -103,12 +116,12 @@ def make_mp4_with_tc(accession, file, kwargs):
     mp4 = accession + ".mp4"
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
     ffmpeg_cmd = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
-    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd, kwargs)
+    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
     return True
 
-def make_mp4_with_logo(accession, file, kwargs):
+def make_mp4_with_logo(accession, file, kwarg):
     '''
     creates mp4 derivative with logo
     '''

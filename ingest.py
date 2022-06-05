@@ -123,7 +123,7 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with timecode
         accession_tc.mp4
         '''
-        logging("creating mp4 with burned-in timecode")
+        logging.info("creating mp4 with burned-in timecode")
         mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
             logging.error("creation of mp4 with burned-in timecode failed")
