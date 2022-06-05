@@ -56,22 +56,14 @@ def run_ffmpeg(cmd):
         loop = asyncio.get_event_loop()
     rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
     loop.close()
-    #stderr = list(stderr)
-    print(type(stderr))
-    print(len(stderr))
-    print("ok parsing this output into fflog")
     fflog = []
     for line in stderr:
-        print(type(line))
-        input("eh")
-        if not line.startswith("frame"):
+        if not line.startswith(b'frame'):
             fflog.append(line)
         else:
             break
-    print(len(fflog))
     logger.info(fflog)
     logger.info(stderr[-1])
-    input("eh")
     if rc == 0:
         return True
     else:
