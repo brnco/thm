@@ -21,10 +21,11 @@ xendatacopyto = /tub/brendan-project-archive/TheHistoryMakers/startup/Holding_Xe
 xcluster = /tub/brendan-project-archive/TheHistoryMakers/startup/HM
 
 [email]
-recipientlist = "dhjohnson1@gmail.com","mackeypaul1@gmail.com","bb@thehistorymakers.com","jlr@thehistorymakers.com","zs@thehistorymakers.com","brendan.emerson.coates@gmail.com"
+recipientlist = "brendan.emerson.coates@gmail.com","bcoates@computerhistory.org"
 senderaddress = thmvideoprocessing@gmail.com
 senderpwd = history1900
 server = smtp.gmail.com:587
+debug = "brendan.emerson.coates@gmail.com"
 
 [logs]
 logs_path = /home/brnco/code/thm/logs
