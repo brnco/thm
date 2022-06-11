@@ -18,15 +18,17 @@ import pathlib
 import operator
 import argparse
 import configparser
+
 '''
 import microservice scripts
 '''
 import util
 import filemaker_handler as fm
 import file_validation
+import send_email
 
 '''
-functions
+function definitions
 '''
 def get_files_for_ingest(kwargs):
     '''
@@ -350,71 +352,83 @@ def main():
     '''
     manages the running of the script
     '''
-    '''
-    initialization
-    '''
-    kwargs = init_kwargs()
-    kwargs = init_config(kwargs)
-    init_log(kwargs)
-    startup_ok = verify_startup(kwargs)
-    if not startup_ok:
-        logging.error("startup failed")
-        kwargs.config.lockfile.unlink()
-        quit()
-    '''
-    determine if script is running in test mode
-    '''
-    if kwargs.mtf:
-        make_test_files(kwargs)
-        quit()
-    '''
-    create ingest list
-    '''
-    ingests = get_files_for_ingest(kwargs)
-    '''
-    loop through ingest list
-    '''
-    for accession in sorted(ingests.keys()):
+    try:
         '''
-        check filemaker records for each accession
+        initialization
         '''
-        filemaker_connection, cursor = fm.init_connection(kwargs)
-        filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
-        if not filemaker_ok:
-            logging.error("FileMaker record not found for %s", accession)
+        kwargs = init_kwargs()
+        kwargs = init_config(kwargs)
+        init_log(kwargs)
+        startup_ok = verify_startup(kwargs)
+        if not startup_ok:
+            logging.error("startup failed")
             kwargs.config.lockfile.unlink()
             quit()
-        else:
+        '''
+        determine if script is running in test mode
+        '''
+        if kwargs.mtf:
+            make_test_files(kwargs)
+            quit()
+        '''
+        create ingest list
+        '''
+        ingests = get_files_for_ingest(kwargs)
+        '''
+        loop through ingest list
+        '''
+        for accession in sorted(ingests.keys()):
             '''
-            do input validation on each file, if requested
+            check filemaker records for each accession
             '''
-            if kwargs.input_validation:
-                logging.info("running mediaconch policies against input files to determine valid inputs")
-                accession_mediaconch_policy = file_validation.validate_input(accession, ingests[accession], kwargs)
-                if not accession_mediaconch_policy:
-                    logging.error("mediainfo input validation failed for accession %s, quitting", str(accession))
-                    kwargs.config.lockfile.unlink()
-                    quit()
-                else:
-                    kwargs.accession_mediaconch_policy = accession_mediaconch_policy
-            '''
-            actually process/ transcode/ hash the files
-            '''
-            processing_ok = process_accession(accession, ingests[accession], cursor, filemaker_connection, kwargs)
-            if not processing_ok:
-                logging.error("processing for accession %s failed. See log for details",str(accession))
-                if kwargs.continue_on_error:
-                    pass
-                else:
-                    logging.info("script instructed to quit on processing error. Exiting...")
-                    break
+            filemaker_connection, cursor = fm.init_connection(kwargs)
+            filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
+            if not filemaker_ok:
+                logging.error("FileMaker record not found for %s", accession)
+                kwargs.config.lockfile.unlink()
+                quit()
             else:
                 '''
-                do output validation on each file, if requested
+                do input validation on each file, if requested
                 '''
-                if kwargs.output_validation:
-                    outputs_ok = file_validation.validate_output(accession, ingests[accession], kwargs)
-                logging.info("accession %s processed successfully", accession)
+                if kwargs.input_validation:
+                    logging.info("running mediaconch policies against input files to determine valid inputs")
+                    accession_mediaconch_policy = file_validation.validate_input(accession, \
+                            ingests[accession], kwargs)
+                    if not accession_mediaconch_policy:
+                        logging.error("mediainfo input validation failed for accession %s, quitting", \
+                                str(accession))
+                        kwargs.config.lockfile.unlink()
+                        quit()
+                    else:
+                        kwargs.accession_mediaconch_policy = accession_mediaconch_policy
+                '''
+                actually process/ transcode/ hash the files
+                '''
+                processing_ok = process_accession(accession, \
+                        ingests[accession], cursor, filemaker_connection, kwargs)
+                if not processing_ok:
+                    logging.error("processing for accession %s failed. See log for details",str(accession))
+                    if kwargs.continue_on_error:
+                        pass
+                    else:
+                        logging.info("script instructed to quit on processing error. Exiting...")
+                        break
+                else:
+                    '''
+                    do output validation on each file, if requested
+                    '''
+                    if kwargs.output_validation:
+                        outputs_ok = file_validation.validate_output(accession, ingests[accession], kwargs)
+                    logging.info("accession %s processed successfully", accession)
+                    #send_email("processing successful for " + accession, \
+                            #logging.getLoggerClass().root.handlers[0].baseFilename)
+    except Exception as e:
+        logging.error("processing of accession %s unsuccessful", accession)
+        logging.error("ingest.py encountered an error:")
+        logging.error(str(e))
+        #send_email("processing unsuccessful for " + accession, \
+                #logging.getLoggerClass().root.handlers[0].baseFilename)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":
