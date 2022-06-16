@@ -4,7 +4,33 @@ This repository contains scripts and configurations to process preservation file
 
 # Installation
 
-clone the repository to your local machine
+## Prerequisites
+
+### Git
+
+Download official Windows build here: https://git-scm.com/download/win
+ 
+Install using the Git-[version].exe file, using the default/ pre-filled options
+
+### Python
+
+Download official Python 3.x build for Windows here: https://www.python.org/downloads/windows/
+
+Open Downloads folder, locate python3.x.exe file, right-click and select "Run as Administrator" from pop-up menu
+
+IMPORTANT - during install, select "Add Python to environment variables" option
+
+#### test the Python install
+
+open a new instance of Powershell, type "python" and hit enter (type "exit()" and hit enter to exit the Python interperator shell that was opened)
+
+## connect to GitHub
+
+Git is version control software for developers - GitHub is a website that integrates Git with other features that developers find handy. The code for this project is hosted on GitHub, and we'll use Git to download a copy of that code to the machine running the video processing, and upload back to GitHub with any changes.
+
+GitHub only supports SSH authentication these days, follow thier guide for setting that up here: https://docs.github.com/en/authentication/connecting-to-github-with-ssh
+
+Once SSH is set up, do an SSH clone of the repo to the video processing machine. 
 
 # Configuration
 
