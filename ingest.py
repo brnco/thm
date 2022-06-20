@@ -13,7 +13,6 @@ import re
 import time
 import logging
 import random
-import fcntl
 import pathlib
 import operator
 import argparse
@@ -23,9 +22,10 @@ import configparser
 import microservice scripts
 '''
 import util
+import transcodes
 import filemaker_handler as fm
 import file_validation
-import send_email
+from send_email import send_email
 
 '''
 function definitions
@@ -98,7 +98,7 @@ def move_files(accession, files, kwargs):
     logging.info("moving files from processing dir to preservation")
     '''
     for file in files:
-    subprocess.run(rsync file prservation)
+    subprocess.run(robocopy Z:\source D:\destination file.mov)
     '''
     return True
 
@@ -119,7 +119,6 @@ def make_derivatives(accession, input_files, kwargs):
     '''
     manages derivative creation
     '''
-    import transcodes
     for file in input_files:
         '''
         mp4 with timecode
@@ -144,7 +143,7 @@ def make_derivatives(accession, input_files, kwargs):
         accession_dvd.mpeg
         '''
         logging.info("creating mpeg DVD file")
-        mpeg_dvd_ok = transcodes.make_mpeg(accession, file, kwargs)
+        mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, file, kwargs)
         if not mpeg_dvd_ok:
             logging.error("creation of mpeg DVD file failed")
             return False
@@ -172,7 +171,7 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     input is list of raw files in accession directory
     output is list of single concatenated file, named for accession_pres.mov
     '''
-    import transcodes
+    '''
     accession_fullpath = kwargs.config.raw_captures / accession
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
@@ -182,9 +181,12 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
                 logging.error("concatenation failed")
                 return False
     '''
+    '''
     make derivatives in transcode script
     '''
-    files = make_derivatives(accession, files, kwargs)
+    files = [accession + "_pres.mov"]
+    with util.cd(str(accession_fullpath)):
+        files = make_derivatives(accession, files, kwargs)
     if not files:
         logging.error("derivative creation failed")
         return False
@@ -231,6 +233,7 @@ def verify_startup(kwargs):
     if already_running:
         logging.error("makevideos is already running")
         return False
+    files_done_copying = startup.verify_file_copy(kwargs)
     drives_ok = startup.verify_config_drivepaths(kwargs)
     if not drives_ok:
         logging.error("drives not found")

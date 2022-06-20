@@ -9,16 +9,37 @@ def verify_already_running(kwargs):
     returns True if logs/makevideos.lock exists
     '''
     if kwargs.config.lockfile.is_file():
-        logger.error("makevideos is already running")
-        print("Ensure that makevideos isn't ready running by typing this into terminal: ")
-        print("ps aux | grep python")
-        print("if no python processes are found, delete makevideos lock file located at:")
-        print(kwargs.config.lockfile)
+        logger.error("ingest.py may already be running")
+        print("Ensure that ingest.py isn't already running")
+        print("This error may be caused by improper shutdown of ingest.py")
+        print("Check the most recent log file located at:")
+        print(kwargs.config.logs_path)
+        print("If ingest.py isn't already running, you can re-run it now as normal")
         return True
     else:
         logger.info("creating lock file %s", str(kwargs.config.lockfile))
         kwargs.config.lockfile.touch()
         return False
+
+def verify_file_copying(kwargs):
+    '''
+    checks if something is copying into the raw capture dir
+
+    does so by renaming the file to a temporary filename, then naming back
+    on Windows, files can only be used by 1 IO process at a time
+    so, if a file is copying, renaming raises OSError, script tries again 120seconds later
+    '''
+    for file in os.listdir(kwargs.config.raw_captures):
+        while True:
+            try:
+                tmp_file = file + "_"
+                os.rename(file, tmp_file)
+                os.rename(tmp_file, file)
+                time.sleep(0.05)
+                break
+            except OSError:
+                time.sleep(120)
+    return True
 
 def verify_raw_captures(kwargs):
     '''
@@ -29,7 +50,6 @@ def verify_raw_captures(kwargs):
     if kwargs.input:
         for accession in kwargs.input:
             accession_path = kwargs.config.raw_captures / accession
-            print(accession_path)
             raw_captures = [path for path in accession_path.glob('*.*') \
                 if not any(part.startswith('.') for part in path.parts) \
                 and not any(part.startswith('Thumbs.db') for part in path.parts)]
