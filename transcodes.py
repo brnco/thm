@@ -3,6 +3,7 @@ handles all transcodes and concatenations
 '''
 import sys
 import os
+import pathlib
 import asyncio
 from asyncio.subprocess import PIPE
 import subprocess
@@ -31,7 +32,7 @@ def read_and_display(cmd):
     '''
     print(cmd)
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
                 read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
@@ -49,6 +50,7 @@ def run_ffmpeg(cmd):
     '''
     logger.info("running ffmpeg with below command:")
     logger.info("%s", cmd)
+    '''
     if os.name == 'nt':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
@@ -56,6 +58,9 @@ def run_ffmpeg(cmd):
         loop = asyncio.get_event_loop()
     rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
     loop.close()
+    '''
+    #asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    rc, stdout, stderr = asyncio.run(read_and_display(cmd))
     fflog = []
     for line in stderr:
         if not line.startswith(b'frame'):
@@ -87,14 +92,20 @@ def run_ffmpeg(cmd):
         #logs.append(str(e.stdout))
         return False'''
 
-def make_mpeg_dvd(accession, file, kwargs):
+def make_mpg_dvd(accession, file, kwargs):
     '''
     make mpg for dvd
     '''
     logger.info("creating mpeg derivative for DVD")
-    #endfile.mpeg + timecode
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
-    ffmpeg_cmd = 'ffmpeg -i concat.mov -target ntsc-dvd -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + ',scale=720:480" -threads 0 ' + mpeg
+    mpg = str(pathlib.Path(file).parent / accession) + "_dvd.mpg"
+    print(mpg)
+    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + \
+            ": timecode='00\:00\:00\:00'" + \
+            ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
+    ffmpeg_cmd = "ffmpeg -i '" + file + \
+            "' -target ntsc-dvd -map 0:v:0 -map 0:a -ac 2 \
+            -b:v 5000k -vtag xvid -vf " + drawtext + ',scale=720:480" -threads 0 -y ' + \
+            mpg
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd, kwargs)
     if not ffmpeg_ok:
         return False
@@ -105,27 +116,48 @@ def make_mp4_with_tc(accession, file, kwargs):
     creates mp4 with burned in timecode
     '''
     logger.info("creating mp4 derivative with burned-in timecode")
-    mp4 = accession + ".mp4"
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ": timecode='00\:\:00\:00\:00'" + ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x0000009    9'
-    ffmpeg_cmd = 'ffmpeg -i concat.mov -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + ',scale=420:270" -c:a aac -ar 44100 -map_channel 0.1.0:0.1 -map_channel 0.2.0:0.1 -threads 0 ' + mp4
+    mp4 = str(pathlib.Path(file).parent / accession) + "_accs_burn.mp4"
+    print(mp4)
+    segment = accession.split("_")[-1]
+    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + \
+            ": timecode='" + segment[-2:] + "\:00\:00\:00'" + \
+            ': r=29.97: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: fontsize=72: box=1: boxcolor=0x00000099'
+    ffmpeg_cmd = "ffmpeg -i '" + file + \
+            "' -c:v mpeg4 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf " + drawtext + \
+            ',scale=480:270" -c:a aac -ar 44100 -map 0:v -map 0:a -threads 0 -y ' + \
+            mp4
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
     return True
 
-def make_mp4_with_logo(accession, file, kwarg):
+def make_mp4_with_logo(accession, file, kwargs):
     '''
     creates mp4 derivative with logo
     '''
     logger.info("creating mp4 derivative with logo")
-    return str(accession) + "-logo.mp4", logs
+    mp4 = str(pathlib.Path(file).parent / accession) + "_accs_logo.mp4"
+    print(mp4)
+    segment = accession.split("_")[-1]
+    ffmpeg_cmd = "ffmpeg -i '" + file + "' -i '" + kwargs.config.watermark_white + "'" \
+            + ' -filter_complex "scale=480:270,overlay=0:0;[0:a:0][0:a:1]amerge=inputs=2[a]" \
+            -c:v libx264 -preset fast -b:v 700k -r 29.97 -pix_fmt yuv420p -c:a aac -ac 2 \
+            -map 0:v -map "[a]" -timecode ' + segment[-2:] + ':00:00:00 -threads 0 -y ' + \
+            mp4
+    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
+    if not ffmpeg_ok:
+        return False
+    return True
 
 def make_mxf_mezz(accession, file, kwargs):
     '''
     creates mxf mezzanine file
     '''
     logger.info("creating mxf mezzanine file")
-    return str(accession) + ".mxf", logs
+    ffmpeg_cmd = "ffmpeg -i '" + file + \
+            "' -c:v libx264 -pix_fmt yuv422p -x264opts tff=1 -c:a pcm_s24le -r 48000 -y "\
+            + str(accession) + "_mezz.mxf"
+    return str(accession) + "_mezz.mxf"
 
 def concatenate_raw_captures(accession, files, kwargs):
     '''
@@ -140,7 +172,8 @@ def concatenate_raw_captures(accession, files, kwargs):
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + ':00:00:00 concat.mov'
+    ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -ignore_unknown -timecode ' + \
+            segment[-2:] + ':00:00:00 concat.mov'
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")

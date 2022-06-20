@@ -26,7 +26,7 @@ import util
 import filemaker_handler as fm
 import file_validation
 import send_email
-
+import transcodes
 '''
 function definitions
 '''
@@ -119,7 +119,6 @@ def make_derivatives(accession, input_files, kwargs):
     '''
     manages derivative creation
     '''
-    import transcodes
     for file in input_files:
         '''
         mp4 with timecode
@@ -133,24 +132,25 @@ def make_derivatives(accession, input_files, kwargs):
         '''
         mp4 with watermark
         accession_wm.mp4
-        '''
+        
         logging.info("creating mp4 with burned-in watermark")
         mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
         if not mp4_with_logo_ok:
             logging.error("creation of mp4 with watermark failed")
             return False
         '''
+        '''
         mpeg file for DVD
         accession_dvd.mpeg
         '''
         logging.info("creating mpeg DVD file")
-        mpeg_dvd_ok = transcodes.make_mpeg(accession, file, kwargs)
+        mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, file, kwargs)
         if not mpeg_dvd_ok:
             logging.error("creation of mpeg DVD file failed")
             return False
         '''
         mezzanine mxf
-        mezz.mxf
+        accession_mezz.mxf
         '''
         logging.info("creating mxf mezzanine")
         mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
@@ -162,9 +162,7 @@ def make_derivatives(accession, input_files, kwargs):
 def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     manages processing of single accession
-    '''
-    logging.info("Processing accession %s", accession)
-    '''
+    
     concatenates files by default
     flag for --no_concatenation evaluated here
 
@@ -172,7 +170,7 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     input is list of raw files in accession directory
     output is list of single concatenated file, named for accession_pres.mov
     '''
-    import transcodes
+    logging.info("Processing accession %s", accession)
     accession_fullpath = kwargs.config.raw_captures / accession
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
