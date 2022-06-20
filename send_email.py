@@ -1,14 +1,15 @@
 #sends email from thm gmail acct
 
-import os
-import smtplib
-from email.message import EmailMessage
-import configparser
+
 
 def send_email(message,attachment_path,debug=False):
     '''
     sends an email using config from video-post-processing
     '''
+    import os
+    import smtplib
+    from email.message import EmailMessage
+    import configparser
     '''
     init config info from video-post-processing-config
     '''
@@ -43,7 +44,7 @@ def send_email(message,attachment_path,debug=False):
             txt = txt + "\n\n attachment too big to include. Find it at the following location: " + attachment
     '''
     actually send the email
-    
+
     with smtplib.SMTP(email_server) as server:
         server.send_message(msg)
     '''
@@ -54,4 +55,3 @@ def send_email(message,attachment_path,debug=False):
     smtp.login(sender_email,sender_pwd)
     smtp.sendmail(sender_email,recipients,msg.as_string())
     smtp.close()
-    

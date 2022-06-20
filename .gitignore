@@ -1,6 +1,7 @@
 *.txt
 filemaker_handler.py
-send-email.py
+send_email.py
 processing.pid
 thm-test-backups/
 .DS_Store
+Thumbs.db
