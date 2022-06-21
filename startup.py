@@ -2,6 +2,8 @@
 startup functions for thm makevideos script
 '''
 import logging
+import pathlib
+import time
 logger = logging.getLogger(__name__)
 
 def verify_already_running(kwargs):
@@ -29,16 +31,19 @@ def verify_file_copying(kwargs):
     on Windows, files can only be used by 1 IO process at a time
     so, if a file is copying, renaming raises OSError, script tries again 120seconds later
     '''
-    for file in os.listdir(kwargs.config.raw_captures):
-        while True:
-            try:
-                tmp_file = file + "_"
-                os.rename(file, tmp_file)
-                os.rename(tmp_file, file)
-                time.sleep(0.05)
-                break
-            except OSError:
-                time.sleep(120)
+    logging.info("verifying that no files are being copied into raw_captures")
+    for file in kwargs.config.raw_captures.iterdir():
+        if file.is_file():
+            while True:
+                try:
+                    _tmp_file = str(kwargs.config.raw_captures) + file + "_"
+                    tmp_file = pathlib.Path(_tmp_file)
+                    file.rename(tmp_file)
+                    tmp_file.rename(file)
+                    time.sleep(0.05)
+                    break
+                except OSError:
+                    time.sleep(120)
     return True
 
 def verify_raw_captures(kwargs):

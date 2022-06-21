@@ -26,6 +26,7 @@ import transcodes
 import filemaker_handler as fm
 import file_validation
 from send_email import send_email
+import startup
 
 '''
 function definitions
@@ -124,11 +125,13 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with timecode
         accession_tc.mp4
         '''
+        '''
         logging.info("creating mp4 with burned-in timecode")
         mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
             logging.error("creation of mp4 with burned-in timecode failed")
             return False
+        '''
         '''
         mp4 with watermark
         accession_wm.mp4
@@ -171,8 +174,8 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     input is list of raw files in accession directory
     output is list of single concatenated file, named for accession_pres.mov
     '''
-    '''
     accession_fullpath = kwargs.config.raw_captures / accession
+    '''
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
@@ -228,12 +231,11 @@ def verify_startup(kwargs):
     '''
     manages startup of script
     '''
-    import startup
     already_running = startup.verify_already_running(kwargs)
     if already_running:
         logging.error("makevideos is already running")
         return False
-    files_done_copying = startup.verify_file_copy(kwargs)
+    files_done_copying = startup.verify_file_copying(kwargs)
     drives_ok = startup.verify_config_drivepaths(kwargs)
     if not drives_ok:
         logging.error("drives not found")

@@ -75,7 +75,7 @@ def make_mpg_dvd(accession, file, kwargs):
     logger.info("creating mpeg derivative for DVD")
     mpeg = accession + "_dvd.mpg"
     segment = accession.split("_")[-1]
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:]\
+    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
         "\:00\:00\:00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + \
         ',scale=720:480" -threads 0 ' + mpeg
@@ -102,13 +102,13 @@ def make_mp4_with_tc(accession, file, kwargs):
         return False
     return True
 
-def make_mp4_with_logo(accession, file, kwarg):
+def make_mp4_with_logo(accession, file, kwargs):
     '''
     creates mp4 derivative with logo
     '''
     logger.info("creating mp4 derivative with logo")
     mp4 = accession + "_accs_logo.mp4"
-    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + kwargs.config.watermark_white + \
+    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex overlay=0:0,scale=420:270 ' \
         + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 ' + mp4
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
