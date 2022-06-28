@@ -23,7 +23,7 @@ import microservice scripts
 '''
 import util
 import transcodes
-import filemaker_handler as fm
+#import filemaker_handler as fm
 import file_validation
 from send_email import send_email
 import startup
@@ -244,10 +244,11 @@ def verify_startup(kwargs):
     if not timecode_and_watermark_files_ok:
         logging.error("timecode and/or watermark files not found")
         return False
-    raw_captures_files_ok = startup.verify_raw_captures(kwargs)
-    if not raw_captures_files_ok:
-        logging.error("files not found in raw capture directory")
-        return False
+    if not kwargs.mtf:
+        raw_captures_files_ok = startup.verify_raw_captures(kwargs)
+        if not raw_captures_files_ok:
+            logging.error("files not found in raw capture directory")
+            return False
     return True
 
 def init_log(kwargs):
@@ -256,6 +257,7 @@ def init_log(kwargs):
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
+    pathlib.Path(log_filepath).touch()
     message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
             datefmt='%Y-%m-%d %H:%M:%S')
     global logger
@@ -374,6 +376,8 @@ def main():
         '''
         if kwargs.mtf:
             make_test_files(kwargs)
+            logging.info("script started in test mode, exiting...")
+            kwargs.config.lockfile.unlink()
             quit()
         '''
         create ingest list

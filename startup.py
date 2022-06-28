@@ -92,7 +92,7 @@ def verify_config_drivepaths(kwargs):
     '''
     logger.info("verifying that drives are mounted")
     if not kwargs.config.sunnas.is_dir():
-        logger.error("The video script is unable to run because SUNNAS is not mounted as expected." \
+        logger.error("The video script is unable to run because SUNNAS is not mounted as expected. " \
         "Please mount SUNNAS on XCluster at %s", str(kwargs.config.sunnas))
         return False
     if not kwargs.config.sunnascopyto.is_dir():
@@ -100,7 +100,7 @@ def verify_config_drivepaths(kwargs):
         "Please mount SUNNAS on XCluster and ensure this directory exists ", str(kwargs.config.sunnascopyto))
         return False
     if not kwargs.config.xendata.is_dir():
-        logger.error("The video script is unable to run because Xendata is not mounted as expected." \
+        logger.error("The video script is unable to run because Xendata is not mounted as expected. " \
         "Please mount Xendata on XCluster at ", str(kwargs.config.xendata))
         return False
     if not kwargs.config.xendatacopyto.is_dir():
