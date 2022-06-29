@@ -23,7 +23,7 @@ import microservice scripts
 '''
 import util
 import transcodes
-#import filemaker_handler as fm
+import filemaker_handler as fm
 import file_validation
 from send_email import send_email
 import startup
