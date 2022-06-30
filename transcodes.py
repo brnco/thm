@@ -17,17 +17,29 @@ def read_stream_and_display(stream, display):
     '''
     output = []
     while True:
-        line = yield from stream.readline()
-        if not line:
+        try:
+            line = yield from stream.readline()
+            if not line:
+                break
+                output.append(line)
+                display(line)
+        except ValueError:
+            #enters this condition if line > limit
+            continue
+        else:
             break
-        output.append(line)
-        display(line)
     return output
 
 @asyncio.coroutine
 def read_and_display(cmd):
     '''
     capture cmd stdout, stderr while also displaying them
+
+    limit here is used to limit the amount of output text
+    we need it because ffmpeg outputs a lot of text data
+    keep the 1024 * to start, second number is number of bytes
+    total limit is expressed in kibibytes (roughly same as kilobytes)
+    default is 256KiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
             limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
@@ -78,7 +90,7 @@ def make_mpg_dvd(accession, file, kwargs):
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
         "\:00\:00\:00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + \
-        ',scale=720:480" -threads 0 ' + mpeg
+        ',scale=720:480" -threads 0 -y ' + mpeg
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -96,7 +108,7 @@ def make_mp4_with_tc(accession, file, kwargs):
         "\:00\:00\:00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + file + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + \
-        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 ' + mp4
+        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + mp4
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -110,7 +122,7 @@ def make_mp4_with_logo(accession, file, kwargs):
     mp4 = accession + "_accs_logo.mp4"
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex overlay=0:0,scale=420:270 ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 ' + mp4
+        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + mp4
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -123,7 +135,7 @@ def make_mxf_mezz(accession, file, kwargs):
     logger.info("creating mxf mezzanine file")
     mxf = accession + "_mezz.mxf"
     ffmpeg_cmd = 'ffmpeg -i ' + file + \
-        ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 ' + mxf
+        ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + mxf
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -143,7 +155,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
     ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
-        ':00:00:00 concat.mov'
+        ':00:00:00 -y concat.mov'
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")

@@ -14,6 +14,7 @@ import time
 import logging
 import random
 import pathlib
+import traceback
 import operator
 import argparse
 import configparser
@@ -136,20 +137,24 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with watermark
         accession_wm.mp4
         '''
+        '''
         logging.info("creating mp4 with burned-in watermark")
         mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
         if not mp4_with_logo_ok:
             logging.error("creation of mp4 with watermark failed")
             return False
         '''
+        '''
         mpeg file for DVD
         accession_dvd.mpeg
+        '''
         '''
         logging.info("creating mpeg DVD file")
         mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, file, kwargs)
         if not mpeg_dvd_ok:
             logging.error("creation of mpeg DVD file failed")
             return False
+        '''
         '''
         mezzanine mxf
         mezz.mxf
@@ -169,7 +174,6 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     concatenates files by default
     flag for --no_concatenation evaluated here
-
     files variable changes value based on output from transcodes:
     input is list of raw files in accession directory
     output is list of single concatenated file, named for accession_pres.mov
@@ -436,6 +440,7 @@ def main():
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(str(e))
+        logging.error(traceback.format_exc())
         #send_email("processing unsuccessful for " + accession, \
                 #logging.getLoggerClass().root.handlers[0].baseFilename)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
