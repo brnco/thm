@@ -163,7 +163,7 @@ def make_derivatives(accession, input_files, kwargs):
             return False
     return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
 
-def process_accession(accession, files, cursor, filemaker_connection, kwargs):
+def process_accession(accession, files, kwargs):
     '''
     manages processing of single accession
     '''
@@ -194,34 +194,7 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     if not files:
         logging.error("derivative creation failed")
         return False
-    '''
-    create checksums for each derivative
-    hashes is dictionary of full_filepath:hash pairs
-    '''
-    hashes = hash_files(files, kwargs)
-    if not hashes:
-        logging.error("file hashing failed")
-        return False
-    '''
-    send checksums to filemaker
-    file transfers are validated post-ingest by Mark Strecker's Java app
-    '''
-    kwargs.id = accession
-    for filetype in hashes.keys():
-        kwargs.hash = hashes[file]
-        kwargs.filename = file.name
-        fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
-        if not fm_updates_ok:
-            logging.error("FileMaker update for hashes failed")
-            return False
-    '''
-    send file data to various places
-    '''
-    files_moved_ok = move_files(accession, files, kwargs)
-    if not files_moved_ok:
-        logging.error("file transfer to preservation storage failed")
-        return False
-    return True
+    return files
 
 def make_test_files(kwargs):
     '''
@@ -384,6 +357,8 @@ def main():
             quit()
         '''
         create ingest list
+        technically ingests dictionary with list of full filepaths for each accession folder
+        A2022_012_001_001:['file1.mov','file2.mov']
         '''
         ingests = get_files_for_ingest(kwargs)
         '''
@@ -415,10 +390,11 @@ def main():
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
                 '''
-                actually process/ transcode/ hash the files
+                actually process/ transcode the files
+                processing_ok variable is list of full paths to derivative files
                 '''
-                processing_ok = process_accession(accession, \
-                        ingests[accession], cursor, filemaker_connection, kwargs)
+                files = processing_ok = process_accession(accession, \
+                        ingests[accession], kwargs)
                 if not processing_ok:
                     logging.error("processing for accession %s failed. See log for details",str(accession))
                     if kwargs.continue_on_error:
@@ -426,12 +402,39 @@ def main():
                     else:
                         logging.info("script instructed to quit on processing error. Exiting...")
                         break
+                '''
+                do output validation on each file, if requested
+                '''
+                if kwargs.output_validation:
+                    outputs_ok = file_validation.validate_output(accession, files, kwargs)
+                '''
+                create checksums for each derivative
+                hashes is dictionary of full_filepath:hash pairs
+                '''
+                hashes = hash_files(files, kwargs)
+                if not hashes:
+                    logging.error("file hashing failed")
+                    return False
+                '''
+                send checksums to filemaker
+                file transfers are validated post-ingest by Mark Strecker's Java app
+                '''
+                kwargs.id = accession
+                for filetype in hashes.keys():
+                    kwargs.hash = hashes[file]
+                    kwargs.filename = file.name
+                    fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
+                    if not fm_updates_ok:
+                        logging.error("FileMaker update for hashes failed")
+                        return False
+                '''
+                send file data to various places
+                '''
+                files_moved_ok = move_files(accession, files, kwargs)
+                if not files_moved_ok:
+                    logging.error("file transfer to preservation storage failed")
+                    return False
                 else:
-                    '''
-                    do output validation on each file, if requested
-                    '''
-                    if kwargs.output_validation:
-                        outputs_ok = file_validation.validate_output(accession, ingests[accession], kwargs)
                     logging.info("accession %s processed successfully", accession)
                     #send_email("processing successful for " + accession, \
                             #logging.getLoggerClass().root.handlers[0].baseFilename)
