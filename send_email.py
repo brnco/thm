@@ -50,8 +50,6 @@ def send_email(message,attachment_path,debug=False):
     '''
     smtp = smtplib.SMTP(email_server)
     smtp.starttls()
-    print(sender_email)
-    print(sender_pwd)
     smtp.login(sender_email,sender_pwd)
     smtp.sendmail(sender_email,recipients,msg.as_string())
     smtp.close()

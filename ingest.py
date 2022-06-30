@@ -109,13 +109,16 @@ def hash_files(files, kwargs):
     creates portable SHA -1 hash for file
     '''
     logging.info("hashing files")
-    '''
-    dict = {}
-    for file in files:
-        hash = subprocess(shasum -p)
-        dict.file = hash
-    '''
-    return {"mov":"asdf1234","mp4":"lkjh0987"}
+    hashes = {}
+    cmd = "certutil -hashfile '" + file + "'"
+    output = subprocess.run(cmd, capture_output=True)
+    if output.returncode == 0:
+        lines = output.stdout.split(b"\r\n")
+        hash = str(lines[1].strip())
+        hashes[file] = hash
+    else:
+        return False
+        return hashes
 
 def make_derivatives(accession, input_files, kwargs):
     '''
@@ -126,17 +129,14 @@ def make_derivatives(accession, input_files, kwargs):
         mp4 with timecode
         accession_tc.mp4
         '''
-        '''
         logging.info("creating mp4 with burned-in timecode")
         mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
         if not mp4_with_tc_ok:
             logging.error("creation of mp4 with burned-in timecode failed")
             return False
         '''
-        '''
         mp4 with watermark
         accession_wm.mp4
-        '''
         '''
         logging.info("creating mp4 with burned-in watermark")
         mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
@@ -144,17 +144,14 @@ def make_derivatives(accession, input_files, kwargs):
             logging.error("creation of mp4 with watermark failed")
             return False
         '''
-        '''
         mpeg file for DVD
         accession_dvd.mpeg
-        '''
         '''
         logging.info("creating mpeg DVD file")
         mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, file, kwargs)
         if not mpeg_dvd_ok:
             logging.error("creation of mpeg DVD file failed")
             return False
-        '''
         '''
         mezzanine mxf
         mezz.mxf
@@ -164,7 +161,7 @@ def make_derivatives(accession, input_files, kwargs):
         if not mxf_mezz_ok:
             logging.error("creation of mxf mezzanine failed")
             return False
-    return [mp4_with_tc_ok, mp4_with_logo_ok, mxf_mezz_ok]
+    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
 
 def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
@@ -176,10 +173,11 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     flag for --no_concatenation evaluated here
     files variable changes value based on output from transcodes:
     input is list of raw files in accession directory
+    input files have their full paths
     output is list of single concatenated file, named for accession_pres.mov
+    output is also full path
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
-    '''
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
@@ -188,10 +186,9 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
                 logging.error("concatenation failed")
                 return False
     '''
-    '''
     make derivatives in transcode script
     '''
-    files = [accession + "_pres.mov"]
+    #files = [accession + "_pres.mov"]
     with util.cd(str(accession_fullpath)):
         files = make_derivatives(accession, files, kwargs)
     if not files:
@@ -199,6 +196,7 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
         return False
     '''
     create checksums for each derivative
+    hashes is dictionary of full_filepath:hash pairs
     '''
     hashes = hash_files(files, kwargs)
     if not hashes:
@@ -210,8 +208,8 @@ def process_accession(accession, files, cursor, filemaker_connection, kwargs):
     '''
     kwargs.id = accession
     for filetype in hashes.keys():
-        kwargs.format_digital = filetype
-        kwargs.hash = hashes[filetype]
+        kwargs.hash = hashes[file]
+        kwargs.filename = file.name
         fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
         if not fm_updates_ok:
             logging.error("FileMaker update for hashes failed")
@@ -261,7 +259,6 @@ def init_log(kwargs):
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
-    pathlib.Path(log_filepath).touch()
     message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
             datefmt='%Y-%m-%d %H:%M:%S')
     global logger
@@ -308,6 +305,8 @@ def init_config(kwargs):
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
     kwargs.config.mediaconchas = pathlib.Path(config.get('mediaconch','folder'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
+    kwargs.config.fm_username = config.get('filemaker','user')
+    kwargs.config.fm_pwd = config.get('filemaker','pwd')
     return kwargs
 
 def init_kwargs():
