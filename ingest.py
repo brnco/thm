@@ -286,7 +286,7 @@ def init_kwargs():
     '''
     initialize variables and arguments from command line
 
-    "kwargs" = KeyWordArguments - this is a single object/ dictionary that stores msot of our variables
+    "kwargs" = KeyWordArguments - this is a single object/ dictionary that stores most of our variables
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
     parser.add_argument('-v','--verbose', action='store_true',default=False,\

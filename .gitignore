@@ -1,6 +1,4 @@
 *.txt
-filemaker_handler.py
-send_email.py
 processing.pid
 thm-test-backups/
 .DS_Store

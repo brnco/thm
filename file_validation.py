@@ -27,6 +27,19 @@ def validate_output(accession, files, kwargs):
     '''
     validates output video files
     '''
+    logger.info("validating derivative files for %s", accession)
+    for file in files:
+        if file.endswith(".mov"):
+            logger.info("validating %s against mediaconch policy %s", % (file, kwargs.accession_mediaconch_policy))
+        elif file.endswith("_mezz.mxf"):
+            logger.info("validating %s against mediaconch policy %s", % (file, kwargs.config.mezz_policy))
+        elif file.endswith("_logo.mp4"):
+            logger.info("validating %s against mediaconch policy %s", % (file, kwargs.config.logo_policy))
+        elif file.endswith("_burn.mp4"):
+            logger.info("validating %s against mediaconch policy %s", % (file, kwargs.config.burn_policy))
+        elif file.endswith("_dvd.mpg"):
+            logger.info("validating %s against mediaconch policy %s", % (file, kwargs.config.dvd_policy))
+    return True
 
 def validate_input(accession, files, kwargs):
     '''
@@ -37,7 +50,6 @@ def validate_input(accession, files, kwargs):
     else:
         mediaconch_policies = [kwargs.accession_mediaconch_policy]
     policy_passes = []
-    logs = []
     for policy in mediaconch_policies:
         for file in files:
             logger.info("testing %s against %s", str(file), str(policy))
