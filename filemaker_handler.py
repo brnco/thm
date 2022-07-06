@@ -5,19 +5,24 @@ egg_path = '/Library/Python/2.7/site-packages/pyodbc-3.0.7-py2.7-macosx-10.11-in
 sys.path.append(egg_path)
 #import pyodbc
 import argparse
+#from makevideos import log
 
 def verify_record_exists(accession, cursor, kwargs):
     '''
     verifies that filemaker record exists for each accession
+    return True
     '''
-
     output = ''
     query = "select identifier from PBCoreInstantiation where identifier='" + accession + "'"
     cursor.execute(query)
     output = cursor.fetchone()
     if output:
+        log(kwargs.log,str(output),False)
         return True
     else:
+        msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
+        #subprocess.call(["python","send-email.py","-txt",msg,'-att',logfile])
+        log(kwargs.log,msg)
         return False
 
 def query_hash(accession, cursor, kwargs):
@@ -40,22 +45,17 @@ def update_hash(accession, cursor, filemaker_connection, kwargs):
     whole string in () needs to be enclosed in double quotes
     values for SQL commands need to be enclosed in single quotes
     '''
-    try:
-        query = "update PBCoreInstantiation set ShaDigest='" + kwargs.hash + "' where FileName='" + kwargs.filename + "'"
-        cursor.execute(query)
-        filemaker_connection.commit()
-    except:
-        return False
+    query = "update PBCoreInstantiation set ShaDigest='" + kwargs.hash + "' where filename='" + kwargs.filename + "'"
+    cursor.execute(query)
+    filemaker_connection.commit()
     return True
 
 def init_connection(kwargs):
     '''
     initalizes connection to filemaker
     '''
-    '''
-    filemaker_connection = pyodbc.connect("DRIVER={FileMaker ODBC};SERVER=;DATABASE=PBCore_Catalog;PORT=2399;UID=;PWD=;CHARSET=UTF-8")
+    filemaker_connection = pyodbc.connect("DRIVER={FileMaker ODBC};SERVER=;DATABASE=PBCore_Catalog;PORT=2399;UID=;PWD=;CHARSET=UTF-16")
     cursor = filemaker_connection.cursor()
-    '''
     filemaker_connection = True
     cursor = True
     return filemaker_connection, cursor
