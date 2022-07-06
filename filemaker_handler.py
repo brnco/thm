@@ -1,11 +1,8 @@
-#send hashes to filemaker
-#takes input args for hash and id of accession
-import sys
-egg_path = '/Library/Python/2.7/site-packages/pyodbc-3.0.7-py2.7-macosx-10.11-intel.egg'
-sys.path.append(egg_path)
-#import pyodbc
+#manage filemaker connection and operations
+import pyodbc
 import argparse
-#from makevideos import log
+import logging
+logger = logging.getLogger(__name__)
 
 def verify_record_exists(accession, cursor, kwargs):
     '''
@@ -17,12 +14,12 @@ def verify_record_exists(accession, cursor, kwargs):
     cursor.execute(query)
     output = cursor.fetchone()
     if output:
-        log(kwargs.log,str(output),False)
+        logger.info(output)
         return True
     else:
         msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
-        #subprocess.call(["python","send-email.py","-txt",msg,'-att',logfile])
-        log(kwargs.log,msg)
+        logger.error(output)
+        logger.error(msg)
         return False
 
 def query_hash(accession, cursor, kwargs):
@@ -54,10 +51,10 @@ def init_connection(kwargs):
     '''
     initalizes connection to filemaker
     '''
-    filemaker_connection = pyodbc.connect("DRIVER={FileMaker ODBC};SERVER=;DATABASE=PBCore_Catalog;PORT=2399;UID=;PWD=;CHARSET=UTF-16")
+    filemaker_connection = pyodbc.connect("DRIVER={FileMaker ODBC};SERVER=;DATABASE=PBCore_Catalog;PORT=2399;" \
+        "UID=" + kwargs.filemaker_user + ";PWD=" + kwargs.filemaker_pwd + ";CHARSET=UTF-16")
     cursor = filemaker_connection.cursor()
-    filemaker_connection = True
-    cursor = True
+    logger.info("connected to FileMaker successfully")
     return filemaker_connection, cursor
 
 def init():
