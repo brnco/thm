@@ -17,7 +17,7 @@ def verify_record_exists(accession, cursor, kwargs):
         logger.info(output)
         return True
     else:
-        msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
+        msg = "The video script is unable to run because there is not an accession record for " + accession + " in FileMaker"
         logger.error(output)
         logger.error(msg)
         return False
@@ -51,8 +51,10 @@ def init_connection(kwargs):
     '''
     initalizes connection to filemaker
     '''
-    filemaker_connection = pyodbc.connect("DRIVER={FileMaker ODBC};SERVER=;DATABASE=PBCore_Catalog;PORT=2399;" \
-        "UID=" + kwargs.filemaker_user + ";PWD=" + kwargs.filemaker_pwd + ";CHARSET=UTF-16")
+    conn_str = "DRIVER={FileMaker ODBC};SERVER=192.168.19.3;DATABASE=PBCore_Catalog;PORT=2399;" + \
+        "UID=" + kwargs.filemaker_user + ";PWD=" + kwargs.filemaker_pwd + ";CHARSET=UTF-16"
+    print(conn_str)
+    filemaker_connection = pyodbc.connect(conn_str)
     cursor = filemaker_connection.cursor()
     logger.info("connected to FileMaker successfully")
     return filemaker_connection, cursor

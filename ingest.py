@@ -278,8 +278,8 @@ def init_config(kwargs):
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
     kwargs.config.mediaconchas = pathlib.Path(config.get('mediaconch','folder'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
-    kwargs.config.fm_username = config.get('filemaker','user')
-    kwargs.config.fm_pwd = config.get('filemaker','pwd')
+    kwargs.config.filemaker_user = config.get('filemaker','user')
+    kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
     return kwargs
 
 def init_kwargs():
