@@ -42,7 +42,7 @@ def read_and_display(cmd):
     default is 128KiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 128, stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
                 read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
@@ -68,13 +68,17 @@ def run_ffmpeg(cmd):
     rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
     loop.close()
     fflog = []
+    print(stderr)
     for line in stderr:
         if not line.startswith(b'frame'):
             fflog.append(line)
         else:
             break
     logger.info(fflog)
-    logger.info(stderr[-1])
+    try:
+        logger.info(stderr[-1])
+    except:
+        pass
     if rc == 0:
         return True
     else:
@@ -102,7 +106,7 @@ def make_mp4_with_tc(accession, file, kwargs):
     creates mp4 with burned in timecode
     '''
     logger.info("creating mp4 derivative with burned-in timecode")
-    mp4 = accession + "_accs_burn.mp4"
+    mp4 = accession + "_tc.mp4"
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
     segment = accession.split("_")[-1]
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + \
@@ -121,7 +125,7 @@ def make_mp4_with_logo(accession, file, kwargs):
     creates mp4 derivative with logo
     '''
     logger.info("creating mp4 derivative with logo")
-    mp4 = accession + "_accs_logo.mp4"
+    mp4 = accession + "_wm.mp4"
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex overlay=0:0,scale=420:270 ' \
@@ -150,25 +154,26 @@ def concatenate_raw_captures(accession, files, kwargs):
     setup accession directory for ffmpeg transcode to concatenate raw captures
     '''
     accession_dir = files[0].parent
+    file_ext = files[0].suffix
     segment = accession.split("_")[-1]
     logger.info("concatenating input files in directory %s", str(accession_dir))
     concat_txt_path = accession_dir / "concat.txt"
-    concat_mov = accession_dir / "concat.mov"
-    accession_mov = str(accession_dir / accession) + "_pres.mov"
+    concat_vid = concat_txt_path.with_suffix(file_ext)
+    accession_pres = concat_txt_path.with_name(accession + "_pres" + file_ext)
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
     ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
-        ':00:00:00 -y concat.mov'
+        ':00:00:00 -y ' + str(concat_vid)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")
         return False
     else:
         logger.info("concatenation completed successfully")
-        concat_mov.replace(accession_mov)
+        concat_vid.replace(accession_pres)
         concat_txt_path.unlink()
-        return [accession_mov]
+        return [str(accession_pres)]
 
 def make_test_videos(kwargs):
     '''

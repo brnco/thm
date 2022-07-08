@@ -42,7 +42,8 @@ def update_hash(accession, cursor, filemaker_connection, kwargs):
     whole string in () needs to be enclosed in double quotes
     values for SQL commands need to be enclosed in single quotes
     '''
-    query = "update PBCoreInstantiation set ShaDigest='" + kwargs.hash + "' where filename='" + kwargs.filename + "'"
+    query = "update PBCoreInstantiation set ShaDigest = '" + kwargs.hash + "' where filename = '" + kwargs.filename + "'"
+    logger.info(query)
     cursor.execute(query)
     filemaker_connection.commit()
     return True
@@ -52,8 +53,8 @@ def init_connection(kwargs):
     initalizes connection to filemaker
     '''
     conn_str = "DRIVER={FileMaker ODBC};SERVER=192.168.19.3;DATABASE=PBCore_Catalog;PORT=2399;" + \
-        "UID=" + kwargs.filemaker_user + ";PWD=" + kwargs.filemaker_pwd + ";CHARSET=UTF-16"
-    print(conn_str)
+        "UID=" + kwargs.config.filemaker_user + ";PWD=" + kwargs.config.filemaker_pwd + ";CHARSET=UTF-16"
+    logger.debug(conn_str)
     filemaker_connection = pyodbc.connect(conn_str)
     cursor = filemaker_connection.cursor()
     logger.info("connected to FileMaker successfully")

@@ -98,10 +98,34 @@ def move_files(accession, files, kwargs):
     moves files from processing directory to preservation server
     '''
     logging.info("moving files from processing dir to preservation")
-    '''
-    for file in files:
-    subprocess.run(robocopy Z:\source D:\destination file.mov)
-    '''
+    accession_fullpath = kwargs.config.raw_captures / accession
+    try:
+        for file in files:
+            if str(file).endswith("pres.mov") or str(file).endswith("dvd.mpg"):
+                #xendata
+                file = pathlib.Path(file)
+                cmd = "robocopy " + str(accession_fullpath) + " " + \
+                    str(kwargs.config.xendatacopyto) + " " + str(file.name)
+            if str(file).endswith("wm.mp4") or str(file).endswith("tc.mp4"):
+                #sunnas
+                file = pathlib.Path(file)
+                cmd = "robocopy " + str(accession_fullpath) + " " + \
+                    str(kwargs.config.sunnascopyto) + " " + str(file.name)
+            logger.info("copying %s", str(file))
+            logger.debug(cmd)
+            output = subprocess.run(cmd, capture_output=True)
+            if output.returncode < 2:
+                continue
+            else:
+                logger.error(output.returncode)
+                logger.error(output.stderr)
+                logger.error(output.stdout)
+                logger.error("there was an error moving a file %s", file)
+                return False
+    except Exception as e:
+        logger.error("there was an error moving a file %s", file)
+        logger.error(e)
+        return False
     return True
 
 def hash_files(files, kwargs):
@@ -110,15 +134,20 @@ def hash_files(files, kwargs):
     '''
     logging.info("hashing files")
     hashes = {}
-    cmd = "certutil -hashfile '" + file + "'"
-    output = subprocess.run(cmd, capture_output=True)
-    if output.returncode == 0:
-        lines = output.stdout.split(b"\r\n")
-        hash = str(lines[1].strip())
-        hashes[file] = hash
-    else:
-        return False
-        return hashes
+    for file in files:
+        logger.info("hashing " + file)
+        cmd = 'certutil -hashfile "' + file + '"'
+        logger.debug(cmd)
+        output = subprocess.run(cmd, capture_output=True)
+        if output.returncode == 0:
+            lines = output.stdout.split(b"\r\n")
+            hash = lines[1].strip().decode("utf-8")
+            hashes[file] = hash
+        else:
+            logging.error(output.stderr)
+            return False
+    logging.info("hashing files completed successfully")
+    return hashes
 
 def make_derivatives(accession, input_files, kwargs):
     '''
@@ -153,15 +182,18 @@ def make_derivatives(accession, input_files, kwargs):
             logging.error("creation of mpeg DVD file failed")
             return False
         '''
+        NOT IMPLEMENTED
+        need to add mxf_mezz_ok to return list if you do implement this
         mezzanine mxf
         mezz.mxf
-        '''
+
         logging.info("creating mxf mezzanine")
         mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
         if not mxf_mezz_ok:
             logging.error("creation of mxf mezzanine failed")
             return False
-    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
+        '''
+    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok]
 
 def process_accession(accession, files, kwargs):
     '''
@@ -363,8 +395,10 @@ def main():
         ingests = get_files_for_ingest(kwargs)
         '''
         loop through ingest list
+        accession here is string of form A2022_001_001_001
         '''
         for accession in sorted(ingests.keys()):
+            accession_fullpath = kwargs.config.raw_captures / accession
             '''
             check filemaker records for each accession
             '''
@@ -415,26 +449,33 @@ def main():
                 if not hashes:
                     logging.error("file hashing failed")
                     return False
+                logging.debug(hashes)
                 '''
                 send checksums to filemaker
                 file transfers are validated post-ingest by Mark Strecker's Java app
                 '''
                 kwargs.id = accession
-                for filetype in hashes.keys():
-                    kwargs.hash = hashes[file]
-                    kwargs.filename = file.name
+                for file in hashes.keys():
+                    file = pathlib.Path(file)
+                    kwargs.hash = hashes[str(file)]
+                    kwargs.filename = str(file.name)
                     fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
                     if not fm_updates_ok:
                         logging.error("FileMaker update for hashes failed")
-                        return False
+                        raise RuntimeError("the script failed due to an error at runtime")
                 '''
                 send file data to various places
                 '''
                 files_moved_ok = move_files(accession, files, kwargs)
                 if not files_moved_ok:
                     logging.error("file transfer to preservation storage failed")
-                    return False
+                    raise RuntimeError("the script failed due to an error at runtime")
                 else:
+                    logging.info("files moved successfully")
+                    for file in accession_fullpath.iterdir():
+                        file.unlink()
+                    time.sleep(1)
+                    accession_fullpath.rmdir() #deletes accession dir we just processed
                     logging.info("accession %s processed successfully", accession)
                     #send_email("processing successful for " + accession, \
                             #logging.getLoggerClass().root.handlers[0].baseFilename)
