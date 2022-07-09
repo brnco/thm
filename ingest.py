@@ -135,6 +135,7 @@ def hash_files(files, kwargs):
     logging.info("hashing files")
     hashes = {}
     for file in files:
+        file = str(file)
         logger.info("hashing " + file)
         cmd = 'certutil -hashfile "' + file + '"'
         logger.debug(cmd)
