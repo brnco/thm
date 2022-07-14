@@ -17,17 +17,11 @@ def read_stream_and_display(stream, display):
     '''
     output = []
     while True:
-        try:
-            line = yield from stream.readline()
-            if not line:
-                break
-            output.append(line)
-            display(line)
-        except ValueError:
-            #enters this condition if line > limit
-            continue
-        else:
+        line = yield from stream.readline()
+        if not line:
             break
+        output.append(line)
+        display(line)
     return output
 
 @asyncio.coroutine
@@ -42,11 +36,11 @@ def read_and_display(cmd):
     default is 128KiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 512, stdout=PIPE,stderr=PIPE)
+            stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
-                read_stream_and_display(proc.stderr, sys.stderr.buffer.write),\
-                read_stream_and_display(proc.stdout, sys.stdout.buffer.write))
+                read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
+                read_stream_and_display(proc.stderr, sys.stderr.buffer.write))
     except Exception:
         proc.kill()
         raise
@@ -71,12 +65,15 @@ def run_ffmpeg(cmd):
     print(stderr)
     for line in stderr:
         if not line.startswith(b'frame'):
-            fflog.append(line)
+            fflog.append(line.decode("utf-8"))
         else:
             break
-    logger.info(fflog)
+    ffstr = ''
+    for line in fflog:
+        ffstr += line + "\n"
+    logger.info(ffstr)
     try:
-        logger.info(stderr[-1])
+        logger.info(stderr[-1].decode("utf-8"))
     except:
         pass
     if rc == 0:
