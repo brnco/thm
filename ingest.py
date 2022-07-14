@@ -221,6 +221,7 @@ def process_accession(accession, files, kwargs):
     '''
     make derivatives in transcode script
     '''
+    input("eh")
     #files = [accession + "_pres.mov"]
     with util.cd(str(accession_fullpath)):
         files = make_derivatives(accession, files, kwargs)
@@ -244,12 +245,12 @@ def verify_startup(kwargs):
         logging.error("makevideos is already running")
         return False
     files_done_copying = startup.verify_file_copying(kwargs)
-    drives_ok = startup.verify_config_drivepaths(kwargs)
+    '''drives_ok = startup.verify_config_drivepaths(kwargs)
     if not drives_ok:
         logging.error("drives not found")
-        return False
-    timecode_and_watermark_files_ok = startup.verify_config_filepaths(kwargs)
-    if not timecode_and_watermark_files_ok:
+        return False'''
+    watermark_file_ok = startup.verify_config_filepaths(kwargs)
+    if not watermark_file_ok:
         logging.error("timecode and/or watermark files not found")
         return False
     if not kwargs.mtf:
@@ -302,7 +303,7 @@ def init_config(kwargs):
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
     kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
-    kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
+    #kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))

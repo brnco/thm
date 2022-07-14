@@ -79,11 +79,6 @@ def verify_config_filepaths(kwargs):
         logger.error("The white-watermark file cannot be found." \
             "Please put the white watermark file at %s", str(kwargs.config.watermark_white))
         return False
-    if not kwargs.config.timecode_fontfile.is_file():
-        logger.error("The fontfile cannot be found." \
-            "Please put the fontfile at %s", str(kwargs.config.timecode_fontfile))
-        return False
-    logger.info("timecode font and watermark file verification ok")
     return True
 
 def verify_config_drivepaths(kwargs):

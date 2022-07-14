@@ -21,8 +21,8 @@ def read_stream_and_display(stream, display):
             line = yield from stream.readline()
             if not line:
                 break
-                output.append(line)
-                display(line)
+            output.append(line)
+            display(line)
         except ValueError:
             #enters this condition if line > limit
             continue
@@ -42,11 +42,11 @@ def read_and_display(cmd):
     default is 128KiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 512, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
-                read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
-                read_stream_and_display(proc.stderr, sys.stderr.buffer.write))
+                read_stream_and_display(proc.stderr, sys.stderr.buffer.write),\
+                read_stream_and_display(proc.stdout, sys.stdout.buffer.write))
     except Exception:
         proc.kill()
         raise
@@ -93,9 +93,9 @@ def make_mpg_dvd(accession, file, kwargs):
     mpeg_fullpath = kwargs.config.raw_captures / accession / mpeg
     segment = accession.split("_")[-1]
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
-        "\:00\:00\:00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
+        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + \
-        ',scale=720:480" -threads 0 -y ' + mpeg
+        ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -105,16 +105,18 @@ def make_mp4_with_tc(accession, file, kwargs):
     '''
     creates mp4 with burned in timecode
     '''
-    logger.info("creating mp4 derivative with burned-in timecode")
+    #logger.info("creating mp4 derivative with burned-in timecode")
     mp4 = accession + "_tc.mp4"
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
     segment = accession.split("_")[-1]
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + \
-        "':timecode='" + segment[-2:] + \
-        "\:00\:00\:00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
+    drawtext = 'drawtext="' \
+        "timecode='" + segment[-2:] + \
+        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + file + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + \
-        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + mp4
+        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
+    print(ffmpeg_cmd)
+    input("eh")
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -129,7 +131,7 @@ def make_mp4_with_logo(accession, file, kwargs):
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
     ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex overlay=0:0,scale=420:270 ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + mp4
+        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -143,7 +145,7 @@ def make_mxf_mezz(accession, file, kwargs):
     mxf = accession + "_mezz.mxf"
     mxf_fullpath = kwargs.config.raw_captures / accession / mxf
     ffmpeg_cmd = 'ffmpeg -i ' + file + \
-        ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + mxf
+        ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + str(mxf_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -151,7 +153,7 @@ def make_mxf_mezz(accession, file, kwargs):
 
 def concatenate_raw_captures(accession, files, kwargs):
     '''
-    setup accession directory for ffmpeg transcode to concatenate raw captures
+    concatenates raw captures in accession folder
     '''
     accession_dir = files[0].parent
     file_ext = files[0].suffix
@@ -164,7 +166,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
     ffmpeg_cmd = 'ffmpeg -f concat -i concat.txt -map 0 -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
-        ':00:00:00 -y ' + str(concat_vid)
+        ':00:00;00 -y ' + str(concat_vid)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")

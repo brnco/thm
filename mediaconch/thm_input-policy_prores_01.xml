@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <policy type="and" name="thm_input-policy_prores_01">
-  <tag/>
   <rule name="General/StreamCount is 1" value="StreamCount" tracktype="General" occurrence="*" operator="=">1</rule>
   <rule name="General/StreamKind is General" value="StreamKind" tracktype="General" occurrence="*" operator="=">General</rule>
   <rule name="General/StreamKind_String is General" value="StreamKind_String" tracktype="General" occurrence="*" operator="=">General</rule>
@@ -27,14 +26,12 @@
   <rule name="General/Format_Profile is QuickTime" value="Format_Profile" tracktype="General" occurrence="*" operator="=">QuickTime</rule>
   <rule name="General/InternetMediaType is video/mp4" value="InternetMediaType" tracktype="General" occurrence="*" operator="=">video/mp4</rule>
   <rule name="General/CodecID is qt  " value="CodecID" tracktype="General" occurrence="*" operator="=">qt  </rule>
-  <rule name="General/CodecID_Version is 2007.09" value="CodecID_Version" tracktype="General" occurrence="*" operator="=">2007.09</rule>
   <rule name="General/CodecID_Compatible is qt  /CDes" value="CodecID_Compatible" tracktype="General" occurrence="*" operator="=">qt  /CDes</rule>
   <rule name="General/OverallBitRate_Mode is VBR" value="OverallBitRate_Mode" tracktype="General" occurrence="*" operator="=">VBR</rule>
   <rule name="General/OverallBitRate_Mode_String is VBR" value="OverallBitRate_Mode_String" tracktype="General" occurrence="*" operator="=">VBR</rule>
   <rule name="General/OverallBitRate_String is-more-than 150 Mbps" value="OverallBitRate_String" tracktype="General" occurrence="*" operator="&gt;=">150Mbps</rule>
   <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
   <rule name="General/FrameRate_String is 29.970 fps" value="FrameRate_String" tracktype="General" occurrence="*" operator="=">29.970 fps</rule>
-  <rule name="General/HeaderSize is 40" value="HeaderSize" tracktype="General" occurrence="*" operator="=">40</rule>
   <rule name="General/IsStreamable is No" value="IsStreamable" tracktype="General" occurrence="*" operator="=">No</rule>
   <rule name="Video/StreamCount is 1" value="StreamCount" tracktype="Video" occurrence="*" operator="=">1</rule>
   <rule name="Video/StreamKind is Video" value="StreamKind" tracktype="Video" occurrence="*" operator="=">Video</rule>
@@ -54,20 +51,13 @@
   <rule name="Video/BitRate_String is-more-than 150 Mbps" value="BitRate_String" tracktype="Video" occurrence="*" operator="&gt;=">150 Mbps</rule>
   <rule name="Video/Width is 1920" value="Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
   <rule name="Video/Width_String is 1920 pixel" value="Width_String" tracktype="Video" occurrence="*" operator="=">1920 pixel</rule>
-  <rule name="Video/Width_CleanAperture is 1888" value="Width_CleanAperture" tracktype="Video" occurrence="*" operator="=">1888</rule>
-  <rule name="Video/Width_CleanAperture_String is 1888 pixel" value="Width_CleanAperture_String" tracktype="Video" occurrence="*" operator="=">1888 pixel</rule>
   <rule name="Video/Height is 1080" value="Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
   <rule name="Video/Height_String is 1080 pixel" value="Height_String" tracktype="Video" occurrence="*" operator="=">1080 pixel</rule>
-  <rule name="Video/Height_CleanAperture is 1062" value="Height_CleanAperture" tracktype="Video" occurrence="*" operator="=">1062</rule>
-  <rule name="Video/Height_CleanAperture_String is 1062 pixel" value="Height_CleanAperture_String" tracktype="Video" occurrence="*" operator="=">1062 pixel</rule>
   <rule name="Video/Sampled_Width is 1920" value="Sampled_Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
   <rule name="Video/Sampled_Height is 1080" value="Sampled_Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
   <rule name="Video/PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
-  <rule name="Video/PixelAspectRatio_CleanAperture is 1.000" value="PixelAspectRatio_CleanAperture" tracktype="Video" occurrence="*" operator="=">1.000</rule>
   <rule name="Video/DisplayAspectRatio is 1.778" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.778</rule>
   <rule name="Video/DisplayAspectRatio_String is 16:9" value="DisplayAspectRatio_String" tracktype="Video" occurrence="*" operator="=">16:9</rule>
-  <rule name="Video/DisplayAspectRatio_CleanAperture is 1.778" value="DisplayAspectRatio_CleanAperture" tracktype="Video" occurrence="*" operator="=">1.778</rule>
-  <rule name="Video/DisplayAspectRatio_CleanAperture_String is 16:9" value="DisplayAspectRatio_CleanAperture_String" tracktype="Video" occurrence="*" operator="=">16:9</rule>
   <rule name="Video/Rotation is 0.000" value="Rotation" tracktype="Video" occurrence="*" operator="=">0.000</rule>
   <rule name="Video/FrameRate_Mode is CFR" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
   <rule name="Video/FrameRate_Mode_String is CFR" value="FrameRate_Mode_String" tracktype="Video" occurrence="*" operator="=">CFR</rule>
@@ -149,7 +139,6 @@
   <rule name="Other/TimeCode_DropFrame is Yes" value="TimeCode_DropFrame" tracktype="Other" occurrence="*" operator="=">Yes</rule>
   <rule name="Other/TimeCode_Striped is Yes" value="TimeCode_Striped" tracktype="Other" occurrence="*" operator="=">Yes</rule>
   <rule name="Other/TimeCode_Striped_String is Yes" value="TimeCode_Striped_String" tracktype="Other" occurrence="*" operator="=">Yes</rule>
-  <rule name="Other/Title is Odyssey    " value="Title" tracktype="Other" occurrence="*" operator="=">Odyssey    </rule>
   <rule name="Other/Language is en" value="Language" tracktype="Other" occurrence="*" operator="=">en</rule>
   <rule name="Other/Language_String is en" value="Language_String" tracktype="Other" occurrence="*" operator="=">en</rule>
   <rule name="Other/Language_String1 is en" value="Language_String1" tracktype="Other" occurrence="*" operator="=">en</rule>
