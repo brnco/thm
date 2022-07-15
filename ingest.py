@@ -1,7 +1,7 @@
-#!/usr/bin/python
-#the history makers ingest.py
-#processes videos for The History Makers
-
+#!/usr/bin/env python
+'''
+main script for ingesting materials for The HIstory Makers
+'''
 '''
 import official python libraries
 '''
@@ -21,6 +21,7 @@ import configparser
 
 '''
 import microservice scripts
+(located in thm folder)
 '''
 import util
 import transcodes
@@ -184,7 +185,6 @@ def make_derivatives(accession, input_files, kwargs):
             return False
         '''
         NOT IMPLEMENTED
-        need to add mxf_mezz_ok to return list if you do implement this
         mezzanine mxf
         mezz.mxf
 
@@ -193,6 +193,7 @@ def make_derivatives(accession, input_files, kwargs):
         if not mxf_mezz_ok:
             logging.error("creation of mxf mezzanine failed")
             return False
+        return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
         '''
     return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok]
 
@@ -221,8 +222,6 @@ def process_accession(accession, files, kwargs):
     '''
     make derivatives in transcode script
     '''
-    input("eh")
-    #files = [accession + "_pres.mov"]
     with util.cd(str(accession_fullpath)):
         files = make_derivatives(accession, files, kwargs)
     if not files:
@@ -245,10 +244,11 @@ def verify_startup(kwargs):
         logging.error("makevideos is already running")
         return False
     files_done_copying = startup.verify_file_copying(kwargs)
-    '''drives_ok = startup.verify_config_drivepaths(kwargs)
+    #drives_ok = startup.verify_config_drivepaths(kwargs)
+    drives_ok = True
     if not drives_ok:
         logging.error("drives not found")
-        return False'''
+        return False
     watermark_file_ok = startup.verify_config_filepaths(kwargs)
     if not watermark_file_ok:
         logging.error("timecode and/or watermark files not found")
@@ -392,7 +392,7 @@ def main():
         '''
         create ingest list
         technically ingests dictionary with list of full filepaths for each accession folder
-        A2022_012_001_001:['file1.mov','file2.mov']
+        {A2022_012_001_001:['file1.mov','file2.mov'],A2022_034_001_001:['file3.mov', file4.mov]}
         '''
         ingests = get_files_for_ingest(kwargs)
         '''
@@ -468,7 +468,8 @@ def main():
                 '''
                 send file data to various places
                 '''
-                files_moved_ok = move_files(accession, files, kwargs)
+                #files_moved_ok = move_files(accession, files, kwargs)
+                files_moved_ok = True
                 if not files_moved_ok:
                     logging.error("file transfer to preservation storage failed")
                     raise RuntimeError("the script failed due to an error at runtime")
@@ -477,17 +478,17 @@ def main():
                     for file in accession_fullpath.iterdir():
                         file.unlink()
                     time.sleep(1)
-                    accession_fullpath.rmdir() #deletes accession dir we just processed
+                    #accession_fullpath.rmdir() #deletes accession dir we just processed
                     logging.info("accession %s processed successfully", accession)
-                    #send_email("processing successful for " + accession, \
-                            #logging.getLoggerClass().root.handlers[0].baseFilename)
+                    send_email("processing successful for " + accession, \
+                            logging.getLoggerClass().root.handlers[0].baseFilename)
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(str(e))
         logging.error(traceback.format_exc())
-        #send_email("processing unsuccessful for " + accession, \
-                #logging.getLoggerClass().root.handlers[0].baseFilename)
+        send_email("processing unsuccessful for " + accession, \
+                logging.getLoggerClass().root.handlers[0].baseFilename)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":

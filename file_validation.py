@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 handles mediaconch file validation
 '''

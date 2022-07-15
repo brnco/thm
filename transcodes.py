@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 handles all transcodes and concatenations
 '''

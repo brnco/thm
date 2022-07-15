@@ -1,4 +1,9 @@
-#manage filemaker connection and operations
+#!/usr/bin/env python
+'''
+handles all interactions with FileMaker
+uses ODBC driver for connections
+uses SQL syntax for queries
+'''
 import pyodbc
 import argparse
 import logging

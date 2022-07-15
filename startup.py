@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 '''
-startup functions for thm makevideos script
+handles aspects of starting script
+verifies drives are attached
+verifies there's not a file copying into D:\incoming
 '''
 import logging
 import pathlib
