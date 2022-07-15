@@ -310,10 +310,14 @@ def init_config(kwargs):
     kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
-    kwargs.config.mediaconchas = pathlib.Path(config.get('mediaconch','folder'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
     kwargs.config.filemaker_user = config.get('filemaker','user')
     kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
+    kwargs.config.mediaconch = util.d( \
+        {"input_policies":config.get('mediaconch','input_policies_dir'), \
+        "wm_policy":config.get('mediaconch','watermark_mp4'), \
+        "tc_policy":config.get('mediaconch','timecode_mp4'), \
+        "dvd_policy":config.get('mediaconch','dvd_mpg')})
     return kwargs
 
 def init_kwargs():
@@ -335,10 +339,10 @@ def init_kwargs():
             help="continue processing accessions even if 1 fails")
     parser.add_argument('--mediaconch_policy', default="",\
             help="run input/output validation against specified mediaconch policy at path")
-    parser.add_argument('--no_input_validation', action='store_true',\
-            default=False, help="disable mediaconch file validation on input files")
+    parser.add_argument('--no_input_validation', action='store_true', default=False, \
+        help="disable mediaconch file validation on input files and _pres output file")
     parser.add_argument('--no_output_validation', action='store_true', default=False,\
-            help="disable mediaconch file validation on output files")
+            help="disable mediaconch file validation on derivative output files")
     parser.add_argument('--make_test_files', action='store_true', default=False,\
             help="create test output files using ffmpeg")
     args = parser.parse_args()
@@ -475,8 +479,8 @@ def main():
                     raise RuntimeError("the script failed due to an error at runtime")
                 else:
                     logging.info("files moved successfully")
-                    for file in accession_fullpath.iterdir():
-                        file.unlink()
+                    #for file in accession_fullpath.iterdir():
+                        #file.unlink()
                     time.sleep(1)
                     #accession_fullpath.rmdir() #deletes accession dir we just processed
                     logging.info("accession %s processed successfully", accession)

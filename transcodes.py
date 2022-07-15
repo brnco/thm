@@ -34,10 +34,10 @@ def read_and_display(cmd):
     we need it because ffmpeg outputs a lot of text data
     keep the 1024 * to start, second number is number of bytes
     total limit is expressed in kibibytes (roughly same as kilobytes)
-    default is 128KiB
+    default is 256KiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
                 read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
@@ -71,7 +71,7 @@ def run_ffmpeg(cmd):
             break
     ffstr = ''
     for line in fflog:
-        ffstr += line + "\n"
+        ffstr += line
     logger.info(ffstr)
     try:
         logger.info(stderr[-1].decode("utf-8"))
@@ -113,8 +113,6 @@ def make_mp4_with_tc(accession, file, kwargs):
     ffmpeg_cmd = 'ffmpeg -i ' + file + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + \
         ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
-    print(ffmpeg_cmd)
-    input("eh")
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
