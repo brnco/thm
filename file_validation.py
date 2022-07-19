@@ -13,7 +13,7 @@ def load_mediaconch_policies(kwargs):
     '''
     loads policies from folder in config file
     '''
-    true_parent = kwargs.config.mediaconch.input_policies
+    true_parent = pathlib.Path(kwargs.config.mediaconch.input_policies)
     childs = true_parent.glob('**/*.xml')
     mediaconch_policies = []
     for child in childs:

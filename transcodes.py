@@ -173,10 +173,30 @@ def concatenate_raw_captures(accession, files, kwargs):
         concat_txt_path.unlink()
         return [str(accession_pres)]
 
-def make_test_videos(kwargs):
+def detect_interlaced_video(file, kwargs):
     '''
-    creates test outputs per THM spec
+    detects if input file is interlaced
     '''
+    logger.info("testing %s file for interlaced video", str(file))
+    ffmpeg_cmd = "ffmpeg -filter:v idet -frames:v 360 -an -f rawvideo -y NUL -i " + str(file)
+    ffmpeg_cmd = "ffprobe -v quiet -select_streams v -show_entries stream=field_order -of csv=p=0 -i " + str(file)
+    logger.info(ffmpeg_cmd)
+    ffmpeg_ok = subprocess.run(ffmpeg_cmd, capture_output=True)
+    logger.info(ffmpeg_ok.stdout.decode("utf-8").strip())
+    if not ffmpeg_ok.returncode == 0:
+        logger.error("ffmpeg encountered an error during interlace detection")
+        return False
+    else:
+        output = ffmpeg_ok.stdout.decode("utf-8").strip()
+        if "tff" in output or "bff" in output:
+            kwargs.is_interlaced = True
+            return kwargs
+        elif "progressive" in output or "unknown" in output:
+            kwargs.is_interlaced = False
+            return kwargs
+    logger.error("ffprobe unable to detect progressive or interlaced video")
+    return False
+
 
 def main():
     '''

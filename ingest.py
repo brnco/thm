@@ -49,7 +49,7 @@ def get_files_for_ingest(kwargs):
             ingests[accession] = raw_captures
             for file in accession_path.iterdir():
                 if not file.suffix in kwargs.config.filetypes.input:
-                    logging.warning("the file " + file + " does not have appropriate extension")
+                    logging.warning("the file " + str(file) + " does not have appropriate extension")
                     logging.warning("this file will not be processed")
     else:
         accession_path = kwargs.config.raw_captures
@@ -241,6 +241,53 @@ def test(kwargs):
     here you can define functions/ flows for testing the script
     '''
     logging.info("testing")
+    '''
+    create ingest list
+    technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
+    {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
+    '''
+    ingests = get_files_for_ingest(kwargs)
+    '''
+    loop through ingest list
+    accession here is string of form A2022_001_001_001
+    '''
+    for accession in sorted(ingests.keys()):
+        accession_fullpath = kwargs.config.raw_captures / accession
+        '''
+        check filemaker records for each accession
+        '''
+        filemaker_connection, cursor = fm.init_connection(kwargs)
+        filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
+        if not filemaker_ok:
+            logging.error("FileMaker record not found for %s", accession)
+            kwargs.config.lockfile.unlink()
+            quit()
+        else:
+            '''
+            do input validation on each file, if requested
+            '''
+            if kwargs.input_validation:
+                logging.info("running mediaconch policies against input files to determine valid inputs")
+                accession_mediaconch_policy = file_validation.validate_input(accession, \
+                        ingests[accession], kwargs)
+                if not accession_mediaconch_policy:
+                    logging.error("mediainfo input validation failed for accession %s", \
+                            str(accession))
+                    logging.info("for specific errors, please open file %s " \
+                            "in MediaConch GUI and evaluate against policies located at "\
+                            "%s", ingests[accession][0], kwargs.config.mediaconch.input_policies)
+                    logging.info("alternatively, try running this script with " + \
+                            "--no_input_validation flag")
+                    kwargs.config.lockfile.unlink()
+                    quit()
+                else:
+                    kwargs.accession_mediaconch_policy = accession_mediaconch_policy
+        kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
+        if not kwargs:
+            logger.error("interlace detection failed for accession %s", accession)
+            return
+        return
+
 
 def verify_startup(kwargs):
     '''
@@ -393,8 +440,8 @@ def main():
         determine if script is running in test mode
         '''
         if kwargs.test:
-            test(kwargs)
             accession = "test"
+            test(kwargs)
             logging.info("script started in test mode, exiting...")
             kwargs.config.lockfile.unlink()
             quit()
@@ -437,10 +484,15 @@ def main():
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
                 '''
+                detect interlacing / progressive frame format for input accession
+                '''
+                kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
+                if not kwargs:
+                    logger.error("interlace detection failed for accession %s", accession)
+                '''
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
                 '''
-                input("Eh")
                 files = processing_ok = process_accession(accession, \
                         ingests[accession], kwargs)
                 if not processing_ok:
