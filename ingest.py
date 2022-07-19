@@ -47,6 +47,10 @@ def get_files_for_ingest(kwargs):
                     and not any(part.startswith('Thumbs.db') for part in path.parts)
                     and path.suffix in kwargs.config.filetypes.input]
             ingests[accession] = raw_captures
+            for file in accession_path.iterdir():
+                if not file.suffix in kwargs.config.filetypes.input:
+                    logging.warning("the file " + file + " does not have appropriate extension")
+                    logging.warning("this file will not be processed")
     else:
         accession_path = kwargs.config.raw_captures
         raw_captures = [path for path in accession_path.glob('**/*.*') \
@@ -425,6 +429,8 @@ def main():
                     if not accession_mediaconch_policy:
                         logging.error("mediainfo input validation failed for accession %s, quitting", \
                                 str(accession))
+                        logging.info("to process this accession, try running this script with" + \
+                                "--no_input_validation flag")
                         kwargs.config.lockfile.unlink()
                         quit()
                     else:
