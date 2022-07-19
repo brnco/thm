@@ -1,6 +1,6 @@
 # The History Makers
 
-This repository contains scripts and configurations to process preservation files, generate checksums, and create and move derivatives of The History Makers oral history interviews.
+This repository contains scripts to process preservation files, generate checksums, and create and move derivatives of The History Makers oral history interviews.
 
 # Installation
 
@@ -9,7 +9,7 @@ This repository contains scripts and configurations to process preservation file
 ### Git
 
 Download official Windows build here: https://git-scm.com/download/win
- 
+
 Install using the Git-[version].exe file, using the default/ pre-filled options
 
 ### Python
@@ -30,7 +30,7 @@ Git is version control software for developers - GitHub is a website that integr
 
 GitHub only supports SSH authentication these days, follow thier guide for setting that up here: https://docs.github.com/en/authentication/connecting-to-github-with-ssh
 
-Once SSH is set up, do an SSH clone of the repo to the video processing machine. 
+Once SSH is set up, do an SSH clone of the repo to the video processing machine.
 
 # Configuration
 
@@ -65,10 +65,6 @@ this section contains filepaths for assets which are required in order to transc
 
 #### White Watermark
 
-#### Black Watermark
-
-#### Timecode Font
-
 #### raw_captures
 
 specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see [Usage](https://github.com/brnco/thm#usage) section of this document)
@@ -92,9 +88,6 @@ Example folder setup, tree view
 │   ├── 01275002.MOV
 │   ├── 01275003.MOV
 │   └── 01275004.MOV
-├── An Evening with Valerie Jarrett
-│   ├── AEWVJA CAM1_1.mov
-│   └── AEWVJA CAM1_2.mov
 ```
 
 ### File Destinations
@@ -117,25 +110,45 @@ This section delineates the folderpath for MediaConch policies
 
 ## General
 
-`makevideos.py --options accession_number(s)`
+`ingest.py --options accession_number(s)`
 
 ## Help
 
-`makevideos.py -h`
+`ingest.py -h`
 
 ## Examples
 
 ingest everything in raw_captures directory, as configured in config file
 
-`makevideos.py`
+`ingest.py`
 
 ingest a single accession, A2022_012_001_001
 
-`makevideos.py A2022_012_001_001`
+`ingest.py A2022_012_001_001`
 
 ingest multiple accessions
 
-`makevideos.py A2022_012_001_001 A2022_033_001_001`
+`ingest.py A2022_012_001_001 A2022_033_001_001`
+
+### file validation
+
+ingest without validating input files
+
+`ingest.py --no_input_validation A2022_012_001_001`
+
+### changing terminal output
+
+you can run this script with more or less output to the terminal
+
+note that these setting don't change what is logged, just what is printed
+
+run in verbose mode
+
+`ingest.py -v A2022_012_001_001`
+
+run in quiet mode
+
+`ingest.py -q A2022_012_001_001`
 
 # Script Descriptions
 
@@ -151,7 +164,7 @@ this script takes the raw video captures delivered by THM personnel and:
 
 4. hashmoves (see below) them to their destiantions
 
-5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog 
+5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog
 
 makevideos also checks to make sure that everything is plugged in and that all necessary files (like watermarks) are in their expected locations.
 
@@ -165,7 +178,25 @@ this script checks the values in the config file against the configuration curre
 
 ## file_validation
 
-this script uses [MediaConch](https://mediaarea.net/MediaConch) validation to ensure that only valid input files are passed to the script for preservation/ transcode. MediaConch policies are managed in the directory specified in the config file. For each input file, this script checks it against available file policies in the MediaConch policies folder - if a match is found, that policy is used to validate all other input and output files for tha accession.
+this script uses [MediaConch](https://mediaarea.net/MediaConch) validation to ensure that only valid input files are passed to the script for preservation/ transcode. MediaConch policies are managed in the directory specified in the config file. For each input file, this script checks it against available file policies in the MediaConch policies folder - if a match is found, that policy is used to validate all other input and output files for the accession.
+
+### MediaConch GUI
+
+if a file doesn't pass validation, follow these steps to find out why:
+
+1. open MediaConch
+
+2. in the "Checker" tab, use the dropdown menu to select the policy to check against -- see log for list of policies attempted
+
+3. still in the "Checker" tab, select a file to check against the policy from step 1
+
+4. select "check file"
+
+5. MediaConch will analyze the file and add it to a list at the bottom of the window
+
+6. to view pass/ fail for each field, click the eyeball icon
+
+for more info, see official how-to's at [this link](https://mediaarea.net/MediaConch/Documentation/HowToUse)
 
 ## filemaker_handler
 

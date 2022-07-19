@@ -345,8 +345,6 @@ def init_kwargs():
             help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--no_input_validation', action='store_true', default=False, \
         help="disable mediaconch file validation on input files and _pres output file")
-    parser.add_argument('--no_output_validation', action='store_true', default=False,\
-            help="disable mediaconch file validation on derivative output files")
     parser.add_argument('--make_test_files', action='store_true', default=False,\
             help="create test output files using ffmpeg")
     args = parser.parse_args()
@@ -357,7 +355,6 @@ def init_kwargs():
     #next two lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
-    kwargs.output_validation = operator.not_(args.no_output_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     '''
@@ -449,10 +446,14 @@ def main():
                         logging.info("script instructed to quit on processing error. Exiting...")
                         break
                 '''
-                do output validation on each file, if requested
+                do output validation on preservation file, if requested
                 '''
-                if kwargs.output_validation:
-                    outputs_ok = file_validation.validate_output(accession, files, kwargs)
+                if kwargs.input_validation:
+                    output_pres_ok = file_validation.validate_output(accession, files, kwargs)
+                    if not output_pres_ok:
+                        logging.error("preservation file did not pass validation, quitting...")
+                        kwargs.config.lockfile.unlink()
+                        quit()
                 '''
                 create checksums for each derivative
                 hashes is dictionary of full_filepath:hash pairs
