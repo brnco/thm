@@ -106,12 +106,12 @@ def move_files(accession, files, kwargs):
     accession_fullpath = kwargs.config.raw_captures / accession
     try:
         for file in files:
-            if str(file).endswith("pres.mov") or str(file).endswith("dvd.mpg"):
+            if "_pres" in str(file.name) or "dvd.mpg" in str(file.name):
                 #xendata
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
                     str(kwargs.config.xendatacopyto) + " " + str(file.name)
-            if str(file).endswith("wm.mp4") or str(file).endswith("tc.mp4"):
+            if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
                 #sunnas
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
@@ -119,7 +119,10 @@ def move_files(accession, files, kwargs):
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
-            if output.returncode < 2:
+            if output.returncode < 2 and not "pres" in str(file.name):
+                if not "pres" in str(file.name):
+                    #move files up to their anchor X:\ or whatever
+                    file.replace(file.parents[-1] / file.name)
                 continue
             else:
                 logger.error(output.returncode)
@@ -233,11 +236,11 @@ def process_accession(accession, files, kwargs):
         return False
     return files
 
-def make_test_files(kwargs):
+def test(kwargs):
     '''
-    creates test video files conforming to output standards, using ffmpeg
+    here you can define functions/ flows for testing the script
     '''
-    print("make test videos")
+    logging.info("testing")
 
 def verify_startup(kwargs):
     '''
@@ -345,13 +348,13 @@ def init_kwargs():
             help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--no_input_validation', action='store_true', default=False, \
         help="disable mediaconch file validation on input files and _pres output file")
-    parser.add_argument('--make_test_files', action='store_true', default=False,\
-            help="create test output files using ffmpeg")
+    parser.add_argument('--test', action='store_true', default=False,\
+            help="runs script in test mode")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
-    kwargs.mtf = args.make_test_files
+    kwargs.test = args.test
     #next two lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
@@ -389,15 +392,16 @@ def main():
         '''
         determine if script is running in test mode
         '''
-        if kwargs.mtf:
-            make_test_files(kwargs)
+        if kwargs.test:
+            test(kwargs)
+            accession = "test"
             logging.info("script started in test mode, exiting...")
             kwargs.config.lockfile.unlink()
             quit()
         '''
         create ingest list
-        technically ingests dictionary with list of full filepaths for each accession folder
-        {A2022_012_001_001:['file1.mov','file2.mov'],A2022_034_001_001:['file3.mov', file4.mov]}
+        technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
+        {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
         '''
         ingests = get_files_for_ingest(kwargs)
         '''
@@ -436,6 +440,7 @@ def main():
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
                 '''
+                input("Eh")
                 files = processing_ok = process_accession(accession, \
                         ingests[accession], kwargs)
                 if not processing_ok:
@@ -479,8 +484,7 @@ def main():
                 '''
                 send file data to various places
                 '''
-                #files_moved_ok = move_files(accession, files, kwargs)
-                files_moved_ok = True
+                files_moved_ok = move_files(accession, files, kwargs)
                 if not files_moved_ok:
                     logging.error("file transfer to preservation storage failed")
                     raise RuntimeError("the script failed due to an error at runtime")
@@ -491,15 +495,15 @@ def main():
                     time.sleep(1)
                     #accession_fullpath.rmdir() #deletes accession dir we just processed
                     logging.info("accession %s processed successfully", accession)
-                    send_email("processing successful for " + accession, \
-                            logging.getLoggerClass().root.handlers[0].baseFilename)
+                    '''send_email("processing successful for " + accession, \
+                            logging.getLoggerClass().root.handlers[0].baseFilename)'''
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(str(e))
         logging.error(traceback.format_exc())
-        send_email("processing unsuccessful for " + accession, \
-                logging.getLoggerClass().root.handlers[0].baseFilename)
+        '''send_email("processing unsuccessful for " + accession, \
+                logging.getLoggerClass().root.handlers[0].baseFilename)'''
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":
