@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 handles mediaconch file validation
 '''
@@ -12,14 +13,14 @@ def load_mediaconch_policies(kwargs):
     '''
     loads policies from folder in config file
     '''
-    true_parent = kwargs.config.mediaconchas
+    true_parent = pathlib.Path(kwargs.config.mediaconch.input_policies)
     childs = true_parent.glob('**/*.xml')
     mediaconch_policies = []
     for child in childs:
         if str(child.parent) == str(true_parent):
             mediaconch_policies.append(child)
     if not mediaconch_policies:
-        logger.error("no mediaconch policies found at config path: %s", str(kwargs.config.mediaconchas))
+        logger.error("no mediaconch policies found at config path: %s", str(kwargs.config.mediaconch.input_policies))
         return False
     return mediaconch_policies
 
@@ -27,6 +28,24 @@ def validate_output(accession, files, kwargs):
     '''
     validates output video files
     '''
+    logger.info("validating derivative files for %s", accession)
+    for file in files:
+        if "_pres" in str(file) and not kwargs.input_validation:
+            #skip _pres file if input file(s) not validated
+            #continue in this context means (move to next iteration of containing loop)
+            continue
+        if file.suffix == ".mov":
+            logger.info("validating %s against mediaconch policy %s", (file, kwargs.accession_mediaconch_policy))
+        #elif file.suffix == "_mezz.mxf":
+            #logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.mezz_policy))
+        elif file.suffix == ".mp4":
+            if "_wm" in str(file):
+                logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.wm_policy))
+            elif "_tc" in str(file):
+                logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.tc_policy))
+        elif file.suffix == ".mpg":
+            logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.dvd_policy))
+    return True
 
 def validate_input(accession, files, kwargs):
     '''
@@ -37,7 +56,6 @@ def validate_input(accession, files, kwargs):
     else:
         mediaconch_policies = [kwargs.accession_mediaconch_policy]
     policy_passes = []
-    logs = []
     for policy in mediaconch_policies:
         for file in files:
             logger.info("testing %s against %s", str(file), str(policy))

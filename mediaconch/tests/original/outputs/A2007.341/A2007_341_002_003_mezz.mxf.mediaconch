@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<policy type="and" name="A2007_341_002_003_mezz.mxf">
+  <rule name="General/VideoCount is 1" value="VideoCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/AudioCount is 2" value="AudioCount" tracktype="General" occurrence="*" operator="=">2</rule>
+  <rule name="General/OtherCount is 2" value="OtherCount" tracktype="General" occurrence="*" operator="=">2</rule>
+  <rule name="General/FileExtension is mxf" value="FileExtension" tracktype="General" occurrence="*" operator="=">mxf</rule>
+  <rule name="General/Format is MXF" value="Format" tracktype="General" occurrence="*" operator="=">MXF</rule>
+  <rule name="General/Format_Version is 1.3" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.3</rule>
+  <rule name="General/Format_Profile is OP-1a" value="Format_Profile" tracktype="General" occurrence="*" operator="=">OP-1a</rule>
+  <rule name="General/Format_Settings is Closed / Complete" value="Format_Settings" tracktype="General" occurrence="*" operator="=">Closed / Complete</rule>
+  <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
+  <rule name="General/FooterSize is 11740" value="FooterSize" tracktype="General" occurrence="*" operator="=">11740</rule>
+  <rule name="General/PackageName is A2007_341_002_003 / File Package: SMPTE ST381-3 frame wrapping of H264 video essence" value="PackageName" tracktype="General" occurrence="*" operator="=">A2007_341_002_003 / File Package: SMPTE ST381-3 frame wrapping of H264 video essence</rule>
+  <rule name="General/Encoded_Date is 2022-05-10 19:51:40.376" value="Encoded_Date" tracktype="General" occurrence="*" operator="=">2022-05-10 19:51:40.376</rule>
+  <rule name="General/File_Modified_Date is UTC 2022-05-10 22:53:26" value="File_Modified_Date" tracktype="General" occurrence="*" operator="=">UTC 2022-05-10 22:53:26</rule>
+  <rule name="General/File_Modified_Date_Local is 2022-05-10 15:53:26" value="File_Modified_Date_Local" tracktype="General" occurrence="*" operator="=">2022-05-10 15:53:26</rule>
+  <rule name="General/Encoded_Application_CompanyName is Metaglue Corporation" value="Encoded_Application_CompanyName" tracktype="General" occurrence="*" operator="=">Metaglue Corporation</rule>
+  <rule name="General/Encoded_Application_Name is MXFixer File Wrapper" value="Encoded_Application_Name" tracktype="General" occurrence="*" operator="=">MXFixer File Wrapper</rule>
+  <rule name="General/Encoded_Application_Version is 5.2.2.22509.1" value="Encoded_Application_Version" tracktype="General" occurrence="*" operator="=">5.2.2.22509.1</rule>
+  <rule name="General/Encoded_Library_Name is MXFplus(Windows 10 ( build 19044 )  (64-bit)) (with Metaglue Extensions)(BUF) built May 10 2022 12:42:02" value="Encoded_Library_Name" tracktype="General" occurrence="*" operator="=">MXFplus(Windows 10 ( build 19044 )  (64-bit)) (with Metaglue Extensions)(BUF) built May 10 2022 12:42:02</rule>
+  <rule name="General/Encoded_Library_Version is 2.65.2.22509.1" value="Encoded_Library_Version" tracktype="General" occurrence="*" operator="=">2.65.2.22509.1</rule>
+  <rule name="Video/StreamOrder is 0" value="StreamOrder" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/ID is 2" value="ID" tracktype="Video" occurrence="*" operator="=">2</rule>
+  <rule name="Video/Format is AVC" value="Format" tracktype="Video" occurrence="*" operator="=">AVC</rule>
+  <rule name="Video/Format_Profile is High 4:2:2" value="Format_Profile" tracktype="Video" occurrence="*" operator="=">High 4:2:2</rule>
+  <rule name="Video/Format_Level is 4.1" value="Format_Level" tracktype="Video" occurrence="*" operator="=">4.1</rule>
+  <rule name="Video/Format_Settings_CABAC is Yes" value="Format_Settings_CABAC" tracktype="Video" occurrence="*" operator="=">Yes</rule>
+  <rule name="Video/Format_Settings_RefFrames is 3" value="Format_Settings_RefFrames" tracktype="Video" occurrence="*" operator="=">3</rule>
+  <rule name="Video/Format_Settings_Wrapping is Frame" value="Format_Settings_Wrapping" tracktype="Video" occurrence="*" operator="=">Frame</rule>
+  <rule name="Video/CodecID is 0D01030102106001-0401020201316001" value="CodecID" tracktype="Video" occurrence="*" operator="=">0D01030102106001-0401020201316001</rule>
+  <rule name="Video/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Video" occurrence="*" operator="=">CBR</rule>
+  <rule name="Video/Width is 1920" value="Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
+  <rule name="Video/Height is 1080" value="Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
+  <rule name="Video/Stored_Height is 1088" value="Stored_Height" tracktype="Video" occurrence="*" operator="=">1088</rule>
+  <rule name="Video/Sampled_Width is 1920" value="Sampled_Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
+  <rule name="Video/Sampled_Height is 1080" value="Sampled_Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
+  <rule name="Video/PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
+  <rule name="Video/DisplayAspectRatio is 1.778" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.778</rule>
+  <rule name="Video/FrameRate is 29.970" value="FrameRate" tracktype="Video" occurrence="*" operator="=">29.970</rule>
+  <rule name="Video/ColorSpace is YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
+  <rule name="Video/ChromaSubsampling is 4:2:2" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:2</rule>
+  <rule name="Video/BitDepth is 8" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
+  <rule name="Video/ScanType is MBAFF" value="ScanType" tracktype="Video" occurrence="*" operator="=">MBAFF</rule>
+  <rule name="Video/ScanOrder is TFF" value="ScanOrder" tracktype="Video" occurrence="*" operator="=">TFF</rule>
+  <rule name="Video/Title is V1" value="Title" tracktype="Video" occurrence="*" operator="=">V1</rule>
+  <rule name="Video/Encoded_Library is x264 - core 161 r3027 4121277" value="Encoded_Library" tracktype="Video" occurrence="*" operator="=">x264 - core 161 r3027 4121277</rule>
+  <rule name="Video/Encoded_Library_Name is x264" value="Encoded_Library_Name" tracktype="Video" occurrence="*" operator="=">x264</rule>
+  <rule name="Video/Encoded_Library_Version is core 161 r3027 4121277" value="Encoded_Library_Version" tracktype="Video" occurrence="*" operator="=">core 161 r3027 4121277</rule>
+  <rule name="Video/Encoded_Library_Settings is cabac=1 / ref=3 / deblock=1:0:0 / analyse=0x3:0x113 / me=hex / subme=7 / psy=1 / psy_rd=1.00:0.00 / mixed_ref=1 / me_range=16 / chroma_me=1 / trellis=1 / 8x8dct=1 / cqm=0 / deadzone=21,11 / fast_pskip=1 / chroma_qp_offset=-2 / threads=34 / lookahead_threads=5 / sliced_threads=0 / nr=0 / decimate=1 / interlaced=tff / bluray_compat=0 / constrained_intra=0 / bframes=2 / b_pyramid=0 / b_adapt=0 / b_bias=0 / direct=1 / weightb=1 / open_gop=0 / weightp=0 / keyint=12 / keyint_min=7 / scenecut=0 / intra_refresh=0 / rc_lookahead=29 / rc=cbr / mbtree=1 / bitrate=15000 / ratetol=1.0 / qcomp=0.60 / qpmin=0 / qpmax=69 / qpstep=4 / vbv_maxrate=15000 / vbv_bufsize=15000 / nal_hrd=cbr / filler=1 / ip_ratio=1.40 / aq=1:1.00" value="Encoded_Library_Settings" tracktype="Video" occurrence="*" operator="=">cabac=1 / ref=3 / deblock=1:0:0 / analyse=0x3:0x113 / me=hex / subme=7 / psy=1 / psy_rd=1.00:0.00 / mixed_ref=1 / me_range=16 / chroma_me=1 / trellis=1 / 8x8dct=1 / cqm=0 / deadzone=21,11 / fast_pskip=1 / chroma_qp_offset=-2 / threads=34 / lookahead_threads=5 / sliced_threads=0 / nr=0 / decimate=1 / interlaced=tff / bluray_compat=0 / constrained_intra=0 / bframes=2 / b_pyramid=0 / b_adapt=0 / b_bias=0 / direct=1 / weightb=1 / open_gop=0 / weightp=0 / keyint=12 / keyint_min=7 / scenecut=0 / intra_refresh=0 / rc_lookahead=29 / rc=cbr / mbtree=1 / bitrate=15000 / ratetol=1.0 / qcomp=0.60 / qpmin=0 / qpmax=69 / qpstep=4 / vbv_maxrate=15000 / vbv_bufsize=15000 / nal_hrd=cbr / filler=1 / ip_ratio=1.40 / aq=1:1.00</rule>
+  <rule name="Video/BufferSize is 15000000" value="BufferSize" tracktype="Video" occurrence="*" operator="=">15000000</rule>
+  <rule name="Audio/StreamOrder is 1" value="StreamOrder" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ID is 3" value="ID" tracktype="Audio" occurrence="*" operator="=">3</rule>
+  <rule name="Audio/Format is PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio/Format_Settings_Endianness is Little" value="Format_Settings_Endianness" tracktype="Audio" occurrence="*" operator="=">Little</rule>
+  <rule name="Audio/Format_Settings_Wrapping is Frame (BWF)" value="Format_Settings_Wrapping" tracktype="Audio" occurrence="*" operator="=">Frame (BWF)</rule>
+  <rule name="Audio/CodecID is 0D01030102060100" value="CodecID" tracktype="Audio" occurrence="*" operator="=">0D01030102060100</rule>
+  <rule name="Audio/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/Channels is 1" value="Channels" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/SamplesPerFrame is 1601.6" value="SamplesPerFrame" tracktype="Audio" occurrence="*" operator="=">1601.6</rule>
+  <rule name="Audio/SamplingRate is 48000" value="SamplingRate" tracktype="Audio" occurrence="*" operator="=">48000</rule>
+  <rule name="Audio/SamplingCount is 90618528" value="SamplingCount" tracktype="Audio" occurrence="*" operator="=">90618528</rule>
+  <rule name="Audio/FrameRate is 29.970" value="FrameRate" tracktype="Audio" occurrence="*" operator="=">29.970</rule>
+  <rule name="Audio/BitDepth is 24" value="BitDepth" tracktype="Audio" occurrence="*" operator="=">24</rule>
+  <rule name="Audio/Delay_DropFrame is Yes" value="Delay_DropFrame" tracktype="Audio" occurrence="*" operator="=">Yes</rule>
+  <rule name="Audio/Delay_Source is Container" value="Delay_Source" tracktype="Audio" occurrence="*" operator="=">Container</rule>
+  <rule name="Audio/StreamSize_Proportion is 0.06618" value="StreamSize_Proportion" tracktype="Audio" occurrence="*" operator="=">0.06618</rule>
+  <rule name="Audio/Title is A1" value="Title" tracktype="Audio" occurrence="*" operator="=">A1</rule>
+  <rule name="Audio/StreamOrder is 2" value="StreamOrder" tracktype="Audio" occurrence="*" operator="=">2</rule>
+  <rule name="Audio/ID is 4" value="ID" tracktype="Audio" occurrence="*" operator="=">4</rule>
+  <rule name="Audio/Format is PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio/Format_Settings_Endianness is Little" value="Format_Settings_Endianness" tracktype="Audio" occurrence="*" operator="=">Little</rule>
+  <rule name="Audio/Format_Settings_Wrapping is Frame (BWF)" value="Format_Settings_Wrapping" tracktype="Audio" occurrence="*" operator="=">Frame (BWF)</rule>
+  <rule name="Audio/CodecID is 0D01030102060100" value="CodecID" tracktype="Audio" occurrence="*" operator="=">0D01030102060100</rule>
+  <rule name="Audio/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/Channels is 1" value="Channels" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/SamplesPerFrame is 1601.6" value="SamplesPerFrame" tracktype="Audio" occurrence="*" operator="=">1601.6</rule>
+  <rule name="Audio/SamplingRate is 48000" value="SamplingRate" tracktype="Audio" occurrence="*" operator="=">48000</rule>
+  <rule name="Audio/SamplingCount is 90618528" value="SamplingCount" tracktype="Audio" occurrence="*" operator="=">90618528</rule>
+  <rule name="Audio/FrameRate is 29.970" value="FrameRate" tracktype="Audio" occurrence="*" operator="=">29.970</rule>
+  <rule name="Audio/BitDepth is 24" value="BitDepth" tracktype="Audio" occurrence="*" operator="=">24</rule>
+  <rule name="Audio/Delay_DropFrame is Yes" value="Delay_DropFrame" tracktype="Audio" occurrence="*" operator="=">Yes</rule>
+  <rule name="Audio/Delay_Source is Container" value="Delay_Source" tracktype="Audio" occurrence="*" operator="=">Container</rule>
+  <rule name="Audio/StreamSize_Proportion is 0.06618" value="StreamSize_Proportion" tracktype="Audio" occurrence="*" operator="=">0.06618</rule>
+  <rule name="Audio/Title is A2" value="Title" tracktype="Audio" occurrence="*" operator="=">A2</rule>
+  <rule name="Other/ID is 1-Material" value="ID" tracktype="Other" occurrence="*" operator="=">1-Material</rule>
+  <rule name="Other/Type is Time code" value="Type" tracktype="Other" occurrence="*" operator="=">Time code</rule>
+  <rule name="Other/Format is MXF TC" value="Format" tracktype="Other" occurrence="*" operator="=">MXF TC</rule>
+  <rule name="Other/FrameRate is 29.970" value="FrameRate" tracktype="Other" occurrence="*" operator="=">29.970</rule>
+  <rule name="Other/TimeCode_FirstFrame is 04:00:00;00" value="TimeCode_FirstFrame" tracktype="Other" occurrence="*" operator="=">04:00:00;00</rule>
+  <rule name="Other/TimeCode_LastFrame is 04:31:27;25" value="TimeCode_LastFrame" tracktype="Other" occurrence="*" operator="=">04:31:27;25</rule>
+  <rule name="Other/TimeCode_Settings is Material Package" value="TimeCode_Settings" tracktype="Other" occurrence="*" operator="=">Material Package</rule>
+  <rule name="Other/TimeCode_Striped is Yes" value="TimeCode_Striped" tracktype="Other" occurrence="*" operator="=">Yes</rule>
+  <rule name="Other/Title is Timecode Track" value="Title" tracktype="Other" occurrence="*" operator="=">Timecode Track</rule>
+  <rule name="Other/ID is 1-Source" value="ID" tracktype="Other" occurrence="*" operator="=">1-Source</rule>
+  <rule name="Other/Type is Time code" value="Type" tracktype="Other" occurrence="*" operator="=">Time code</rule>
+  <rule name="Other/Format is MXF TC" value="Format" tracktype="Other" occurrence="*" operator="=">MXF TC</rule>
+  <rule name="Other/FrameRate is 29.970" value="FrameRate" tracktype="Other" occurrence="*" operator="=">29.970</rule>
+  <rule name="Other/TimeCode_FirstFrame is 04:00:00;00" value="TimeCode_FirstFrame" tracktype="Other" occurrence="*" operator="=">04:00:00;00</rule>
+  <rule name="Other/TimeCode_LastFrame is 04:31:27;25" value="TimeCode_LastFrame" tracktype="Other" occurrence="*" operator="=">04:31:27;25</rule>
+  <rule name="Other/TimeCode_Settings is Source Package" value="TimeCode_Settings" tracktype="Other" occurrence="*" operator="=">Source Package</rule>
+  <rule name="Other/TimeCode_Striped is Yes" value="TimeCode_Striped" tracktype="Other" occurrence="*" operator="=">Yes</rule>
+  <rule name="Other/Title is Timecode Track" value="Title" tracktype="Other" occurrence="*" operator="=">Timecode Track</rule>
+</policy>
+

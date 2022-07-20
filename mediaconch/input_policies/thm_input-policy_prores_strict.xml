@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<policy type="and" name="thm_input-policy_prores_01">
+  <rule name="General/StreamCount is 1" value="StreamCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/StreamKind is General" value="StreamKind" tracktype="General" occurrence="*" operator="=">General</rule>
+  <rule name="General/StreamKind_String is General" value="StreamKind_String" tracktype="General" occurrence="*" operator="=">General</rule>
+  <rule name="General/StreamKindID is 0" value="StreamKindID" tracktype="General" occurrence="*" operator="=">0</rule>
+  <rule name="General/VideoCount is 1" value="VideoCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/AudioCount is 1" value="AudioCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/OtherCount is 1" value="OtherCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/Video_Format_List is ProRes" value="Video_Format_List" tracktype="General" occurrence="*" operator="=">ProRes</rule>
+  <rule name="General/Video_Format_WithHint_List is ProRes" value="Video_Format_WithHint_List" tracktype="General" occurrence="*" operator="=">ProRes</rule>
+  <rule name="General/Video_Codec_List is ProRes" value="Video_Codec_List" tracktype="General" occurrence="*" operator="=">ProRes</rule>
+  <rule name="General/Video_Language_List is en" value="Video_Language_List" tracktype="General" occurrence="*" operator="=">en</rule>
+  <rule name="General/Audio_Format_List is PCM" value="Audio_Format_List" tracktype="General" occurrence="*" operator="=">PCM</rule>
+  <rule name="General/Audio_Format_WithHint_List is PCM" value="Audio_Format_WithHint_List" tracktype="General" occurrence="*" operator="=">PCM</rule>
+  <rule name="General/Audio_Codec_List is PCM" value="Audio_Codec_List" tracktype="General" occurrence="*" operator="=">PCM</rule>
+  <rule name="General/Audio_Language_List is en" value="Audio_Language_List" tracktype="General" occurrence="*" operator="=">en</rule>
+  <rule name="General/Other_Format_List is QuickTime TC" value="Other_Format_List" tracktype="General" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="General/Other_Format_WithHint_List is QuickTime TC" value="Other_Format_WithHint_List" tracktype="General" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="General/Other_Codec_List is QuickTime TC" value="Other_Codec_List" tracktype="General" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="General/Other_Language_List is en" value="Other_Language_List" tracktype="General" occurrence="*" operator="=">en</rule>
+  <rule name="General/FileExtension is mov" value="FileExtension" tracktype="General" occurrence="*" operator="=">mov</rule>
+  <rule name="General/Format is MPEG-4" value="Format" tracktype="General" occurrence="*" operator="=">MPEG-4</rule>
+  <rule name="General/Format_String is MPEG-4" value="Format_String" tracktype="General" occurrence="*" operator="=">MPEG-4</rule>
+  <rule name="General/Format_Commercial is MPEG-4" value="Format_Commercial" tracktype="General" occurrence="*" operator="=">MPEG-4</rule>
+  <rule name="General/Format_Profile is QuickTime" value="Format_Profile" tracktype="General" occurrence="*" operator="=">QuickTime</rule>
+  <rule name="General/InternetMediaType is video/mp4" value="InternetMediaType" tracktype="General" occurrence="*" operator="=">video/mp4</rule>
+  <rule name="General/CodecID is qt  " value="CodecID" tracktype="General" occurrence="*" operator="=">qt  </rule>
+  <rule name="General/CodecID_Compatible is qt  /CDes" value="CodecID_Compatible" tracktype="General" occurrence="*" operator="=">qt  /CDes</rule>
+  <rule name="General/OverallBitRate_Mode is VBR" value="OverallBitRate_Mode" tracktype="General" occurrence="*" operator="=">VBR</rule>
+  <rule name="General/OverallBitRate_Mode_String is VBR" value="OverallBitRate_Mode_String" tracktype="General" occurrence="*" operator="=">VBR</rule>
+  <rule name="General/OverallBitRate_String is-more-than 150 Mbps" value="OverallBitRate_String" tracktype="General" occurrence="*" operator="&gt;=">150Mbps</rule>
+  <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
+  <rule name="General/FrameRate_String is 29.970 fps" value="FrameRate_String" tracktype="General" occurrence="*" operator="=">29.970 fps</rule>
+  <rule name="General/IsStreamable is No" value="IsStreamable" tracktype="General" occurrence="*" operator="=">No</rule>
+  <rule name="Video/StreamCount is 1" value="StreamCount" tracktype="Video" occurrence="*" operator="=">1</rule>
+  <rule name="Video/StreamKind is Video" value="StreamKind" tracktype="Video" occurrence="*" operator="=">Video</rule>
+  <rule name="Video/StreamKind_String is Video" value="StreamKind_String" tracktype="Video" occurrence="*" operator="=">Video</rule>
+  <rule name="Video/StreamKindID is 0" value="StreamKindID" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/StreamOrder is 0" value="StreamOrder" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/ID is 1" value="ID" tracktype="Video" occurrence="*" operator="=">1</rule>
+  <rule name="Video/ID_String is 1" value="ID_String" tracktype="Video" occurrence="*" operator="=">1</rule>
+  <rule name="Video/Format is ProRes" value="Format" tracktype="Video" occurrence="*" operator="=">ProRes</rule>
+  <rule name="Video/Format_String is ProRes" value="Format_String" tracktype="Video" occurrence="*" operator="=">ProRes</rule>
+  <rule name="Video/Format_Commercial is ProRes" value="Format_Commercial" tracktype="Video" occurrence="*" operator="=">ProRes</rule>
+  <rule name="Video/Format_Version is 0" value="Format_Version" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/Format_Profile is 422" value="Format_Profile" tracktype="Video" occurrence="*" operator="=">422</rule>
+  <rule name="Video/CodecID is apcn" value="CodecID" tracktype="Video" occurrence="*" operator="=">apcn</rule>
+  <rule name="Video/BitRate_Mode is VBR" value="BitRate_Mode" tracktype="Video" occurrence="*" operator="=">VBR</rule>
+  <rule name="Video/BitRate_Mode_String is VBR" value="BitRate_Mode_String" tracktype="Video" occurrence="*" operator="=">VBR</rule>
+  <rule name="Video/BitRate_String is-more-than 150 Mbps" value="BitRate_String" tracktype="Video" occurrence="*" operator="&gt;=">150 Mbps</rule>
+  <rule name="Video/Width is 1920" value="Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
+  <rule name="Video/Width_String is 1920 pixel" value="Width_String" tracktype="Video" occurrence="*" operator="=">1920 pixel</rule>
+  <rule name="Video/Height is 1080" value="Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
+  <rule name="Video/Height_String is 1080 pixel" value="Height_String" tracktype="Video" occurrence="*" operator="=">1080 pixel</rule>
+  <rule name="Video/Sampled_Width is 1920" value="Sampled_Width" tracktype="Video" occurrence="*" operator="=">1920</rule>
+  <rule name="Video/Sampled_Height is 1080" value="Sampled_Height" tracktype="Video" occurrence="*" operator="=">1080</rule>
+  <rule name="Video/PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
+  <rule name="Video/DisplayAspectRatio is 1.778" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.778</rule>
+  <rule name="Video/DisplayAspectRatio_String is 16:9" value="DisplayAspectRatio_String" tracktype="Video" occurrence="*" operator="=">16:9</rule>
+  <rule name="Video/Rotation is 0.000" value="Rotation" tracktype="Video" occurrence="*" operator="=">0.000</rule>
+  <rule name="Video/FrameRate_Mode is CFR" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
+  <rule name="Video/FrameRate_Mode_String is CFR" value="FrameRate_Mode_String" tracktype="Video" occurrence="*" operator="=">CFR</rule>
+  <rule name="Video/FrameRate is 29.970" value="FrameRate" tracktype="Video" occurrence="*" operator="=">29.970</rule>
+  <rule name="Video/FrameRate_String is 29.970 (29970/1000) fps" value="FrameRate_String" tracktype="Video" occurrence="*" operator="=">29.970 (29970/1000) fps</rule>
+  <rule name="Video/FrameRate_Num is 29970" value="FrameRate_Num" tracktype="Video" occurrence="*" operator="=">29970</rule>
+  <rule name="Video/FrameRate_Den is 1000" value="FrameRate_Den" tracktype="Video" occurrence="*" operator="=">1000</rule>
+  <rule name="Video/ColorSpace is YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
+  <rule name="Video/ChromaSubsampling is 4:2:2" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:2</rule>
+  <rule name="Video/ChromaSubsampling_String is 4:2:2" value="ChromaSubsampling_String" tracktype="Video" occurrence="*" operator="=">4:2:2</rule>
+  <rule name="Video/ScanType is Progressive" value="ScanType" tracktype="Video" occurrence="*" operator="=">Progressive</rule>
+  <rule name="Video/ScanType_String is Progressive" value="ScanType_String" tracktype="Video" occurrence="*" operator="=">Progressive</rule>
+  <rule name="Video/Delay_Settings is DropFrame=Yes / 24HourMax=Yes / IsVisual=No" value="Delay_Settings" tracktype="Video" occurrence="*" operator="=">DropFrame=Yes / 24HourMax=Yes / IsVisual=No</rule>
+  <rule name="Video/Delay_DropFrame is Yes" value="Delay_DropFrame" tracktype="Video" occurrence="*" operator="=">Yes</rule>
+  <rule name="Video/Delay_Source is Container" value="Delay_Source" tracktype="Video" occurrence="*" operator="=">Container</rule>
+  <rule name="Video/Delay_Source_String is Container" value="Delay_Source_String" tracktype="Video" occurrence="*" operator="=">Container</rule>
+  <rule name="Video/Encoded_Library is CDSN" value="Encoded_Library" tracktype="Video" occurrence="*" operator="=">CDSN</rule>
+  <rule name="Video/Encoded_Library_String is CDSN" value="Encoded_Library_String" tracktype="Video" occurrence="*" operator="=">CDSN</rule>
+  <rule name="Video/Language is en" value="Language" tracktype="Video" occurrence="*" operator="=">en</rule>
+  <rule name="Video/Language_String is en" value="Language_String" tracktype="Video" occurrence="*" operator="=">en</rule>
+  <rule name="Video/Language_String1 is en" value="Language_String1" tracktype="Video" occurrence="*" operator="=">en</rule>
+  <rule name="Video/Language_String2 is en" value="Language_String2" tracktype="Video" occurrence="*" operator="=">en</rule>
+  <rule name="Video/Language_String3 is eng" value="Language_String3" tracktype="Video" occurrence="*" operator="=">eng</rule>
+  <rule name="Video/Language_String4 is en" value="Language_String4" tracktype="Video" occurrence="*" operator="=">en</rule>
+  <rule name="Video/colour_description_present is Yes" value="colour_description_present" tracktype="Video" occurrence="*" operator="=">Yes</rule>
+  <rule name="Video/colour_description_present_Source is Container / Stream" value="colour_description_present_Source" tracktype="Video" occurrence="*" operator="=">Container / Stream</rule>
+  <rule name="Video/colour_primaries is BT.709" value="colour_primaries" tracktype="Video" occurrence="*" operator="=">BT.709</rule>
+  <rule name="Video/colour_primaries_Source is Container / Stream" value="colour_primaries_Source" tracktype="Video" occurrence="*" operator="=">Container / Stream</rule>
+  <rule name="Video/transfer_characteristics is BT.709" value="transfer_characteristics" tracktype="Video" occurrence="*" operator="=">BT.709</rule>
+  <rule name="Video/transfer_characteristics_Source is Container / Stream" value="transfer_characteristics_Source" tracktype="Video" occurrence="*" operator="=">Container / Stream</rule>
+  <rule name="Video/matrix_coefficients is BT.709" value="matrix_coefficients" tracktype="Video" occurrence="*" operator="=">BT.709</rule>
+  <rule name="Video/matrix_coefficients_Source is Container / Stream" value="matrix_coefficients_Source" tracktype="Video" occurrence="*" operator="=">Container / Stream</rule>
+  <rule name="Audio/StreamCount is 1" value="StreamCount" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/StreamKind is Audio" value="StreamKind" tracktype="Audio" occurrence="*" operator="=">Audio</rule>
+  <rule name="Audio/StreamKind_String is Audio" value="StreamKind_String" tracktype="Audio" occurrence="*" operator="=">Audio</rule>
+  <rule name="Audio/StreamKindID is 0" value="StreamKindID" tracktype="Audio" occurrence="*" operator="=">0</rule>
+  <rule name="Audio/StreamOrder is 1" value="StreamOrder" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ID is 2" value="ID" tracktype="Audio" occurrence="*" operator="=">2</rule>
+  <rule name="Audio/ID_String is 2" value="ID_String" tracktype="Audio" occurrence="*" operator="=">2</rule>
+  <rule name="Audio/Format is PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio/Format_String is PCM" value="Format_String" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio/Format_Commercial is PCM" value="Format_Commercial" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio/Format_Settings_Endianness is Big" value="Format_Settings_Endianness" tracktype="Audio" occurrence="*" operator="=">Big</rule>
+  <rule name="Audio/Format_Settings_Sign is Signed" value="Format_Settings_Sign" tracktype="Audio" occurrence="*" operator="=">Signed</rule>
+  <rule name="Audio/CodecID is lpcm" value="CodecID" tracktype="Audio" occurrence="*" operator="=">lpcm</rule>
+  <rule name="Audio/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/BitRate_Mode_String is CBR" value="BitRate_Mode_String" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/BitRate_String is_more-than 10 Mbps" value="BitRate_String" tracktype="Audio" occurrence="*" operator="&gt;=">10 Mbps</rule>
+  <rule name="Audio/Channels is 8" value="Channels" tracktype="Audio" occurrence="*" operator="=">8</rule>
+  <rule name="Audio/Channels_String is 8 channel" value="Channels_String" tracktype="Audio" occurrence="*" operator="=">8 channel</rule>
+  <rule name="Audio/SamplingRate is 48000" value="SamplingRate" tracktype="Audio" occurrence="*" operator="=">48000</rule>
+  <rule name="Audio/SamplingRate_String is 48.0 KHz" value="SamplingRate_String" tracktype="Audio" occurrence="*" operator="=">48.0 KHz</rule>
+  <rule name="Audio/BitDepth is 32" value="BitDepth" tracktype="Audio" occurrence="*" operator="=">32</rule>
+  <rule name="Audio/BitDepth_String is 32 bit" value="BitDepth_String" tracktype="Audio" occurrence="*" operator="=">32 bit</rule>
+  <rule name="Audio/Delay_DropFrame is Yes" value="Delay_DropFrame" tracktype="Audio" occurrence="*" operator="=">Yes</rule>
+  <rule name="Audio/Delay_Source is Container" value="Delay_Source" tracktype="Audio" occurrence="*" operator="=">Container</rule>
+  <rule name="Audio/Delay_Source_String is Container" value="Delay_Source_String" tracktype="Audio" occurrence="*" operator="=">Container</rule>
+  <rule name="Audio/Language is en" value="Language" tracktype="Audio" occurrence="*" operator="=">en</rule>
+  <rule name="Audio/Language_String is en" value="Language_String" tracktype="Audio" occurrence="*" operator="=">en</rule>
+  <rule name="Audio/Language_String1 is en" value="Language_String1" tracktype="Audio" occurrence="*" operator="=">en</rule>
+  <rule name="Audio/Language_String2 is en" value="Language_String2" tracktype="Audio" occurrence="*" operator="=">en</rule>
+  <rule name="Audio/Language_String3 is eng" value="Language_String3" tracktype="Audio" occurrence="*" operator="=">eng</rule>
+  <rule name="Audio/Language_String4 is en" value="Language_String4" tracktype="Audio" occurrence="*" operator="=">en</rule>
+  <rule name="Other/StreamCount is 1" value="StreamCount" tracktype="Other" occurrence="*" operator="=">1</rule>
+  <rule name="Other/StreamKind is Other" value="StreamKind" tracktype="Other" occurrence="*" operator="=">Other</rule>
+  <rule name="Other/StreamKind_String is Other" value="StreamKind_String" tracktype="Other" occurrence="*" operator="=">Other</rule>
+  <rule name="Other/StreamKindID is 0" value="StreamKindID" tracktype="Other" occurrence="*" operator="=">0</rule>
+  <rule name="Other/StreamOrder is 2" value="StreamOrder" tracktype="Other" occurrence="*" operator="=">2</rule>
+  <rule name="Other/ID is 3" value="ID" tracktype="Other" occurrence="*" operator="=">3</rule>
+  <rule name="Other/ID_String is 3" value="ID_String" tracktype="Other" occurrence="*" operator="=">3</rule>
+  <rule name="Other/Type is Time code" value="Type" tracktype="Other" occurrence="*" operator="=">Time code</rule>
+  <rule name="Other/Format is QuickTime TC" value="Format" tracktype="Other" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="Other/Format_String is QuickTime TC" value="Format_String" tracktype="Other" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="Other/Format_Commercial is QuickTime TC" value="Format_Commercial" tracktype="Other" occurrence="*" operator="=">QuickTime TC</rule>
+  <rule name="Other/FrameRate is 29.970" value="FrameRate" tracktype="Other" occurrence="*" operator="=">29.970</rule>
+  <rule name="Other/FrameRate_String is 29.970 (29970/1000) fps" value="FrameRate_String" tracktype="Other" occurrence="*" operator="=">29.970 (29970/1000) fps</rule>
+  <rule name="Other/FrameRate_Num is 29970" value="FrameRate_Num" tracktype="Other" occurrence="*" operator="=">29970</rule>
+  <rule name="Other/FrameRate_Den is 1000" value="FrameRate_Den" tracktype="Other" occurrence="*" operator="=">1000</rule>
+  <rule name="Other/TimeCode_DropFrame is Yes" value="TimeCode_DropFrame" tracktype="Other" occurrence="*" operator="=">Yes</rule>
+  <rule name="Other/TimeCode_Striped is Yes" value="TimeCode_Striped" tracktype="Other" occurrence="*" operator="=">Yes</rule>
+  <rule name="Other/TimeCode_Striped_String is Yes" value="TimeCode_Striped_String" tracktype="Other" occurrence="*" operator="=">Yes</rule>
+  <rule name="Other/Language is en" value="Language" tracktype="Other" occurrence="*" operator="=">en</rule>
+  <rule name="Other/Language_String is en" value="Language_String" tracktype="Other" occurrence="*" operator="=">en</rule>
+  <rule name="Other/Language_String1 is en" value="Language_String1" tracktype="Other" occurrence="*" operator="=">en</rule>
+  <rule name="Other/Language_String2 is en" value="Language_String2" tracktype="Other" occurrence="*" operator="=">en</rule>
+  <rule name="Other/Language_String3 is eng" value="Language_String3" tracktype="Other" occurrence="*" operator="=">eng</rule>
+  <rule name="Other/Language_String4 is en" value="Language_String4" tracktype="Other" occurrence="*" operator="=">en</rule>
+</policy>

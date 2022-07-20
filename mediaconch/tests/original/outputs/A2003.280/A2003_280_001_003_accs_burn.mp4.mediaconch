@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<policy type="and" name="A2003_280_001_003_accs_burn.mp4">
+  <rule name="General/VideoCount is 1" value="VideoCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/AudioCount is 1" value="AudioCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/FileExtension is mp4" value="FileExtension" tracktype="General" occurrence="*" operator="=">mp4</rule>
+  <rule name="General/Format is MPEG-4" value="Format" tracktype="General" occurrence="*" operator="=">MPEG-4</rule>
+  <rule name="General/Format_Profile is Base Media" value="Format_Profile" tracktype="General" occurrence="*" operator="=">Base Media</rule>
+  <rule name="General/CodecID is isom" value="CodecID" tracktype="General" occurrence="*" operator="=">isom</rule>
+  <rule name="General/CodecID_Compatible is isom/iso2/avc1/mp41" value="CodecID_Compatible" tracktype="General" occurrence="*" operator="=">isom/iso2/avc1/mp41</rule>
+  <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
+  <rule name="General/HeaderSize is 40" value="HeaderSize" tracktype="General" occurrence="*" operator="=">40</rule>
+  <rule name="General/DataSize is 123789720" value="DataSize" tracktype="General" occurrence="*" operator="=">123789720</rule>
+  <rule name="General/FooterSize is 2062874" value="FooterSize" tracktype="General" occurrence="*" operator="=">2062874</rule>
+  <rule name="General/IsStreamable is No" value="IsStreamable" tracktype="General" occurrence="*" operator="=">No</rule>
+  <rule name="General/File_Modified_Date is UTC 2022-05-10 22:16:34" value="File_Modified_Date" tracktype="General" occurrence="*" operator="=">UTC 2022-05-10 22:16:34</rule>
+  <rule name="General/File_Modified_Date_Local is 2022-05-10 15:16:34" value="File_Modified_Date_Local" tracktype="General" occurrence="*" operator="=">2022-05-10 15:16:34</rule>
+  <rule name="General/Encoded_Application is Lavf58.45.100" value="Encoded_Application" tracktype="General" occurrence="*" operator="=">Lavf58.45.100</rule>
+  <rule name="Video/StreamOrder is 0" value="StreamOrder" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/ID is 1" value="ID" tracktype="Video" occurrence="*" operator="=">1</rule>
+  <rule name="Video/Format is AVC" value="Format" tracktype="Video" occurrence="*" operator="=">AVC</rule>
+  <rule name="Video/Format_Profile is High" value="Format_Profile" tracktype="Video" occurrence="*" operator="=">High</rule>
+  <rule name="Video/Format_Level is 2.1" value="Format_Level" tracktype="Video" occurrence="*" operator="=">2.1</rule>
+  <rule name="Video/Format_Settings_CABAC is Yes" value="Format_Settings_CABAC" tracktype="Video" occurrence="*" operator="=">Yes</rule>
+  <rule name="Video/Format_Settings_RefFrames is 4" value="Format_Settings_RefFrames" tracktype="Video" occurrence="*" operator="=">4</rule>
+  <rule name="Video/CodecID is avc1" value="CodecID" tracktype="Video" occurrence="*" operator="=">avc1</rule>
+  <rule name="Video/BitRate_Nominal is 500000" value="BitRate_Nominal" tracktype="Video" occurrence="*" operator="=">500000</rule>
+  <rule name="Video/Width is 480" value="Width" tracktype="Video" occurrence="*" operator="=">480</rule>
+  <rule name="Video/Height is 270" value="Height" tracktype="Video" occurrence="*" operator="=">270</rule>
+  <rule name="Video/Stored_Height is 272" value="Stored_Height" tracktype="Video" occurrence="*" operator="=">272</rule>
+  <rule name="Video/Sampled_Width is 480" value="Sampled_Width" tracktype="Video" occurrence="*" operator="=">480</rule>
+  <rule name="Video/Sampled_Height is 270" value="Sampled_Height" tracktype="Video" occurrence="*" operator="=">270</rule>
+  <rule name="Video/PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
+  <rule name="Video/DisplayAspectRatio is 1.778" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.778</rule>
+  <rule name="Video/Rotation is 0.000" value="Rotation" tracktype="Video" occurrence="*" operator="=">0.000</rule>
+  <rule name="Video/FrameRate_Mode is CFR" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
+  <rule name="Video/FrameRate_Mode_Original is VFR" value="FrameRate_Mode_Original" tracktype="Video" occurrence="*" operator="=">VFR</rule>
+  <rule name="Video/FrameRate is 29.970" value="FrameRate" tracktype="Video" occurrence="*" operator="=">29.970</rule>
+  <rule name="Video/ColorSpace is YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
+  <rule name="Video/ChromaSubsampling is 4:2:0" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:0</rule>
+  <rule name="Video/BitDepth is 8" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
+  <rule name="Video/ScanType is Progressive" value="ScanType" tracktype="Video" occurrence="*" operator="=">Progressive</rule>
+  <rule name="Video/Encoded_Library is x264 - core 161 r3027 4121277" value="Encoded_Library" tracktype="Video" occurrence="*" operator="=">x264 - core 161 r3027 4121277</rule>
+  <rule name="Video/Encoded_Library_Name is x264" value="Encoded_Library_Name" tracktype="Video" occurrence="*" operator="=">x264</rule>
+  <rule name="Video/Encoded_Library_Version is core 161 r3027 4121277" value="Encoded_Library_Version" tracktype="Video" occurrence="*" operator="=">core 161 r3027 4121277</rule>
+  <rule name="Video/Encoded_Library_Settings is cabac=1 / ref=3 / deblock=1:0:0 / analyse=0x3:0x113 / me=hex / subme=7 / psy=1 / psy_rd=1.00:0.00 / mixed_ref=1 / me_range=16 / chroma_me=1 / trellis=1 / 8x8dct=1 / cqm=0 / deadzone=21,11 / fast_pskip=1 / chroma_qp_offset=-2 / threads=8 / lookahead_threads=1 / sliced_threads=0 / nr=0 / decimate=1 / interlaced=0 / bluray_compat=0 / constrained_intra=0 / bframes=3 / b_pyramid=2 / b_adapt=1 / b_bias=0 / direct=1 / weightb=1 / open_gop=0 / weightp=2 / keyint=250 / keyint_min=25 / scenecut=40 / intra_refresh=0 / rc_lookahead=40 / rc=cbr / mbtree=1 / bitrate=500 / ratetol=1.0 / qcomp=0.60 / qpmin=0 / qpmax=69 / qpstep=4 / vbv_maxrate=500 / vbv_bufsize=500 / nal_hrd=none / filler=0 / ip_ratio=1.40 / aq=1:1.00" value="Encoded_Library_Settings" tracktype="Video" occurrence="*" operator="=">cabac=1 / ref=3 / deblock=1:0:0 / analyse=0x3:0x113 / me=hex / subme=7 / psy=1 / psy_rd=1.00:0.00 / mixed_ref=1 / me_range=16 / chroma_me=1 / trellis=1 / 8x8dct=1 / cqm=0 / deadzone=21,11 / fast_pskip=1 / chroma_qp_offset=-2 / threads=8 / lookahead_threads=1 / sliced_threads=0 / nr=0 / decimate=1 / interlaced=0 / bluray_compat=0 / constrained_intra=0 / bframes=3 / b_pyramid=2 / b_adapt=1 / b_bias=0 / direct=1 / weightb=1 / open_gop=0 / weightp=2 / keyint=250 / keyint_min=25 / scenecut=40 / intra_refresh=0 / rc_lookahead=40 / rc=cbr / mbtree=1 / bitrate=500 / ratetol=1.0 / qcomp=0.60 / qpmin=0 / qpmax=69 / qpstep=4 / vbv_maxrate=500 / vbv_bufsize=500 / nal_hrd=none / filler=0 / ip_ratio=1.40 / aq=1:1.00</rule>
+  <rule name="Audio/StreamOrder is 1" value="StreamOrder" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ID is 2" value="ID" tracktype="Audio" occurrence="*" operator="=">2</rule>
+  <rule name="Audio/Format is AAC" value="Format" tracktype="Audio" occurrence="*" operator="=">AAC</rule>
+  <rule name="Audio/Format_Settings_SBR is No (Explicit)" value="Format_Settings_SBR" tracktype="Audio" occurrence="*" operator="=">No (Explicit)</rule>
+  <rule name="Audio/Format_AdditionalFeatures is LC" value="Format_AdditionalFeatures" tracktype="Audio" occurrence="*" operator="=">LC</rule>
+  <rule name="Audio/CodecID is mp4a-40-2" value="CodecID" tracktype="Audio" occurrence="*" operator="=">mp4a-40-2</rule>
+  <rule name="Audio/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/Channels is 1" value="Channels" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ChannelPositions is Front: C" value="ChannelPositions" tracktype="Audio" occurrence="*" operator="=">Front: C</rule>
+  <rule name="Audio/ChannelLayout is C" value="ChannelLayout" tracktype="Audio" occurrence="*" operator="=">C</rule>
+  <rule name="Audio/SamplesPerFrame is 1024" value="SamplesPerFrame" tracktype="Audio" occurrence="*" operator="=">1024</rule>
+  <rule name="Audio/SamplingRate is 48000" value="SamplingRate" tracktype="Audio" occurrence="*" operator="=">48000</rule>
+  <rule name="Audio/SamplingCount is 90063888" value="SamplingCount" tracktype="Audio" occurrence="*" operator="=">90063888</rule>
+  <rule name="Audio/FrameRate is 46.875" value="FrameRate" tracktype="Audio" occurrence="*" operator="=">46.875</rule>
+  <rule name="Audio/Compression_Mode is Lossy" value="Compression_Mode" tracktype="Audio" occurrence="*" operator="=">Lossy</rule>
+  <rule name="Audio/StreamSize_Proportion is 0.12951" value="StreamSize_Proportion" tracktype="Audio" occurrence="*" operator="=">0.12951</rule>
+  <rule name="Audio/Default is Yes" value="Default" tracktype="Audio" occurrence="*" operator="=">Yes</rule>
+  <rule name="Audio/AlternateGroup is 1" value="AlternateGroup" tracktype="Audio" occurrence="*" operator="=">1</rule>
+</policy>
+

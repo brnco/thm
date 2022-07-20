@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<policy name="DOH_HEJ_006_008.mov" type="and">
+ <rule name="General/VideoCount is 1" occurrence="*" operator="=" tracktype="General" value="VideoCount">
+  1
+ </rule>
+ <rule name="General/AudioCount is 1" occurrence="*" operator="=" tracktype="General" value="AudioCount">
+  1
+ </rule>
+ <rule name="General/OtherCount is 1" occurrence="*" operator="=" tracktype="General" value="OtherCount">
+  1
+ </rule>
+ <rule name="General/FileExtension is mov" occurrence="*" operator="=" tracktype="General" value="FileExtension">
+  mov
+ </rule>
+ <rule name="General/Format is MPEG-4" occurrence="*" operator="=" tracktype="General" value="Format">
+  MPEG-4
+ </rule>
+ <rule name="General/Format_Profile is QuickTime" occurrence="*" operator="=" tracktype="General" value="Format_Profile">
+  QuickTime
+ </rule>
+ <rule name="General/CodecID is qt  " occurrence="*" operator="=" tracktype="General" value="CodecID">
+  qt
+ </rule>
+ <rule name="General/CodecID_Version is 2007.09" occurrence="*" operator="=" tracktype="General" value="CodecID_Version">
+  2007.09
+ </rule>
+ <rule name="General/CodecID_Compatible is qt  /CDes" occurrence="*" operator="=" tracktype="General" value="CodecID_Compatible">
+  qt  /CDes
+ </rule>
+ <rule name="General/OverallBitRate_Mode is VBR" occurrence="*" operator="=" tracktype="General" value="OverallBitRate_Mode">
+  VBR
+ </rule>
+ <rule name="General/FrameRate is 29.970" occurrence="*" operator="=" tracktype="General" value="FrameRate">
+  29.970
+ </rule>
+ <rule name="General/HeaderSize is 40" occurrence="*" operator="=" tracktype="General" value="HeaderSize">
+  40
+ </rule>
+ <rule name="General/DataSize is 3758096344" occurrence="*" operator="=" tracktype="General" value="DataSize">
+  3758096344
+ </rule>
+ <rule name="General/FooterSize is 2886656" occurrence="*" operator="=" tracktype="General" value="FooterSize">
+  2886656
+ </rule>
+ <rule name="General/IsStreamable is No" occurrence="*" operator="=" tracktype="General" value="IsStreamable">
+  No
+ </rule>
+ <rule name="General/Encoded_Date is UTC 2008-06-06 20:25:39" occurrence="*" operator="=" tracktype="General" value="Encoded_Date">
+  UTC 2008-06-06 20:25:39
+ </rule>
+ <rule name="General/Tagged_Date is UTC 2008-06-06 20:25:50" occurrence="*" operator="=" tracktype="General" value="Tagged_Date">
+  UTC 2008-06-06 20:25:50
+ </rule>
+ <rule name="General/File_Modified_Date is UTC 2022-05-12 18:36:22" occurrence="*" operator="=" tracktype="General" value="File_Modified_Date">
+  UTC 2022-05-12 18:36:22
+ </rule>
+ <rule name="General/File_Modified_Date_Local is 2022-05-12 11:36:22" occurrence="*" operator="=" tracktype="General" value="File_Modified_Date_Local">
+  2022-05-12 11:36:22
+ </rule>
+ <rule name="Video/StreamOrder is 0" occurrence="*" operator="=" tracktype="Video" value="StreamOrder">
+  0
+ </rule>
+ <rule name="Video/ID is 1" occurrence="*" operator="=" tracktype="Video" value="ID">
+  1
+ </rule>
+ <rule name="Video/Format is ProRes" occurrence="*" operator="=" tracktype="Video" value="Format">
+  ProRes
+ </rule>
+ <rule name="Video/Format_Version is 0" occurrence="*" operator="=" tracktype="Video" value="Format_Version">
+  0
+ </rule>
+ <rule name="Video/Format_Profile is 422" occurrence="*" operator="=" tracktype="Video" value="Format_Profile">
+  422
+ </rule>
+ <rule name="Video/CodecID is apcn" occurrence="*" operator="=" tracktype="Video" value="CodecID">
+  apcn
+ </rule>
+ <rule name="Video/BitRate_Mode is VBR" occurrence="*" operator="=" tracktype="Video" value="BitRate_Mode">
+  VBR
+ </rule>
+ <rule name="Video/Width is 1920" occurrence="*" operator="=" tracktype="Video" value="Width">
+  1920
+ </rule>
+ <rule name="Video/Width_CleanAperture is 1888" occurrence="*" operator="=" tracktype="Video" value="Width_CleanAperture">
+  1888
+ </rule>
+ <rule name="Video/Height is 1080" occurrence="*" operator="=" tracktype="Video" value="Height">
+  1080
+ </rule>
+ <rule name="Video/Sampled_Width is 1920" occurrence="*" operator="=" tracktype="Video" value="Sampled_Width">
+  1920
+ </rule>
+ <rule name="Video/Sampled_Height is 1080" occurrence="*" operator="=" tracktype="Video" value="Sampled_Height">
+  1080
+ </rule>
+ <rule name="Video/PixelAspectRatio is 1.000" occurrence="*" operator="=" tracktype="Video" value="PixelAspectRatio">
+  1.000
+ </rule>
+ <rule name="Video/DisplayAspectRatio is 1.778" occurrence="*" operator="=" tracktype="Video" value="DisplayAspectRatio">
+  1.778
+ </rule>
+ <rule name="Video/Rotation is 0.000" occurrence="*" operator="=" tracktype="Video" value="Rotation">
+  0.000
+ </rule>
+ <rule name="Video/FrameRate_Mode is CFR" occurrence="*" operator="=" tracktype="Video" value="FrameRate_Mode">
+  CFR
+ </rule>
+ <rule name="Video/FrameRate is 29.970" occurrence="*" operator="=" tracktype="Video" value="FrameRate">
+  29.970
+ </rule>
+ <rule name="Video/ColorSpace is YUV" occurrence="*" operator="=" tracktype="Video" value="ColorSpace">
+  YUV
+ </rule>
+ <rule name="Video/ChromaSubsampling is 4:2:2" occurrence="*" operator="=" tracktype="Video" value="ChromaSubsampling">
+  4:2:2
+ </rule>
+ <rule name="Video/ScanType is Progressive" occurrence="*" operator="=" tracktype="Video" value="ScanType">
+  Progressive
+ </rule>
+ <rule name="Video/Encoded_Library is CDSN" occurrence="*" operator="=" tracktype="Video" value="Encoded_Library">
+  CDSN
+ </rule>
+ <rule name="Video/Language is en" occurrence="*" operator="=" tracktype="Video" value="Language">
+  en
+ </rule>
+ <rule name="Video/Encoded_Date is UTC 2008-06-06 20:25:39" occurrence="*" operator="=" tracktype="Video" value="Encoded_Date">
+  UTC 2008-06-06 20:25:39
+ </rule>
+ <rule name="Video/Tagged_Date is UTC 2008-06-06 20:25:50" occurrence="*" operator="=" tracktype="Video" value="Tagged_Date">
+  UTC 2008-06-06 20:25:50
+ </rule>
+ <rule name="Video/colour_description_present is Yes" occurrence="*" operator="=" tracktype="Video" value="colour_description_present">
+  Yes
+ </rule>
+ <rule name="Video/colour_description_present_Source is Container / Stream" occurrence="*" operator="=" tracktype="Video" value="colour_description_present_Source">
+  Container / Stream
+ </rule>
+ <rule name="Video/colour_primaries is BT.709" occurrence="*" operator="=" tracktype="Video" value="colour_primaries">
+  BT.709
+ </rule>
+ <rule name="Video/colour_primaries_Source is Container / Stream" occurrence="*" operator="=" tracktype="Video" value="colour_primaries_Source">
+  Container / Stream
+ </rule>
+ <rule name="Video/transfer_characteristics is BT.709" occurrence="*" operator="=" tracktype="Video" value="transfer_characteristics">
+  BT.709
+ </rule>
+ <rule name="Video/transfer_characteristics_Source is Container / Stream" occurrence="*" operator="=" tracktype="Video" value="transfer_characteristics_Source">
+  Container / Stream
+ </rule>
+ <rule name="Video/matrix_coefficients is BT.709" occurrence="*" operator="=" tracktype="Video" value="matrix_coefficients">
+  BT.709
+ </rule>
+ <rule name="Video/matrix_coefficients_Source is Container / Stream" occurrence="*" operator="=" tracktype="Video" value="matrix_coefficients_Source">
+  Container / Stream
+ </rule>
+ <rule name="Audio/StreamOrder is 1" occurrence="*" operator="=" tracktype="Audio" value="StreamOrder">
+  1
+ </rule>
+ <rule name="Audio/ID is 2" occurrence="*" operator="=" tracktype="Audio" value="ID">
+  2
+ </rule>
+ <rule name="Audio/Format is PCM" occurrence="*" operator="=" tracktype="Audio" value="Format">
+  PCM
+ </rule>
+ <rule name="Audio/Format_Settings_Endianness is Big" occurrence="*" operator="=" tracktype="Audio" value="Format_Settings_Endianness">
+  Big
+ </rule>
+ <rule name="Audio/Format_Settings_Sign is Signed" occurrence="*" operator="=" tracktype="Audio" value="Format_Settings_Sign">
+  Signed
+ </rule>
+ <rule name="Audio/CodecID is lpcm" occurrence="*" operator="=" tracktype="Audio" value="CodecID">
+  lpcm
+ </rule>
+ <rule name="Audio/BitRate_Mode is CBR" occurrence="*" operator="=" tracktype="Audio" value="BitRate_Mode">
+  CBR
+ </rule>
+ <rule name="Audio/Channels is 8" occurrence="*" operator="=" tracktype="Audio" value="Channels">
+  8
+ </rule>
+ <rule name="Audio/SamplingRate is 48000" occurrence="*" operator="=" tracktype="Audio" value="SamplingRate">
+  48000
+ </rule>
+ <rule name="Audio/SamplingCount is 8257872" occurrence="*" operator="=" tracktype="Audio" value="SamplingCount">
+  8257872
+ </rule>
+ <rule name="Audio/BitDepth is 32" occurrence="*" operator="=" tracktype="Audio" value="BitDepth">
+  32
+ </rule>
+ <rule name="Audio/Delay_DropFrame is Yes" occurrence="*" operator="=" tracktype="Audio" value="Delay_DropFrame">
+  Yes
+ </rule>
+ <rule name="Audio/Delay_Source is Container" occurrence="*" operator="=" tracktype="Audio" value="Delay_Source">
+  Container
+ </rule>
+ <rule name="Audio/StreamSize_Proportion is 0.00878" occurrence="*" operator="=" tracktype="Audio" value="StreamSize_Proportion">
+  0.00878
+ </rule>
+ <rule name="Audio/Language is en" occurrence="*" operator="=" tracktype="Audio" value="Language">
+  en
+ </rule>
+ <rule name="Audio/Encoded_Date is UTC 2008-06-06 20:25:39" occurrence="*" operator="=" tracktype="Audio" value="Encoded_Date">
+  UTC 2008-06-06 20:25:39
+ </rule>
+ <rule name="Audio/Tagged_Date is UTC 2008-06-06 20:25:50" occurrence="*" operator="=" tracktype="Audio" value="Tagged_Date">
+  UTC 2008-06-06 20:25:50
+ </rule>
+ <rule name="Other/StreamOrder is 2" occurrence="*" operator="=" tracktype="Other" value="StreamOrder">
+  2
+ </rule>
+ <rule name="Other/ID is 3" occurrence="*" operator="=" tracktype="Other" value="ID">
+  3
+ </rule>
+ <rule name="Other/Type is Time code" occurrence="*" operator="=" tracktype="Other" value="Type">
+  Time code
+ </rule>
+ <rule name="Other/Format is QuickTime TC" occurrence="*" operator="=" tracktype="Other" value="Format">
+  QuickTime TC
+ </rule>
+ <rule name="Other/FrameRate is 29.970" occurrence="*" operator="=" tracktype="Other" value="FrameRate">
+  29.970
+ </rule>
+ <rule name="Other/TimeCode_FirstFrame is 00:23:17;23" occurrence="*" operator="=" tracktype="Other" value="TimeCode_FirstFrame">
+  00:23:17;23
+ </rule>
+ <rule name="Other/TimeCode_LastFrame is 00:26:09;24" occurrence="*" operator="=" tracktype="Other" value="TimeCode_LastFrame">
+  00:26:09;24
+ </rule>
+ <rule name="Other/TimeCode_Striped is Yes" occurrence="*" operator="=" tracktype="Other" value="TimeCode_Striped">
+  Yes
+ </rule>
+ <rule name="Other/Title is Odyssey    " occurrence="*" operator="=" tracktype="Other" value="Title">
+  Odyssey
+ </rule>
+ <rule name="Other/Language is en" occurrence="*" operator="=" tracktype="Other" value="Language">
+  en
+ </rule>
+</policy>

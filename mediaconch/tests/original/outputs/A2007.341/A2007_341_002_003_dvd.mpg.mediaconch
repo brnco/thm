@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<policy type="and" name="A2007_341_002_003_dvd.mpg">
+  <rule name="General/VideoCount is 1" value="VideoCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/AudioCount is 1" value="AudioCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/MenuCount is 1" value="MenuCount" tracktype="General" occurrence="*" operator="=">1</rule>
+  <rule name="General/FileExtension is mpg" value="FileExtension" tracktype="General" occurrence="*" operator="=">mpg</rule>
+  <rule name="General/Format is MPEG-PS" value="Format" tracktype="General" occurrence="*" operator="=">MPEG-PS</rule>
+  <rule name="General/OverallBitRate_Mode is VBR" value="OverallBitRate_Mode" tracktype="General" occurrence="*" operator="=">VBR</rule>
+  <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
+  <rule name="General/File_Modified_Date is UTC 2022-05-10 22:48:40" value="File_Modified_Date" tracktype="General" occurrence="*" operator="=">UTC 2022-05-10 22:48:40</rule>
+  <rule name="General/File_Modified_Date_Local is 2022-05-10 15:48:40" value="File_Modified_Date_Local" tracktype="General" occurrence="*" operator="=">2022-05-10 15:48:40</rule>
+  <rule name="Video/FirstPacketOrder is 0" value="FirstPacketOrder" tracktype="Video" occurrence="*" operator="=">0</rule>
+  <rule name="Video/ID is 224" value="ID" tracktype="Video" occurrence="*" operator="=">224</rule>
+  <rule name="Video/Format is MPEG Video" value="Format" tracktype="Video" occurrence="*" operator="=">MPEG Video</rule>
+  <rule name="Video/Format_Version is 2" value="Format_Version" tracktype="Video" occurrence="*" operator="=">2</rule>
+  <rule name="Video/Format_Profile is Main" value="Format_Profile" tracktype="Video" occurrence="*" operator="=">Main</rule>
+  <rule name="Video/Format_Level is Main" value="Format_Level" tracktype="Video" occurrence="*" operator="=">Main</rule>
+  <rule name="Video/Format_Settings_BVOP is No" value="Format_Settings_BVOP" tracktype="Video" occurrence="*" operator="=">No</rule>
+  <rule name="Video/Format_Settings_Matrix is Default" value="Format_Settings_Matrix" tracktype="Video" occurrence="*" operator="=">Default</rule>
+  <rule name="Video/Format_Settings_GOP is N=12" value="Format_Settings_GOP" tracktype="Video" occurrence="*" operator="=">N=12</rule>
+  <rule name="Video/BitRate_Mode is VBR" value="BitRate_Mode" tracktype="Video" occurrence="*" operator="=">VBR</rule>
+  <rule name="Video/BitRate_Maximum is 9000000" value="BitRate_Maximum" tracktype="Video" occurrence="*" operator="=">9000000</rule>
+  <rule name="Video/Width is 720" value="Width" tracktype="Video" occurrence="*" operator="=">720</rule>
+  <rule name="Video/Height is 480" value="Height" tracktype="Video" occurrence="*" operator="=">480</rule>
+  <rule name="Video/Sampled_Width is 720" value="Sampled_Width" tracktype="Video" occurrence="*" operator="=">720</rule>
+  <rule name="Video/Sampled_Height is 480" value="Sampled_Height" tracktype="Video" occurrence="*" operator="=">480</rule>
+  <rule name="Video/PixelAspectRatio is 1.185" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.185</rule>
+  <rule name="Video/DisplayAspectRatio is 1.778" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.778</rule>
+  <rule name="Video/FrameRate is 29.970" value="FrameRate" tracktype="Video" occurrence="*" operator="=">29.970</rule>
+  <rule name="Video/Standard is NTSC" value="Standard" tracktype="Video" occurrence="*" operator="=">NTSC</rule>
+  <rule name="Video/ColorSpace is YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
+  <rule name="Video/ChromaSubsampling is 4:2:0" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:0</rule>
+  <rule name="Video/BitDepth is 8" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
+  <rule name="Video/ScanType is Progressive" value="ScanType" tracktype="Video" occurrence="*" operator="=">Progressive</rule>
+  <rule name="Video/Compression_Mode is Lossy" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossy</rule>
+  <rule name="Video/Delay_Original is 0.000" value="Delay_Original" tracktype="Video" occurrence="*" operator="=">0.000</rule>
+  <rule name="Video/TimeCode_FirstFrame is 00:00:00:00" value="TimeCode_FirstFrame" tracktype="Video" occurrence="*" operator="=">00:00:00:00</rule>
+  <rule name="Video/TimeCode_Source is Group of pictures header" value="TimeCode_Source" tracktype="Video" occurrence="*" operator="=">Group of pictures header</rule>
+  <rule name="Video/BufferSize is 229376" value="BufferSize" tracktype="Video" occurrence="*" operator="=">229376</rule>
+  <rule name="Audio/StreamOrder is 0" value="StreamOrder" tracktype="Audio" occurrence="*" operator="=">0</rule>
+  <rule name="Audio/FirstPacketOrder is 1" value="FirstPacketOrder" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ID is 189-128" value="ID" tracktype="Audio" occurrence="*" operator="=">189-128</rule>
+  <rule name="Audio/Format is AC-3" value="Format" tracktype="Audio" occurrence="*" operator="=">AC-3</rule>
+  <rule name="Audio/Format_Commercial_IfAny is Dolby Digital" value="Format_Commercial_IfAny" tracktype="Audio" occurrence="*" operator="=">Dolby Digital</rule>
+  <rule name="Audio/Format_Settings_Endianness is Big" value="Format_Settings_Endianness" tracktype="Audio" occurrence="*" operator="=">Big</rule>
+  <rule name="Audio/MuxingMode is DVD-Video" value="MuxingMode" tracktype="Audio" occurrence="*" operator="=">DVD-Video</rule>
+  <rule name="Audio/BitRate_Mode is CBR" value="BitRate_Mode" tracktype="Audio" occurrence="*" operator="=">CBR</rule>
+  <rule name="Audio/Channels is 1" value="Channels" tracktype="Audio" occurrence="*" operator="=">1</rule>
+  <rule name="Audio/ChannelPositions is Front: C" value="ChannelPositions" tracktype="Audio" occurrence="*" operator="=">Front: C</rule>
+  <rule name="Audio/ChannelLayout is C" value="ChannelLayout" tracktype="Audio" occurrence="*" operator="=">C</rule>
+  <rule name="Audio/SamplesPerFrame is 1536" value="SamplesPerFrame" tracktype="Audio" occurrence="*" operator="=">1536</rule>
+  <rule name="Audio/SamplingRate is 48000" value="SamplingRate" tracktype="Audio" occurrence="*" operator="=">48000</rule>
+  <rule name="Audio/SamplingCount is 90619392" value="SamplingCount" tracktype="Audio" occurrence="*" operator="=">90619392</rule>
+  <rule name="Audio/FrameRate is 31.250" value="FrameRate" tracktype="Audio" occurrence="*" operator="=">31.250</rule>
+  <rule name="Audio/Compression_Mode is Lossy" value="Compression_Mode" tracktype="Audio" occurrence="*" operator="=">Lossy</rule>
+  <rule name="Audio/Delay_Source is Container" value="Delay_Source" tracktype="Audio" occurrence="*" operator="=">Container</rule>
+  <rule name="Audio/StreamSize_Proportion is 0.11354" value="StreamSize_Proportion" tracktype="Audio" occurrence="*" operator="=">0.11354</rule>
+  <rule name="Audio/ServiceKind is CM" value="ServiceKind" tracktype="Audio" occurrence="*" operator="=">CM</rule>
+  <rule name="Menu/Format is DVD-Video" value="Format" tracktype="Menu" occurrence="*" operator="=">DVD-Video</rule>
+</policy>
+

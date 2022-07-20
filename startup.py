@@ -1,7 +1,14 @@
+#!/usr/bin/env python
 '''
-startup functions for thm makevideos script
+handles aspects of starting script
+verifies drives are attached
+verifies there's not a file copying into D:\incoming
 '''
 import logging
+import pathlib
+import time
+import traceback
+import sys
 logger = logging.getLogger(__name__)
 
 def verify_already_running(kwargs):
@@ -9,16 +16,57 @@ def verify_already_running(kwargs):
     returns True if logs/makevideos.lock exists
     '''
     if kwargs.config.lockfile.is_file():
-        logger.error("makevideos is already running")
-        print("Ensure that makevideos isn't ready running by typing this into terminal: ")
-        print("ps aux | grep python")
-        print("if no python processes are found, delete makevideos lock file located at:")
-        print(kwargs.config.lockfile)
+        logger.error("ingest.py may already be running")
+        print("Ensure that ingest.py isn't already running")
+        print("This error may be caused by improper shutdown of ingest.py")
+        print("Check the most recent log file located at:")
+        print(kwargs.config.logs_path)
+        print("If ingest.py isn't already running, you can re-run it now as normal")
         return True
     else:
         logger.info("creating lock file %s", str(kwargs.config.lockfile))
         kwargs.config.lockfile.touch()
         return False
+
+def verify_venv():
+    '''
+    verifies if the virutal environment (venv) has been enabled
+    '''
+    logger.debug("sys.base_prefix = %s", sys.base_prefix)
+    logger.debug("sys.prefix = %s", sys.prefix)
+    is_venv = sys.base_prefix != sys.prefix
+    if not is_venv:
+        logger.error("the script could not be started because the virtual environment has not been enabled")
+        logger.info("to enable the virtual environment for this script," \
+            + " run the below code in cmd.exe, while in the code repo directory (C:\\Users\\archadmin\\code\\thm)")
+        logger.info("venv\Scripts\\activate.bat")
+        return False
+    return True
+
+def verify_file_copying(kwargs):
+    '''
+    checks if something is copying into the raw capture dir
+
+    does so by renaming the file to a temporary filename, then naming back
+    on Windows, files can only be used by 1 IO process at a time
+    so, if a file is copying, renaming raises OSError, script tries again 120seconds later
+    '''
+    logging.info("verifying that no files are being copied into raw_captures")
+    for file in kwargs.config.raw_captures.glob('**/*'):
+        if file.is_file() and not file.name.startswith(".") and not "Thumbs.db" in file.name:
+            logger.debug("testing file %s", file)
+            while True:
+                try:
+                    real_file = file
+                    tmp_file = pathlib.Path(str(file) + "_")
+                    file.rename(tmp_file)
+                    time.sleep(1)
+                    tmp_file.rename(real_file)
+                    break
+                except OSError:
+                    logger.debug(traceback.format_exc())
+                    time.sleep(120)
+    return True
 
 def verify_raw_captures(kwargs):
     '''
@@ -29,7 +77,6 @@ def verify_raw_captures(kwargs):
     if kwargs.input:
         for accession in kwargs.input:
             accession_path = kwargs.config.raw_captures / accession
-            print(accession_path)
             raw_captures = [path for path in accession_path.glob('*.*') \
                 if not any(part.startswith('.') for part in path.parts) \
                 and not any(part.startswith('Thumbs.db') for part in path.parts)]
@@ -54,11 +101,6 @@ def verify_config_filepaths(kwargs):
         logger.error("The white-watermark file cannot be found." \
             "Please put the white watermark file at %s", str(kwargs.config.watermark_white))
         return False
-    if not kwargs.config.timecode_fontfile.is_file():
-        logger.error("The fontfile cannot be found." \
-            "Please put the fontfile at %s", str(kwargs.config.timecode_fontfile))
-        return False
-    logger.info("timecode font and watermark file verification ok")
     return True
 
 def verify_config_drivepaths(kwargs):
@@ -67,7 +109,7 @@ def verify_config_drivepaths(kwargs):
     '''
     logger.info("verifying that drives are mounted")
     if not kwargs.config.sunnas.is_dir():
-        logger.error("The video script is unable to run because SUNNAS is not mounted as expected." \
+        logger.error("The video script is unable to run because SUNNAS is not mounted as expected. " \
         "Please mount SUNNAS on XCluster at %s", str(kwargs.config.sunnas))
         return False
     if not kwargs.config.sunnascopyto.is_dir():
@@ -75,7 +117,7 @@ def verify_config_drivepaths(kwargs):
         "Please mount SUNNAS on XCluster and ensure this directory exists ", str(kwargs.config.sunnascopyto))
         return False
     if not kwargs.config.xendata.is_dir():
-        logger.error("The video script is unable to run because Xendata is not mounted as expected." \
+        logger.error("The video script is unable to run because Xendata is not mounted as expected. " \
         "Please mount Xendata on XCluster at ", str(kwargs.config.xendata))
         return False
     if not kwargs.config.xendatacopyto.is_dir():
