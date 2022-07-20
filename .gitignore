@@ -3,3 +3,4 @@ processing.pid
 thm-test-backups/
 .DS_Store
 Thumbs.db
+*.png

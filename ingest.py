@@ -288,7 +288,6 @@ def test(kwargs):
             return
         return
 
-
 def verify_startup(kwargs):
     '''
     manages startup of script
@@ -297,12 +296,16 @@ def verify_startup(kwargs):
     if already_running:
         logging.error("makevideos is already running")
         return False
-    files_done_copying = startup.verify_file_copying(kwargs)
-    drives_ok = startup.verify_config_drivepaths(kwargs)
-    drives_ok = True
-    if not drives_ok:
-        logging.error("drives not found")
+    in_venv = startup.verify_venv()
+    if not in_venv:
+        logging.error("please enable virtual environment and re-run the script")
         return False
+    files_done_copying = startup.verify_file_copying(kwargs)
+    if kwargs.copy_files:
+        drives_ok = startup.verify_config_drivepaths(kwargs)
+        if not drives_ok:
+            logging.error("drives not found")
+            return False
     watermark_file_ok = startup.verify_config_filepaths(kwargs)
     if not watermark_file_ok:
         logging.error("timecode and/or watermark files not found")
@@ -443,6 +446,7 @@ def main():
             logging.error("startup failed")
             kwargs.config.lockfile.unlink()
             quit()
+        input("eh")
         '''
         determine if script is running in test mode
         '''

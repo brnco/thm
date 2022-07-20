@@ -116,6 +116,18 @@ This section delineates the folderpath for MediaConch policies
 
 `ingest.py -h`
 
+## virtual environment
+
+this script uses the `venv` python library to manage dependencies ("venv" is short for "virtual environment"). It must be enabled in order to be used, however. THM staff shouldn't have to do this too often, but after closing cmd.exe or after a restart it may be necessary.
+
+To enable the virtual environment, run the below command in cmd.exe:
+
+`python -m venv venv`
+
+once that command completes, you should be good to go
+
+the script will error and close if it is not being run in the virtual environment
+
 ## Examples
 
 ingest everything in raw_captures directory, as configured in config file
@@ -149,6 +161,24 @@ run in verbose mode
 run in quiet mode
 
 `ingest.py -q A2022_012_001_001`
+
+### changing notification settings
+
+you can run this script without sending emails using the `--no_email` flag
+
+`ingest.py --no_email`
+
+### changing file copy setting
+
+you can run the script without copying files to the connected drives using the `--no_copy` flag
+
+`ingest.py --no_copy`
+
+### using multiple flags
+
+these options can be strung together in a single command. the command below will process two accessions without input validation, printing every log entry to the terminal window, without copying files and without emailing anyone
+
+`ingest.py -v --no_input_validation --no_copy --no_email A2022_999_001_001 A2017_088_001_001`
 
 # Script Descriptions
 

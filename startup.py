@@ -8,6 +8,7 @@ import logging
 import pathlib
 import time
 import traceback
+import sys
 logger = logging.getLogger(__name__)
 
 def verify_already_running(kwargs):
@@ -26,6 +27,21 @@ def verify_already_running(kwargs):
         logger.info("creating lock file %s", str(kwargs.config.lockfile))
         kwargs.config.lockfile.touch()
         return False
+
+def verify_venv():
+    '''
+    verifies if the virutal environment (venv) has been enabled
+    '''
+    logger.debug("sys.base_prefix = %s", sys.base_prefix)
+    logger.debug("sys.prefix = %s", sys.prefix)
+    is_venv = sys.base_prefix != sys.prefix
+    if not is_venv:
+        logger.error("the script could not be started because the virtual environment has not been enabled")
+        logger.info("to enable the virtual environment for this script," \
+            + " run the below code in cmd.exe, while in the code repo directory (C:\\Users\\archadmin\\code\\thm)")
+        logger.info("venv\Scripts\\activate.bat")
+        return False
+    return True
 
 def verify_file_copying(kwargs):
     '''
