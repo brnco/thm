@@ -90,9 +90,13 @@ def make_mpg_dvd(accession, file, kwargs):
     mpeg = accession + "_dvd.mpg"
     mpeg_fullpath = kwargs.config.raw_captures / accession / mpeg
     segment = accession.split("_")[-1]
+    if kwargs.is_interlaced:
+        yadif = "yadif,"
+    else:
+        yadif = ""
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
-        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + drawtext + \
+        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099" + yadif
+    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
         ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -103,15 +107,19 @@ def make_mp4_with_tc(accession, file, kwargs):
     '''
     creates mp4 with burned in timecode
     '''
-    #logger.info("creating mp4 derivative with burned-in timecode")
+    logger.info("creating mp4 derivative with burned-in timecode")
     mp4 = accession + "_tc.mp4"
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
     segment = accession.split("_")[-1]
+    if kwargs.is_interlaced:
+        yadif = "yadif,"
+    else:
+        yadif = ""
     drawtext = 'drawtext="' \
         "timecode='" + segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -i ' + file + \
-        ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' + drawtext + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
+        ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + drawtext + \
         ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -125,8 +133,12 @@ def make_mp4_with_logo(accession, file, kwargs):
     logger.info("creating mp4 derivative with logo")
     mp4 = accession + "_wm.mp4"
     mp4_fullpath = kwargs.config.raw_captures / accession / mp4
-    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -i ' + str(kwargs.config.watermark_white) + \
-        ' -filter_complex overlay=0:0,scale=420:270 ' \
+    if kwargs.is_interlaced:
+        yadif = "[0]yadif,"
+    else:
+        yadif = ""
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.config.watermark_white) + \
+        ' -filter_complex ' + yadif + 'overlay=0:0,scale=420:270 ' \
         + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -140,7 +152,7 @@ def make_mxf_mezz(accession, file, kwargs):
     logger.info("creating mxf mezzanine file")
     mxf = accession + "_mezz.mxf"
     mxf_fullpath = kwargs.config.raw_captures / accession / mxf
-    ffmpeg_cmd = 'ffmpeg -i ' + file + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + str(mxf_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -188,7 +200,7 @@ def detect_interlaced_video(file, kwargs):
         return False
     else:
         output = ffmpeg_ok.stdout.decode("utf-8").strip()
-        if "tff" in output or "bff" in output:
+        if "tff" in output or "bff" in output or "tb" in output or "bt" in output:
             kwargs.is_interlaced = True
             return kwargs
         elif "progressive" in output or "unknown" in output:

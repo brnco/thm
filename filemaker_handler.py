@@ -16,10 +16,11 @@ def verify_record_exists(accession, cursor, kwargs):
     '''
     output = ''
     query = "select identifier from PBCoreInstantiation where identifier='" + accession + "'"
+    logger.debug(query)
     cursor.execute(query)
     output = cursor.fetchone()
     if output:
-        logger.info(output)
+        logger.debug(output)
         return True
     else:
         msg = "The video script is unable to run because there is not an accession record for " + accession + " in FileMaker"

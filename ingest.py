@@ -58,13 +58,13 @@ def get_files_for_ingest(kwargs):
             and not any(part.startswith('Thumbs.db') for part in path.parts)
             and path.suffix in kwargs.config.filetypes.input]
         for file in raw_captures:
-            grandcestors = str(file.parents[1])
-            accession_number = str(file).replace(grandcestors,"").replace(str(file.name),"").replace("/","")
+            grandcestors = file.parents[1]
+            accession_number = str(file.parent).replace(str(file.parent.parent),"").replace("\\","")
             try:
-                ingests[accession_number].append(str(file))
+                ingests[accession_number].append(file)
             except:
                 ingests[accession_number] = []
-                ingests[accession_number].append(str(file))
+                ingests[accession_number].append(file)
     logging.debug("%s",str(ingests))
     return ingests
 
@@ -297,7 +297,7 @@ def verify_startup(kwargs):
     if already_running:
         logging.error("makevideos is already running")
         return False
-    files_done_copying = startup.verify_file_copying(kwargs)
+    #files_done_copying = startup.verify_file_copying(kwargs)
     #drives_ok = startup.verify_config_drivepaths(kwargs)
     drives_ok = True
     if not drives_ok:
@@ -395,6 +395,8 @@ def init_kwargs():
             help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--no_input_validation', action='store_true', default=False, \
         help="disable mediaconch file validation on input files and _pres output file")
+    parser.add_argument('--no_copy', action='store_true', default=False, \
+        help="disable file copying to sunnas / xendata, useful for testing")
     parser.add_argument('--test', action='store_true', default=False,\
             help="runs script in test mode")
     args = parser.parse_args()
@@ -402,10 +404,12 @@ def init_kwargs():
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
     kwargs.test = args.test
-    #next two lines flip the boolean values for concatenation and input/output validation
+    #next lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
+    kwargs.copy_files = operator.not_(args.no_copy)
+    #sets mediaconch location
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     '''
     next lines set console output verbosity
@@ -488,7 +492,8 @@ def main():
                 '''
                 kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
                 if not kwargs:
-                    logger.error("interlace detection failed for accession %s", accession)
+                    logger.error("interlace detection failed for accession %s, quitting", accession)
+                    quit()
                 '''
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
@@ -536,19 +541,20 @@ def main():
                 '''
                 send file data to various places
                 '''
-                files_moved_ok = move_files(accession, files, kwargs)
-                if not files_moved_ok:
-                    logging.error("file transfer to preservation storage failed")
-                    raise RuntimeError("the script failed due to an error at runtime")
-                else:
-                    logging.info("files moved successfully")
-                    #for file in accession_fullpath.iterdir():
-                        #file.unlink()
-                    time.sleep(1)
-                    #accession_fullpath.rmdir() #deletes accession dir we just processed
-                    logging.info("accession %s processed successfully", accession)
-                    '''send_email("processing successful for " + accession, \
-                            logging.getLoggerClass().root.handlers[0].baseFilename)'''
+                if kwargs.copy_files:
+                    files_moved_ok = move_files(accession, files, kwargs)
+                    if not files_moved_ok:
+                        logging.error("file transfer to preservation storage failed")
+                        raise RuntimeError("the script failed due to an error at runtime")
+                    else:
+                        logging.info("files moved successfully")
+                        #for file in accession_fullpath.iterdir():
+                            #file.unlink()
+                        time.sleep(1)
+                        #accession_fullpath.rmdir() #deletes accession dir we just processed
+                logging.info("accession %s processed successfully", accession)
+                '''send_email("processing successful for " + accession, \
+                        logging.getLoggerClass().root.handlers[0].baseFilename)'''
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
