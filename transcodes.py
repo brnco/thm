@@ -34,10 +34,10 @@ def read_and_display(cmd):
     we need it because ffmpeg outputs a lot of text data
     keep the 1024 * to start, second number is number of bytes
     total limit is expressed in kibibytes (roughly same as kilobytes)
-    default is 256KiB
+    default is 1MiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 256, stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 1024, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
                 read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
@@ -95,8 +95,8 @@ def make_mpg_dvd(accession, file, kwargs):
     else:
         yadif = ""
     drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
-        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099" + yadif
-    ffmpeg_cmd = 'ffmpeg -i ' + file + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
+        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
         ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:

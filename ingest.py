@@ -297,8 +297,8 @@ def verify_startup(kwargs):
     if already_running:
         logging.error("makevideos is already running")
         return False
-    #files_done_copying = startup.verify_file_copying(kwargs)
-    #drives_ok = startup.verify_config_drivepaths(kwargs)
+    files_done_copying = startup.verify_file_copying(kwargs)
+    drives_ok = startup.verify_config_drivepaths(kwargs)
     drives_ok = True
     if not drives_ok:
         logging.error("drives not found")
@@ -397,6 +397,8 @@ def init_kwargs():
         help="disable mediaconch file validation on input files and _pres output file")
     parser.add_argument('--no_copy', action='store_true', default=False, \
         help="disable file copying to sunnas / xendata, useful for testing")
+    parser.add_argument('--no_email', action='store_true', default=False, \
+        help="disable email notifications")
     parser.add_argument('--test', action='store_true', default=False,\
             help="runs script in test mode")
     args = parser.parse_args()
@@ -409,6 +411,7 @@ def init_kwargs():
     kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.copy_files = operator.not_(args.no_copy)
+    kwargs.send_email = operator.not_(args.no_email)
     #sets mediaconch location
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     '''
@@ -548,20 +551,22 @@ def main():
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
                         logging.info("files moved successfully")
-                        #for file in accession_fullpath.iterdir():
-                            #file.unlink()
+                        for file in accession_fullpath.iterdir():
+                            file.unlink()
                         time.sleep(1)
-                        #accession_fullpath.rmdir() #deletes accession dir we just processed
+                        accession_fullpath.rmdir() #deletes accession dir we just processed
                 logging.info("accession %s processed successfully", accession)
-                '''send_email("processing successful for " + accession, \
-                        logging.getLoggerClass().root.handlers[0].baseFilename)'''
+                if kwargs.send_email:
+                    send_email("processing successful for " + accession, \
+                        logging.getLoggerClass().root.handlers[0].baseFilename)
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(str(e))
         logging.error(traceback.format_exc())
-        '''send_email("processing unsuccessful for " + accession, \
-                logging.getLoggerClass().root.handlers[0].baseFilename)'''
+        if kwargs.send_email:
+            send_email("processing unsuccessful for " + accession, \
+                logging.getLoggerClass().root.handlers[0].baseFilename)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":

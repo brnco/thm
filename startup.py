@@ -42,10 +42,10 @@ def verify_file_copying(kwargs):
             while True:
                 try:
                     real_file = file
-                    tmp_file = file / "_"
+                    tmp_file = pathlib.Path(str(file) + "_")
                     file.rename(tmp_file)
                     time.sleep(1)
-                    file.rename(real_file)
+                    tmp_file.rename(real_file)
                     break
                 except OSError:
                     logger.debug(traceback.format_exc())
