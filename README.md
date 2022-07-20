@@ -120,7 +120,17 @@ This section delineates the folderpath for MediaConch policies
 
 this script uses the `venv` python library to manage dependencies ("venv" is short for "virtual environment"). It must be enabled in order to be used, however. THM staff shouldn't have to do this too often, but after closing cmd.exe or after a restart it may be necessary.
 
-To enable the virtual environment, run the below command in cmd.exe:
+you can tell you're in the virtual environment by looking to the left of the command prompt. For the THM processing machine, the prompt is `D:\Users\archadmin\code\thm` - if that line is preceded by `(venv)`, you are in the virtual environment
+
+This is what you want:
+
+`(venv) D:\Users\archadmin\code\thm: `
+
+This means you gotta activate it:
+
+`D:\Users\archadmin\code\thm: `
+
+To activate the virtual environment, run the below command in cmd.exe:
 
 `venv\Scripts\activate.bat`
 
