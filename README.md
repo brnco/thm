@@ -122,7 +122,7 @@ this script uses the `venv` python library to manage dependencies ("venv" is sho
 
 To enable the virtual environment, run the below command in cmd.exe:
 
-`python -m venv venv`
+`venv\Scripts\activate.bat`
 
 once that command completes, you should be good to go
 
