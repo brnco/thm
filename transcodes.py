@@ -34,10 +34,10 @@ def read_and_display(cmd):
     we need it because ffmpeg outputs a lot of text data
     keep the 1024 * to start, second number is number of bytes
     total limit is expressed in kibibytes (roughly same as kilobytes)
-    default is 1MiB
+    default is 2MiB
     '''
     proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 1024, stdout=PIPE,stderr=PIPE)
+            limit = 1024 * 2048, stdout=PIPE,stderr=PIPE)
     try:
         stdout, stderr = yield from asyncio.gather(\
                 read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
@@ -165,6 +165,8 @@ def concatenate_raw_captures(accession, files, kwargs):
     '''
     accession_dir = files[0].parent
     file_ext = files[0].suffix
+    if ".MOV" in file_ext:
+        file_ext = ".mov"
     segment = accession.split("_")[-1]
     logger.info("concatenating input files in directory %s", str(accession_dir))
     concat_txt_path = accession_dir / "concat.txt"

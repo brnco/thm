@@ -111,18 +111,20 @@ def move_files(accession, files, kwargs):
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
                     str(kwargs.config.xendatacopyto) + " " + str(file.name)
+                copyto_parent = kwargs.config.xendata
             if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
                 #sunnas
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
                     str(kwargs.config.sunnascopyto) + " " + str(file.name)
+                copyto_parent = kwargs.config.sunnas
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
             if output.returncode < 2 and not "pres" in str(file.name):
                 if not "pres" in str(file.name):
                     #move files up to their anchor X:\ or whatever
-                    file.replace(file.parents[-1] / file.name)
+                    file.replace(copyto_parent / file.name)
                 continue
             else:
                 logger.error(output.returncode)
@@ -134,6 +136,29 @@ def move_files(accession, files, kwargs):
         logger.error("there was an error moving a file %s", file)
         logger.error(e)
         return False
+    return True
+
+def copy_pres_dvd_files(accession, files, kwargs):
+    '''
+    copys preservation and DVD files to D:\loc and D:\dvd, respectively
+    '''
+    accession_fullpath = kwargs.config.raw_captures / accession
+    for file in files:
+        if "_pres" in file.name:
+            cmd = "robocopy " + str(accession_fullpath) + " " + \
+                str(kwargs.config.loc) + " " + str(file.name)
+        elif "dvd.mpg" in file.name:
+            cmd = "robocopy " + str(accession_fullpath) + " " + \
+                str(kwargs.config.dvd) + " " + str(file.name)
+        else:
+            continue
+        logger.info("copying %s to %s", file, kwargs.config.loc)
+        output = subprocess.run(cmd, capture_output=True)
+        if output.returncode < 2:
+            logger.info("file copied successfully")
+        else:
+            logger.error("there was a problem copying %s", file)
+            return False
     return True
 
 def hash_files(files, kwargs):
@@ -222,10 +247,20 @@ def process_accession(accession, files, kwargs):
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
-            files = transcodes.concatenate_raw_captures(accession, files, kwargs)
+            pres_file = transcodes.concatenate_raw_captures(accession, files, kwargs)
             if not files:
                 logging.error("concatenation failed")
                 return False
+    else:
+        file = files[0]
+        if ".MOV" in file.name:
+            ext = ".mov"
+        else:
+            ext = file.suffix
+        filename = accession + ext
+        file.replace(file.parent / filename)
+        pres_file = file.parent / filename
+
     '''
     make derivatives in transcode script
     '''
@@ -234,6 +269,7 @@ def process_accession(accession, files, kwargs):
     if not files:
         logging.error("derivative creation failed")
         return False
+    files.append(pres_file)
     return files
 
 def test(kwargs):
@@ -330,6 +366,12 @@ def init_log(kwargs):
     '''
     make a handler for log file, add to logger
     '''
+    if not kwargs.config.logs_path.is_dir():
+        print("ERROR: logs directory not found")
+        print("ERROR: please create a directory at:")
+        print(kwargs.config.logs_path)
+        print("alternatively, change the logs location in post-processing config txt file")
+        return False
     log_handler = logging.FileHandler(log_filepath)
     log_handler.setFormatter(message_format)
     log_handler.setLevel(logging.DEBUG)
@@ -349,6 +391,7 @@ def init_log(kwargs):
     '''
     logger.info("initializing script and log")
     logger.debug("kwargs object: %s", str(kwargs))
+    return True
 
 def init_config(kwargs):
     '''
@@ -367,6 +410,8 @@ def init_config(kwargs):
     kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
+    kwargs.config.loc = pathlib.Path(config.get('fileDestinations','loc'))
+    kwargs.config.dvd = pathlib.Path(config.get('fileDestinations','dvd'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
     kwargs.config.filemaker_user = config.get('filemaker','user')
     kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
@@ -390,12 +435,12 @@ def init_kwargs():
             help="quiet mode, only report errors to terminal screen")
     parser.add_argument('input', nargs='*',\
             help='the input folder(s)')
-    parser.add_argument('--no_concat', action='store_true', default=False,\
-            help="disable concatenation of input files")
-    parser.add_argument('--continue_on_error', action='store_true', default=False,\
-            help="continue processing accessions even if 1 fails")
     parser.add_argument('--mediaconch_policy', default="",\
             help="run input/output validation against specified mediaconch policy at path")
+    parser.add_argument('--continue_on_error', action='store_true', default=False,\
+            help="continue processing accessions even if 1 fails")
+    parser.add_argument('--no_concat', action='store_true', default=False,\
+            help="disable concatenation of input files")
     parser.add_argument('--no_input_validation', action='store_true', default=False, \
         help="disable mediaconch file validation on input files and _pres output file")
     parser.add_argument('--no_copy', action='store_true', default=False, \
@@ -440,13 +485,16 @@ def main():
         '''
         kwargs = init_kwargs()
         kwargs = init_config(kwargs)
-        init_log(kwargs)
+        log_ok = init_log(kwargs)
+        if not log_ok:
+            print("log initialization failed. no log created for this run. quitting...")
+            accession = None
+            quit()
         startup_ok = verify_startup(kwargs)
         if not startup_ok:
             logging.error("startup failed")
             kwargs.config.lockfile.unlink()
             quit()
-        input("eh")
         '''
         determine if script is running in test mode
         '''
@@ -555,10 +603,18 @@ def main():
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
                         logging.info("files moved successfully")
-                        for file in accession_fullpath.iterdir():
-                            file.unlink()
-                        time.sleep(1)
-                        accession_fullpath.rmdir() #deletes accession dir we just processed
+                        logging.info("copying preservation and DVD files")
+                        pres_dvd_files_copied_ok = copy_pres_dvd_files(accession, files, kwargs)
+                        if not pres_dvd_files_copied_ok:
+                            logging.error("there was an error moving the preservation and dvd files to")
+                            logging.error(kwargs.config.loc)
+                            logging.error(kwargs.config.dvd)
+                            raise RuntimeError("the script failed due to an error at runtime")
+                        else:
+                            for file in accession_fullpath.iterdir():
+                                file.unlink()
+                            time.sleep(1)
+                            accession_fullpath.rmdir() #deletes accession dir we just processed
                 logging.info("accession %s processed successfully", accession)
                 if kwargs.send_email:
                     send_email("processing successful for " + accession, \
