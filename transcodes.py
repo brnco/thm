@@ -63,7 +63,6 @@ def run_ffmpeg(cmd):
     rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
     loop.close()
     fflog = []
-    print(stderr)
     for line in stderr:
         if not line.startswith(b'frame'):
             fflog.append(line.decode("utf-8"))
@@ -117,7 +116,7 @@ def make_mp4_with_tc(accession, file, kwargs):
         yadif = ""
     drawtext = 'drawtext="' \
         "timecode='" + segment[-2:] + \
-        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
+        "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + drawtext + \
         ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
@@ -185,7 +184,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         logger.info("concatenation completed successfully")
         concat_vid.replace(accession_pres)
         concat_txt_path.unlink()
-        return [str(accession_pres)]
+        return str(accession_pres)
 
 def detect_interlaced_video(file, kwargs):
     '''

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-main script for ingesting materials for The HIstory Makers
+main script for ingesting materials for The History Makers
 '''
 '''
 import official python libraries
@@ -27,7 +27,7 @@ import util
 import transcodes
 import filemaker_handler as fm
 import file_validation
-from send_email import send_email
+from send_email import send_email, format_log_for_email
 import startup
 
 '''
@@ -183,50 +183,49 @@ def hash_files(files, kwargs):
     logging.info("hashing files completed successfully")
     return hashes
 
-def make_derivatives(accession, input_files, kwargs):
+def make_derivatives(accession, input_file, kwargs):
     '''
     manages derivative creation
     '''
-    for file in input_files:
-        '''
-        mp4 with timecode
-        accession_tc.mp4
-        '''
-        logging.info("creating mp4 with burned-in timecode")
-        mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, file, kwargs)
-        if not mp4_with_tc_ok:
-            logging.error("creation of mp4 with burned-in timecode failed")
-            return False
-        '''
-        mp4 with watermark
-        accession_wm.mp4
-        '''
-        logging.info("creating mp4 with burned-in watermark")
-        mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, file, kwargs)
-        if not mp4_with_logo_ok:
-            logging.error("creation of mp4 with watermark failed")
-            return False
-        '''
-        mpeg file for DVD
-        accession_dvd.mpeg
-        '''
-        logging.info("creating mpeg DVD file")
-        mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, file, kwargs)
-        if not mpeg_dvd_ok:
-            logging.error("creation of mpeg DVD file failed")
-            return False
-        '''
-        NOT IMPLEMENTED
-        mezzanine mxf
-        mezz.mxf
+    '''
+    mp4 with timecode
+    accession_tc.mp4
+    '''
+    logging.info("creating mp4 with burned-in timecode")
+    mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, input_file, kwargs)
+    if not mp4_with_tc_ok:
+        logging.error("creation of mp4 with burned-in timecode failed")
+        return False
+    '''
+    mp4 with watermark
+    accession_wm.mp4
+    '''
+    logging.info("creating mp4 with burned-in watermark")
+    mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwargs)
+    if not mp4_with_logo_ok:
+        logging.error("creation of mp4 with watermark failed")
+        return False
+    '''
+    mpeg file for DVD
+    accession_dvd.mpeg
+    '''
+    logging.info("creating mpeg DVD file")
+    mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, input_file, kwargs)
+    if not mpeg_dvd_ok:
+        logging.error("creation of mpeg DVD file failed")
+        return False
+    '''
+    NOT IMPLEMENTED
+    mezzanine mxf
+    mezz.mxf
 
-        logging.info("creating mxf mezzanine")
-        mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
-        if not mxf_mezz_ok:
-            logging.error("creation of mxf mezzanine failed")
-            return False
-        return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
-        '''
+    logging.info("creating mxf mezzanine")
+    mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
+    if not mxf_mezz_ok:
+        logging.error("creation of mxf mezzanine failed")
+        return False
+    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
+    '''
     return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok]
 
 def process_accession(accession, files, kwargs):
@@ -265,7 +264,7 @@ def process_accession(accession, files, kwargs):
     make derivatives in transcode script
     '''
     with util.cd(str(accession_fullpath)):
-        files = make_derivatives(accession, files, kwargs)
+        files = make_derivatives(accession, pres_file, kwargs)
     if not files:
         logging.error("derivative creation failed")
         return False
@@ -277,52 +276,14 @@ def test(kwargs):
     here you can define functions/ flows for testing the script
     '''
     logging.info("testing")
-    '''
-    create ingest list
-    technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
-    {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
-    '''
-    ingests = get_files_for_ingest(kwargs)
-    '''
-    loop through ingest list
-    accession here is string of form A2022_001_001_001
-    '''
-    for accession in sorted(ingests.keys()):
-        accession_fullpath = kwargs.config.raw_captures / accession
-        '''
-        check filemaker records for each accession
-        '''
-        filemaker_connection, cursor = fm.init_connection(kwargs)
-        filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
-        if not filemaker_ok:
-            logging.error("FileMaker record not found for %s", accession)
-            kwargs.config.lockfile.unlink()
-            quit()
-        else:
-            '''
-            do input validation on each file, if requested
-            '''
-            if kwargs.input_validation:
-                logging.info("running mediaconch policies against input files to determine valid inputs")
-                accession_mediaconch_policy = file_validation.validate_input(accession, \
-                        ingests[accession], kwargs)
-                if not accession_mediaconch_policy:
-                    logging.error("mediainfo input validation failed for accession %s", \
-                            str(accession))
-                    logging.info("for specific errors, please open file %s " \
-                            "in MediaConch GUI and evaluate against policies located at "\
-                            "%s", ingests[accession][0], kwargs.config.mediaconch.input_policies)
-                    logging.info("alternatively, try running this script with " + \
-                            "--no_input_validation flag")
-                    kwargs.config.lockfile.unlink()
-                    quit()
-                else:
-                    kwargs.accession_mediaconch_policy = accession_mediaconch_policy
-        kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
-        if not kwargs:
-            logger.error("interlace detection failed for accession %s", accession)
-            return
-        return
+    accession = "test"
+    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+    print(the_log)
+    tmp_log = format_log_for_email(the_log)
+    if not tmp_log:
+        logger.warning("unable to format log for email")
+        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+    send_email("processing successful for " + accession, tmp_log)
 
 def verify_startup(kwargs):
     '''
@@ -494,7 +455,7 @@ def main():
         if not startup_ok:
             logging.error("startup failed")
             kwargs.config.lockfile.unlink()
-            quit()
+            raise RuntimeError("the script failed due to an error during startup")
         '''
         determine if script is running in test mode
         '''
@@ -524,7 +485,7 @@ def main():
             if not filemaker_ok:
                 logging.error("FileMaker record not found for %s", accession)
                 kwargs.config.lockfile.unlink()
-                quit()
+                raise RuntimeError("The script could not connect to FileMaker")
             else:
                 '''
                 do input validation on each file, if requested
@@ -539,7 +500,7 @@ def main():
                         logging.info("to process this accession, try running this script with" + \
                                 "--no_input_validation flag")
                         kwargs.config.lockfile.unlink()
-                        quit()
+                        raise RuntimeError("the script quit due to an error validating input video files")
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
                 '''
@@ -548,7 +509,7 @@ def main():
                 kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
                 if not kwargs:
                     logger.error("interlace detection failed for accession %s, quitting", accession)
-                    quit()
+                    raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
                 '''
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
@@ -570,7 +531,7 @@ def main():
                     if not output_pres_ok:
                         logging.error("preservation file did not pass validation, quitting...")
                         kwargs.config.lockfile.unlink()
-                        quit()
+                        raise RuntimeError("the script quit due to an error validating output video preservation file")
                 '''
                 create checksums for each derivative
                 hashes is dictionary of full_filepath:hash pairs
@@ -578,7 +539,7 @@ def main():
                 hashes = hash_files(files, kwargs)
                 if not hashes:
                     logging.error("file hashing failed")
-                    return False
+                    raise RuntimeError("the script quit due an error at runtime")
                 logging.debug(hashes)
                 '''
                 send checksums to filemaker
@@ -612,21 +573,30 @@ def main():
                             raise RuntimeError("the script failed due to an error at runtime")
                         else:
                             for file in accession_fullpath.iterdir():
+                                logging.debug(file)
                                 file.unlink()
                             time.sleep(1)
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                 logging.info("accession %s processed successfully", accession)
                 if kwargs.send_email:
-                    send_email("processing successful for " + accession, \
-                        logging.getLoggerClass().root.handlers[0].baseFilename)
+                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+                    tmp_log = format_log_for_email(the_log)
+                    if not tmp_log:
+                        logger.warning("unable to format log for email")
+                        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+                    send_email("processing successful for " + accession, tmp_log)
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(str(e))
         logging.error(traceback.format_exc())
         if kwargs.send_email:
-            send_email("processing unsuccessful for " + accession, \
-                logging.getLoggerClass().root.handlers[0].baseFilename)
+            the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+            tmp_log = format_log_for_email(the_log)
+            if not tmp_log:
+                logger.warning("unable to format log for email")
+                tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+            send_email("processing unsuccessful for " + accession, tmp_log)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
 
 if __name__ == "__main__":

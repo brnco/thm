@@ -1,6 +1,30 @@
 #sends email from thm gmail acct
 
-
+def format_log_for_email(log_path):
+    '''
+    formats the log file for email
+    '''
+    try:
+        import pathlib
+        import time
+        lines = []
+        _tmp_log = pathlib.Path(log_path)
+        tmp_log = _tmp_log.parent / "email_log.txt"
+        print(tmp_log)
+        with open(log_path) as log_file:
+            for line in log_file:
+                if not "DEBUG:" in line:
+                    lines.append(line)
+        print(lines[0:1])
+        tmp_log.touch(exist_ok=True)
+        time.sleep(1)
+        with open(str(tmp_log),"w+") as tlog:
+            for line in lines:
+                tlog.write(line)
+        return str(tmp_log)
+    except Exception as e:
+        print(e)
+        return False
 
 def send_email(message,attachment_path,debug=False):
     '''
