@@ -462,6 +462,7 @@ def main():
         startup_ok = verify_startup(kwargs)
         if not startup_ok:
             logging.error("startup failed")
+            accession = None
             kwargs.config.lockfile.unlink()
             raise RuntimeError("the script failed due to an error during startup")
         '''
