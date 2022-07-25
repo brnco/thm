@@ -112,19 +112,21 @@ def move_files(accession, files, kwargs):
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
                     str(kwargs.config.xendatacopyto) + " " + str(file.name)
                 copyto_parent = kwargs.config.xendata
+                copyto_file = kwargs.config.xendatacopyto / file.name
             if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
                 #sunnas
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
                     str(kwargs.config.sunnascopyto) + " " + str(file.name)
                 copyto_parent = kwargs.config.sunnas
+                copyto_file = kwargs.config.sunnascopyto / file.name
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
             if output.returncode < 2 and not "pres" in str(file.name):
                 if not "pres" in str(file.name):
                     #move files up to their anchor X:\ or whatever
-                    file.replace(copyto_parent / file.name)
+                    copyto_file.replace(copyto_parent / file.name)
                 continue
             else:
                 logger.error(output.returncode)
@@ -256,7 +258,7 @@ def process_accession(accession, files, kwargs):
             ext = ".mov"
         else:
             ext = file.suffix
-        filename = accession + ext
+        filename = accession + "_pres" + ext
         file.replace(file.parent / filename)
         pres_file = file.parent / filename
 
@@ -396,6 +398,8 @@ def init_kwargs():
             help="quiet mode, only report errors to terminal screen")
     parser.add_argument('input', nargs='*',\
             help='the input folder(s)')
+    parser.add_argument('--sleep', default=0, \
+            help="set script to run after n seconds, useful if file is copying")
     parser.add_argument('--mediaconch_policy', default="",\
             help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--continue_on_error', action='store_true', default=False,\
@@ -415,6 +419,7 @@ def init_kwargs():
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
     kwargs.test = args.test
+    kwargs.sleep = int(args.sleep)
     #next lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
@@ -451,6 +456,10 @@ def main():
             print("log initialization failed. no log created for this run. quitting...")
             accession = None
             quit()
+        if kwargs.sleep:
+            logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
+            time.sleep(kwargs.sleep)
+        input("Eh")
         startup_ok = verify_startup(kwargs)
         if not startup_ok:
             logging.error("startup failed")
