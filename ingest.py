@@ -366,7 +366,7 @@ def init_config(kwargs):
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
     kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
-    #kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
+    kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
@@ -459,7 +459,6 @@ def main():
         if kwargs.sleep:
             logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
             time.sleep(kwargs.sleep)
-        input("Eh")
         startup_ok = verify_startup(kwargs)
         if not startup_ok:
             logging.error("startup failed")

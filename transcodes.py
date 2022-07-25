@@ -93,7 +93,7 @@ def make_mpg_dvd(accession, file, kwargs):
         yadif = "yadif,"
     else:
         yadif = ""
-    drawtext = '"drawtext=fontfile=' + "'" + str(kwargs.config.timecode_fontfile) + "'" + ":timecode='"+ segment[-2:] + \
+    drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
         ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath)
@@ -114,12 +114,11 @@ def make_mp4_with_tc(accession, file, kwargs):
         yadif = "yadif,"
     else:
         yadif = ""
-    drawtext = 'drawtext="' \
-        "timecode='" + segment[-2:] + \
+    drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + \
+    ffmpeg_cmd = 'ffmpeg -loglevel info -i ' + str(file) + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + drawtext + \
-        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
+        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -t 15 -y ' + str(mp4_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
