@@ -123,15 +123,17 @@ def move_files(accession, files, kwargs):
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
-            if output.returncode < 2 and not "pres" in str(file.name):
+            if output.returncode < 2:
                 if not "pres" in str(file.name):
                     #move files up to their anchor X:\ or whatever
                     copyto_file.replace(copyto_parent / file.name)
-                continue
+                else:
+                    continue
             else:
+                stdout = output.stdout.decode("utf-8")
                 logger.error(output.returncode)
-                logger.error(output.stderr)
-                logger.error(output.stdout)
+                logger.error(stdout[300])
+                logger.error("robocopy output clipped for readability")
                 logger.error("there was an error moving a file %s", file)
                 return False
     except Exception as e:
@@ -366,7 +368,6 @@ def init_config(kwargs):
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
     kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
-    kwargs.config.timecode_fontfile = pathlib.Path(config.get('transcode','timecodefont'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
