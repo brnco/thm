@@ -173,7 +173,7 @@ def concatenate_raw_captures(accession, files, kwargs):
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -f concat -i concat.txt -map 0:v -map 0:a -map -0:d? -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
+    ffmpeg_cmd = 'ffmpeg -loglevel warning -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
         ':00:00;00 -y ' + str(concat_vid)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:

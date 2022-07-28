@@ -251,6 +251,7 @@ def process_accession(accession, files, kwargs):
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
             pres_file = transcodes.concatenate_raw_captures(accession, files, kwargs)
+            pres_file = pathlib.Path(pres_file)
             if not files:
                 logging.error("concatenation failed")
                 return False
@@ -524,8 +525,7 @@ def main():
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
                 '''
-                files = processing_ok = process_accession(accession, \
-                        ingests[accession], kwargs)
+                files = processing_ok = process_accession(accession, ingests[accession], kwargs)
                 if not processing_ok:
                     logging.error("processing for accession %s failed. See log for details",str(accession))
                     if kwargs.continue_on_error:
