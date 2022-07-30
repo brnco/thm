@@ -8,77 +8,53 @@ import asyncio
 from asyncio.subprocess import PIPE
 import subprocess
 import logging
+import pathlib
+import traceback
 logger = logging.getLogger(__name__)
 
-@asyncio.coroutine
-def read_stream_and_display(stream, display):
+def format_ffmpeg_log():
     '''
-    read from stream line by line until EOF
-    display, capture lines
+    formats ffmpeg.log for THM log file
     '''
-    output = []
-    while True:
-        line = yield from stream.readline()
-        if not line:
-            break
-        output.append(line)
-        display(line)
-    return output
-
-@asyncio.coroutine
-def read_and_display(cmd):
-    '''
-    capture cmd stdout, stderr while also displaying them
-
-    limit here is used to limit the amount of output text
-    we need it because ffmpeg outputs a lot of text data
-    keep the 1024 * to start, second number is number of bytes
-    total limit is expressed in kibibytes (roughly same as kilobytes)
-    default is 2MiB
-    '''
-    proc = yield from asyncio.create_subprocess_shell(cmd,\
-            limit = 1024 * 2048, stdout=PIPE,stderr=PIPE)
+    fflog_raw = []
+    fflog_proc = ''
+    fflog_path = pathlib.Path("ffmpeg.log")
     try:
-        stdout, stderr = yield from asyncio.gather(\
-                read_stream_and_display(proc.stdout, sys.stdout.buffer.write),\
-                read_stream_and_display(proc.stderr, sys.stderr.buffer.write))
-    except Exception:
-        proc.kill()
-        raise
-    finally:
-        rc = yield from proc.wait()
-    return rc, stdout, stderr
+        with open(str(fflog_path),"r") as ffmpeg_log:
+            while True:
+                line = ffmpeg_log.readline()
+                if not line.startswith("frame"):
+                    fflog_raw.append(line)
+                else:
+                    break
+        for line in fflog_raw:
+            fflog_proc += line
+        logger.debug(fflog_proc)
+        fflog_path.unlink()
+        return True
+    except Exception as e:
+        logger.error("there was an issue formatting the ffmpeg log")
+        logger.error(traceback.format_exc())
+        return False
 
 def run_ffmpeg(cmd):
     '''
     runs cmd for ffmpeg
     '''
-    logger.info("running ffmpeg with below command:")
-    logger.info("%s", cmd)
-    if os.name == 'nt':
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
-    else:
-        loop = asyncio.get_event_loop()
-    rc, stdout, stderr = loop.run_until_complete(read_and_display(cmd))
-    loop.close()
-    fflog = []
-    for line in stderr:
-        if not line.startswith(b'frame'):
-            fflog.append(line.decode("utf-8"))
-        else:
-            break
-    ffstr = ''
-    for line in fflog:
-        ffstr += line
-    logger.info(ffstr)
     try:
-        logger.info(stderr[-1].decode("utf-8"))
-    except:
-        pass
-    if rc == 0:
-        return True
-    else:
+        logger.info("running ffmpeg with below command:")
+        logger.info("%s", cmd)
+        output = subprocess.run(cmd, shell=True)
+        if not output.returncode == 0:
+            logger.error("there was an error transcoding that file, see log for details")
+            return False
+        else:
+            format_ffmpeg_log()
+            logger.info("ffmpeg ran successfully")
+            return True
+    except Excpetion as e:
+        logger.error("there was an issue running ffmpeg")
+        logger.error(traceback.format_exc())
         return False
 
 def make_mpg_dvd(accession, file, kwargs):
@@ -95,8 +71,8 @@ def make_mpg_dvd(accession, file, kwargs):
         yadif = ""
     drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
-        ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath)
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
+        ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -116,9 +92,9 @@ def make_mp4_with_tc(accession, file, kwargs):
         yadif = ""
     drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + drawtext + \
-        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
+        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -135,9 +111,10 @@ def make_mp4_with_logo(accession, file, kwargs):
         yadif = "[0]yadif,"
     else:
         yadif = ""
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + ' -i ' + str(kwargs.config.watermark_white) + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex ' + yadif + 'overlay=0:0,scale=420:270 ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath)
+        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' \
+        + str(mp4_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -150,7 +127,7 @@ def make_mxf_mezz(accession, file, kwargs):
     logger.info("creating mxf mezzanine file")
     mxf = accession + "_mezz.mxf"
     mxf_fullpath = kwargs.config.raw_captures / accession / mxf
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -i ' + str(file) + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + str(mxf_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -173,8 +150,8 @@ def concatenate_raw_captures(accession, files, kwargs):
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd = 'ffmpeg -loglevel warning -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -timecode ' + segment[-2:] + \
-        ':00:00;00 -y ' + str(concat_vid)
+    ffmpeg_cmd = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -timecode ' \
+        + segment[-2:] + ':00:00;00 -y ' + str(concat_vid) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")

@@ -280,15 +280,37 @@ def test(kwargs):
     '''
     here you can define functions/ flows for testing the script
     '''
-    logging.info("testing")
-    accession = "test"
-    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
-    print(the_log)
-    tmp_log = format_log_for_email(the_log)
-    if not tmp_log:
-        logger.warning("unable to format log for email")
-        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-    send_email("processing successful for " + accession, tmp_log)
+    '''
+    create ingest list
+    technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
+    {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
+    '''
+    ingests = get_files_for_ingest(kwargs)
+    '''
+    loop through ingest list
+    accession here is string of form A2022_001_001_001
+    '''
+    for accession in sorted(ingests.keys()):
+        accession_fullpath = kwargs.config.raw_captures / accession
+        '''
+        detect interlacing / progressive frame format for input accession
+        '''
+        kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
+        if not kwargs:
+            logger.error("interlace detection failed for accession %s, quitting", accession)
+            raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
+        '''
+        actually process/ transcode the files
+        processing_ok variable is list of full paths to derivative files
+        '''
+        files = processing_ok = process_accession(accession, ingests[accession], kwargs)
+        if not processing_ok:
+            logging.error("processing for accession %s failed. See log for details",str(accession))
+            if kwargs.continue_on_error:
+                pass
+            else:
+                logging.info("script instructed to quit on processing error. Exiting...")
+                break
 
 def verify_startup(kwargs):
     '''
@@ -422,6 +444,7 @@ def init_kwargs():
     kwargs.input = args.input
     kwargs.test = args.test
     kwargs.sleep = int(args.sleep)
+    kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
     #next lines flip the boolean values for concatenation and input/output validation
     #makes the code more readable in main()
     kwargs.input_validation = operator.not_(args.no_input_validation)
@@ -598,7 +621,6 @@ def main():
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
-        logging.error(str(e))
         logging.error(traceback.format_exc())
         if kwargs.send_email:
             the_log = logging.getLoggerClass().root.handlers[0].baseFilename
