@@ -44,7 +44,8 @@ def get_files_for_ingest(kwargs):
             accession_path = kwargs.config.raw_captures / accession
             raw_captures = [path for path in accession_path.glob('*.*') \
                     if not any(part.startswith('.') for part in path.parts) \
-                    and not any(part.startswith('Thumbs.db') for part in path.parts)
+                    and not any(part.startswith('Thumbs.db') for part in path.parts) \
+                    and not any(part.startswith('$') for part in path.parts) \
                     and path.suffix in kwargs.config.filetypes.input]
             ingests[accession] = raw_captures
             for file in accession_path.iterdir():
@@ -55,7 +56,8 @@ def get_files_for_ingest(kwargs):
         accession_path = kwargs.config.raw_captures
         raw_captures = [path for path in accession_path.glob('**/*.*') \
             if not any(part.startswith('.') for part in path.parts) \
-            and not any(part.startswith('Thumbs.db') for part in path.parts)
+            and not any(part.startswith('Thumbs.db') for part in path.parts) \
+            and not any(part.startswith('$') for part in path.parts) \
             and path.suffix in kwargs.config.filetypes.input]
         for file in raw_captures:
             grandcestors = file.parents[1]
@@ -293,24 +295,22 @@ def test(kwargs):
     for accession in sorted(ingests.keys()):
         accession_fullpath = kwargs.config.raw_captures / accession
         '''
-        detect interlacing / progressive frame format for input accession
+        check mp4 files for invalid pcm audio
         '''
-        kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
-        if not kwargs:
-            logger.error("interlace detection failed for accession %s, quitting", accession)
-            raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
-        '''
-        actually process/ transcode the files
-        processing_ok variable is list of full paths to derivative files
-        '''
-        files = processing_ok = process_accession(accession, ingests[accession], kwargs)
-        if not processing_ok:
-            logging.error("processing for accession %s failed. See log for details",str(accession))
-            if kwargs.continue_on_error:
-                pass
-            else:
-                logging.info("script instructed to quit on processing error. Exiting...")
-                break
+        for file in ingests[accession]:
+            if str(file).endswith(".mp4") or str(file).endswith(".MP4"):
+                logging.info("testing %s for valid audio codec in mp4",file)
+                valid_mp4 = file_validation.detect_valid_mp4(file, kwargs)
+                if not valid_mp4:
+                    if valid_mp4 == None:
+                        logger.error("there was a problem running mediaconch")
+                        raise RuntimeError("MediaConch could not be run")
+                    else:
+                        kwargs.rewrap_mp4 = True
+                        break
+                else:
+                    logging.info("file is valid mp4")
+                    kwargs.rewrap_mp4 = False
 
 def verify_startup(kwargs):
     '''
@@ -406,7 +406,8 @@ def init_config(kwargs):
         {"input_policies":config.get('mediaconch','input_policies_dir'), \
         "wm_policy":config.get('mediaconch','watermark_mp4'), \
         "tc_policy":config.get('mediaconch','timecode_mp4'), \
-        "dvd_policy":config.get('mediaconch','dvd_mpg')})
+        "dvd_policy":config.get('mediaconch','dvd_mpg'), \
+        'mp4_pcm_policy':config.get('mediaconch','mp4_pcm_policy')})
     return kwargs
 
 def init_kwargs():
@@ -453,6 +454,7 @@ def init_kwargs():
     kwargs.send_email = operator.not_(args.no_email)
     #sets mediaconch location
     kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+    kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
@@ -522,7 +524,7 @@ def main():
                 raise RuntimeError("The script could not connect to FileMaker")
             else:
                 '''
-                do input validation on each file, if requested
+                do input validation on files, if requested
                 '''
                 if kwargs.input_validation:
                     logging.info("running mediaconch policies against input files to determine valid inputs")
@@ -537,6 +539,23 @@ def main():
                         raise RuntimeError("the script quit due to an error validating input video files")
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
+                '''
+                check mp4 files for invalid pcm audio
+                '''
+                for file in ingests[accession]:
+                    if file.endswith(".mp4") or file.endswith(".MP4"):
+                        logging.info("testing %s for valid audio codec in mp4",file)
+                        valid_mp4 = file_validation.detect_valid_mp4(file)
+                        if not valid_mp4:
+                            if valid_mp4 == None:
+                                logger.error("there was a problem running mediaconch")
+                                raise RuntimeError("MediaConch could not be run")
+                            else:
+                                kwargs.rewrap_mp4 = True
+                                break
+                        else:
+                            logging.info("file is valid mp4")
+                            kwargs.rewrap_mp4 = False
                 '''
                 detect interlacing / progressive frame format for input accession
                 '''
@@ -563,7 +582,6 @@ def main():
                     output_pres_ok = file_validation.validate_output(accession, files, kwargs)
                     if not output_pres_ok:
                         logging.error("preservation file did not pass validation, quitting...")
-                        kwargs.config.lockfile.unlink()
                         raise RuntimeError("the script quit due to an error validating output video preservation file")
                 '''
                 create checksums for each derivative

@@ -9,6 +9,28 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def detect_valid_mp4(file, kwargs):
+    '''
+    uses MediaConch to detect if mp4 contains pcm audio
+    '''
+    mediaconch_mp4_pcm_policy = kwargs.config.mediaconch.mp4_pcm_policy
+    logger.info("checking for non-standard PCM audio in MP4")
+    logger.info("%s",file)
+    output = subprocess.run(['mediaconch','-p',str(mediaconch_mp4_pcm_policy),str(file)],capture_output=True,shell=True)
+    if not output.returncode == 0:
+        logger.error("there was a problem evaluating mp4 for pcm audio")
+        logger.error(output.stderr.decode('utf-8'))
+        return None
+    else:
+        stdout = output.stdout.decode('utf-8')
+        if not stdout.startswith('pass'):
+            logger.info("invalid MP4 detected with PCM audio")
+            logger.info("this file or set of files will be re-wrapped in MOV")
+            return False
+        else:
+            logger.info("MP4 contains valid audio codec")
+            return True
+
 def load_mediaconch_policies(kwargs):
     '''
     loads policies from folder in config file

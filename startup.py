@@ -53,7 +53,8 @@ def verify_file_copying(kwargs):
     '''
     logging.info("verifying that no files are being copied into raw_captures")
     for file in kwargs.config.raw_captures.glob('**/*'):
-        if file.is_file() and not file.name.startswith(".") and not "Thumbs.db" in file.name:
+        if file.is_file() and not file.name.startswith(".") \
+        and not file.name.startswith('$') and not "Thumbs.db" in file.name:
             logger.debug("testing file %s", file)
             while True:
                 try:
