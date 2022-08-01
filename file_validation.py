@@ -16,6 +16,7 @@ def detect_valid_mp4(file, kwargs):
     mediaconch_mp4_pcm_policy = kwargs.config.mediaconch.mp4_pcm_policy
     logger.info("checking for non-standard PCM audio in MP4")
     logger.info("%s",file)
+    logger.debug("mediaconch -p " + str(mediaconch_mp4_pcm_policy) + " " + str(file))
     output = subprocess.run(['mediaconch','-p',str(mediaconch_mp4_pcm_policy),str(file)],capture_output=True,shell=True)
     if not output.returncode == 0:
         logger.error("there was a problem evaluating mp4 for pcm audio")
@@ -23,7 +24,7 @@ def detect_valid_mp4(file, kwargs):
         return None
     else:
         stdout = output.stdout.decode('utf-8')
-        if not stdout.startswith('pass'):
+        if stdout.startswith('pass'):
             logger.info("invalid MP4 detected with PCM audio")
             logger.info("this file or set of files will be re-wrapped in MOV")
             return False
