@@ -252,7 +252,7 @@ def process_accession(accession, files, kwargs):
     _files = []
     if kwargs.rewrap_mp4:
         for mp4_file in files:
-            mov_file = transcodes.rewrap_mp4_streams_in_mov(file)
+            mov_file = transcodes.rewrap_mp4_streams_in_mov(mp4_file)
             if not mov_file:
                 logging.error("there was a problem re-wrapping the mp4 file(s) in mov")
                 return False
@@ -555,7 +555,7 @@ def main():
                 for file in ingests[accession]:
                     if file.suffix == ".mp4" or file.suffix == ".MP4":
                         logging.info("testing %s for valid audio codec in mp4",file)
-                        valid_mp4 = file_validation.detect_valid_mp4(file)
+                        valid_mp4 = file_validation.detect_valid_mp4(file, kwargs)
                         if not valid_mp4:
                             if valid_mp4 == None:
                                 logger.error("there was a problem running mediaconch")

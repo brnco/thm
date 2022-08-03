@@ -18,6 +18,7 @@ def detect_valid_mp4(file, kwargs):
     logger.info("%s",file)
     logger.debug("mediaconch -p " + str(mediaconch_mp4_pcm_policy) + " " + str(file))
     output = subprocess.run(['mediaconch','-p',str(mediaconch_mp4_pcm_policy),str(file)],capture_output=True,shell=True)
+    logger.debug(output.stdout.decode('utf-8'))
     if not output.returncode == 0:
         logger.error("there was a problem evaluating mp4 for pcm audio")
         logger.error(output.stderr.decode('utf-8'))

@@ -186,21 +186,20 @@ def detect_interlaced_video(file, kwargs):
     logger.error("ffprobe unable to detect progressive or interlaced video")
     return False
 
-def rewrap_mp4_streams_in_mov(file):
+def rewrap_mp4_streams_in_mov(mp4_file):
     '''
     takes input file, assumed mp4 with (non-spec) pcm audio
     and rewraps the streams in mov
     '''
     logger.info("re-wraping audio and video streams in mov")
-    output_filename = file.stem + ".mov"
-    ffmpeg_cmd = "ffmpeg -i " + str(file) + " -c copy -map -0:d? -y " + output_filename
-    print(ffmpeg_cmd)
+    mov_file = mp4_file.with_suffix(".mov")
+    ffmpeg_cmd = "ffmpeg -i " + str(mp4_file) + " -c copy -map -0:d? -y " + str(mov_file)
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("ffmpeg encountered an error during re-wrap")
         return False
     else:
-        return output_filename
+        return mov_file
 
 def main():
     '''
