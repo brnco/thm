@@ -249,6 +249,16 @@ def process_accession(accession, files, kwargs):
     output is also full path
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
+    _files = []
+    if kwargs.rewrap_mp4:
+        for mp4_file in files:
+            mov_file = transcodes.rewrap_mp4_streams_in_mov(file)
+            if not mov_file:
+                logging.error("there was a problem re-wrapping the mp4 file(s) in mov")
+                return False
+            else:
+                _files.append(mov_file)
+        files = _files
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
