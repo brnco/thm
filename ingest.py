@@ -553,7 +553,7 @@ def main():
                 check mp4 files for invalid pcm audio
                 '''
                 for file in ingests[accession]:
-                    if file.endswith(".mp4") or file.endswith(".MP4"):
+                    if file.suffix == ".mp4" or file.suffix == ".MP4":
                         logging.info("testing %s for valid audio codec in mp4",file)
                         valid_mp4 = file_validation.detect_valid_mp4(file)
                         if not valid_mp4:
