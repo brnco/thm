@@ -435,7 +435,7 @@ def init_kwargs():
             help='the input folder(s)')
     parser.add_argument('--sleep', default=0, \
             help="set script to run after n seconds, useful if file is copying")
-    parser.add_argument('--mediaconch_policy', default="",\
+    parser.add_argument('--mediaconch_policy', default=None,\
             help="run input/output validation against specified mediaconch policy at path")
     parser.add_argument('--continue_on_error', action='store_true', default=False,\
             help="continue processing accessions even if 1 fails")
@@ -463,7 +463,10 @@ def init_kwargs():
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
     #sets mediaconch location
-    kwargs.accession_mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+    try:
+        kwargs.accession_mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+    except:
+        kwargs.accession_mediaconch_policy = None
     kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
