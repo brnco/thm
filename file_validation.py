@@ -19,19 +19,14 @@ def detect_valid_mp4(file, kwargs):
     logger.debug("mediaconch -p " + str(mediaconch_mp4_pcm_policy) + " " + str(file))
     output = subprocess.run(['mediaconch','-p',str(mediaconch_mp4_pcm_policy),str(file)],capture_output=True,shell=True)
     logger.debug(output.stdout.decode('utf-8'))
-    if not output.returncode == 0:
-        logger.error("there was a problem evaluating mp4 for pcm audio")
-        logger.error(output.stderr.decode('utf-8'))
-        return None
+    stdout = output.stdout.decode('utf-8')
+    if stdout.startswith('pass'):
+        logger.info("invalid MP4 detected with PCM audio")
+        logger.info("this file or set of files will be re-wrapped in MOV")
+        return False
     else:
-        stdout = output.stdout.decode('utf-8')
-        if stdout.startswith('pass'):
-            logger.info("invalid MP4 detected with PCM audio")
-            logger.info("this file or set of files will be re-wrapped in MOV")
-            return False
-        else:
-            logger.info("MP4 contains valid audio codec")
-            return True
+        logger.info("MP4 contains valid audio codec")
+        return True
 
 def load_mediaconch_policies(kwargs):
     '''
@@ -80,30 +75,29 @@ def validate_input(accession, files, kwargs):
     else:
         mediaconch_policies = [kwargs.accession_mediaconch_policy]
     policy_passes = []
-    for policy in mediaconch_policies:
-        for file in files:
+    for file in files:
+        for policy in mediaconch_policies:
             logger.info("testing %s against %s", str(file), str(policy))
             output = subprocess.run(['mediaconch','-p',policy,file], capture_output=True)
             logger.debug(output.returncode)
-            logger.debug(output.stdout)
-            logger.debug(output.stderr)
-            if not str(output.stdout).startswith("pass"):
-                logger.error("mediaconch input validation failed for: %s", str(file))
-                logger.error(str(output.stdout))
-                return False
+            logger.debug(output.stdout.decode('utf-8'))
+            logger.debug(output.stderr.decode('utf-8'))
+            if not output.stdout.decode('utf-8').startswith("pass"):
+                logger.warning("mediaconch input validation failed for: %s", str(file))
+                logger.warning(str(output.stdout.decode('utf-8')))
             else:
                 logger.info("mediaconch input validation passed for: %s", str(file))
-                logs.append(str(output.stdout))
+                logger.debug(str(output.stdout.decode('utf-8')))
                 policy_passes.append(file)
-        if policy_passes:
-            logger.info("mediaconch input validation passed for %s", str(accession))
-            logger.info("input/output mediaconch policy is %s", str(policy))
-            accession_mediaconch_policy = policy
-            return accession_mediaconch_policy
-        else:
-            continue
-    logger.error("mediaconch unable to pass input validation for accession %s", str(accession))
-    return False
+                break
+    if len(policy_passes) == len(files):
+        logger.info("mediaconch input validation passed for %s", str(accession))
+        logger.info("input/output mediaconch policy is %s", str(policy))
+        accession_mediaconch_policy = policy
+        return accession_mediaconch_policy
+    else:
+        logger.error("mediaconch unable to pass input validation for accession %s", str(accession))
+        return False
 
 def main():
     '''

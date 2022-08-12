@@ -463,7 +463,7 @@ def init_kwargs():
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
     #sets mediaconch location
-    kwargs.mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+    kwargs.accession_mediaconch_policy = pathlib.Path(args.mediaconch_policy)
     kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
@@ -500,7 +500,6 @@ def main():
         if not startup_ok:
             logging.error("startup failed")
             accession = None
-            kwargs.config.lockfile.unlink()
             raise RuntimeError("the script failed due to an error during startup")
         '''
         determine if script is running in test mode
@@ -530,7 +529,6 @@ def main():
             filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
             if not filemaker_ok:
                 logging.error("FileMaker record not found for %s", accession)
-                kwargs.config.lockfile.unlink()
                 raise RuntimeError("The script could not connect to FileMaker")
             else:
                 '''
@@ -545,7 +543,6 @@ def main():
                                 str(accession))
                         logging.info("to process this accession, try running this script with" + \
                                 "--no_input_validation flag")
-                        kwargs.config.lockfile.unlink()
                         raise RuntimeError("the script quit due to an error validating input video files")
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
