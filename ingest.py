@@ -456,17 +456,25 @@ def init_kwargs():
     kwargs.test = args.test
     kwargs.sleep = int(args.sleep)
     kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
-    #next lines flip the boolean values for concatenation and input/output validation
-    #makes the code more readable in main()
+    '''
+    next lines flip the boolean values for concatenation and input/output validation
+    makes the code more readable in main()
+    '''
     kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
-    #sets mediaconch location
+    '''
+    sets mediaconch location
+    sets flag for running each accession against all MC policies
+    --i.e. different accessions in XDCAM or ProRes can be run in the same batch
+    '''
     try:
         kwargs.accession_mediaconch_policy = pathlib.Path(args.mediaconch_policy)
+        kwargs.reset_mediaconch_policy = False
     except:
         kwargs.accession_mediaconch_policy = None
+        kwargs.rest_mediaconch_policy = True
     kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
@@ -604,7 +612,7 @@ def main():
                 logging.debug(hashes)
                 '''
                 send checksums to filemaker
-                file transfers are validated post-ingest by Mark Strecker's Java app
+                file transfers are validated post-ingest by Mark Streckers Java app
                 '''
                 kwargs.id = accession
                 for file in hashes.keys():

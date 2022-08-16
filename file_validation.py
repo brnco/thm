@@ -46,7 +46,7 @@ def load_mediaconch_policies(kwargs):
 def validate_output(accession, files, kwargs):
     '''
     validates output video files
-    '''
+
     logger.info("validating derivative files for %s", accession)
     for file in files:
         if "_pres" in str(file) and not kwargs.input_validation:
@@ -64,13 +64,15 @@ def validate_output(accession, files, kwargs):
                 logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.tc_policy))
         elif file.suffix == ".mpg":
             logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.dvd_policy))
+    '''
+    logger.debug("output validation not yet implemented")
     return True
 
 def validate_input(accession, files, kwargs):
     '''
     validates input video files
     '''
-    if not kwargs.accession_mediaconch_policy:
+    if not kwargs.accession_mediaconch_policy or kwargs.reset_mediaconch_policy == True:
         mediaconch_policies = load_mediaconch_policies(kwargs)
     else:
         mediaconch_policies = [kwargs.accession_mediaconch_policy]
@@ -83,8 +85,8 @@ def validate_input(accession, files, kwargs):
             logger.debug(output.stdout.decode('utf-8'))
             logger.debug(output.stderr.decode('utf-8'))
             if not output.stdout.decode('utf-8').startswith("pass"):
-                logger.warning("mediaconch input validation failed for: %s", str(file))
-                logger.warning(str(output.stdout.decode('utf-8')))
+                logger.debug("mediaconch input validation failed for: %s", str(file))
+                logger.debug(str(output.stdout.decode('utf-8')))
             else:
                 logger.info("mediaconch input validation passed for: %s", str(file))
                 logger.debug(str(output.stdout.decode('utf-8')))
