@@ -614,10 +614,6 @@ def main():
                     raise RuntimeError("the script quit due an error at runtime")
                 logging.debug(hashes)
                 '''
-                reconnect to filemaker
-                '''
-                filemaker_connection, cursor = fm.init_connection(kwargs)
-                '''
                 send checksums to filemaker
                 file transfers are validated post-ingest by Mark Streckers Java app
                 '''

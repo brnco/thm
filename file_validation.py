@@ -72,7 +72,7 @@ def validate_input(accession, files, kwargs):
     '''
     validates input video files
     '''
-    if not kwargs.accession_mediaconch_policy or kwargs.reset_mediaconch_policy == True:
+    if not kwargs.accession_mediaconch_policy or kwargs.reset_mediaconch_policy is True:
         mediaconch_policies = load_mediaconch_policies(kwargs)
     else:
         mediaconch_policies = [kwargs.accession_mediaconch_policy]
@@ -81,9 +81,6 @@ def validate_input(accession, files, kwargs):
         for policy in mediaconch_policies:
             logger.info("testing %s against %s", str(file), str(policy))
             output = subprocess.run(['mediaconch','-p',policy,file], capture_output=True)
-            logger.debug(output.returncode)
-            logger.debug(output.stdout.decode('utf-8'))
-            logger.debug(output.stderr.decode('utf-8'))
             if not output.stdout.decode('utf-8').startswith("pass"):
                 logger.debug("mediaconch input validation failed for: %s", str(file))
                 logger.debug(str(output.stdout.decode('utf-8')))
