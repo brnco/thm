@@ -329,10 +329,6 @@ def verify_startup(kwargs):
     '''
     manages startup of script
     '''
-    already_running = startup.verify_already_running(kwargs)
-    if already_running:
-        logging.error("makevideos is already running")
-        return False
     in_venv = startup.verify_venv()
     if not in_venv:
         logging.error("please enable virtual environment and re-run the script")
@@ -402,7 +398,6 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
@@ -522,7 +517,6 @@ def main():
             accession = "test"
             test(kwargs)
             logging.info("script started in test mode, exiting...")
-            kwargs.config.lockfile.unlink()
             quit()
         '''
         create ingest list
@@ -660,7 +654,8 @@ def main():
                     if not tmp_log:
                         logger.warning("unable to format log for email")
                         tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-                    send_email("processing successful for " + accession, tmp_log)
+                    send_email("ingest notification for " + accession,\
+                        "processing successful for " + accession, tmp_log)
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
@@ -671,8 +666,8 @@ def main():
             if not tmp_log:
                 logger.warning("unable to format log for email")
                 tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-            send_email("processing unsuccessful for " + accession, tmp_log)
-    kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
+            send_email("ingest notification for " + accession, \
+                "processing unsuccessful for " + accession, tmp_log)
 
 if __name__ == "__main__":
     main()

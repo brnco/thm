@@ -28,7 +28,7 @@ def format_log_for_email(log_path):
         print(e)
         return False
 
-def send_email(message,attachment_path,debug=False):
+def send_email(subject,message,attachment_path,debug=False):
     '''
     sends an email using config from video-post-processing
     '''
@@ -56,7 +56,7 @@ def send_email(message,attachment_path,debug=False):
     msg = EmailMessage()
     msg['From'] = sender_email
     msg['To'] = ', '.join(recipients)
-    msg['Subject'] = "ingest notification"
+    msg['Subject'] = subject
 
     '''
     attachment handler
