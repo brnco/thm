@@ -1,8 +1,34 @@
 #sends email from thm gmail acct
 
+def format_log_for_email(log_path):
+    '''
+    formats the log file for email
+    '''
+    import re
+    try:
+        import pathlib
+        import time
+        lines = []
+        _tmp_log = pathlib.Path(log_path)
+        tmp_log = _tmp_log.parent / "email_log.txt"
+        with open(log_path) as log_file:
+            for line in log_file:
+                match = ''
+                match = re.match(r"\d{4}-\d{2}-\d{2}",line)
+                if match:
+                    if not "DEBUG:" in line:
+                        lines.append(line)
+        tmp_log.touch(exist_ok=True)
+        time.sleep(1)
+        with open(str(tmp_log),"w+") as tlog:
+            for line in lines:
+                tlog.write(line)
+        return str(tmp_log)
+    except Exception as e:
+        print(e)
+        return False
 
-
-def send_email(message,attachment_path,debug=False):
+def send_email(subject,message,attachment_path,debug=False):
     '''
     sends an email using config from video-post-processing
     '''
@@ -30,7 +56,7 @@ def send_email(message,attachment_path,debug=False):
     msg = EmailMessage()
     msg['From'] = sender_email
     msg['To'] = ', '.join(recipients)
-    msg['Subject'] = "ingest notification"
+    msg['Subject'] = subject
 
     '''
     attachment handler

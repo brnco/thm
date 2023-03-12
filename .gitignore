@@ -4,3 +4,4 @@ thm-test-backups/
 .DS_Store
 Thumbs.db
 *.png
+*.pyc

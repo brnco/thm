@@ -11,23 +11,6 @@ import traceback
 import sys
 logger = logging.getLogger(__name__)
 
-def verify_already_running(kwargs):
-    '''
-    returns True if logs/makevideos.lock exists
-    '''
-    if kwargs.config.lockfile.is_file():
-        logger.error("ingest.py may already be running")
-        print("Ensure that ingest.py isn't already running")
-        print("This error may be caused by improper shutdown of ingest.py")
-        print("Check the most recent log file located at:")
-        print(kwargs.config.logs_path)
-        print("If ingest.py isn't already running, you can re-run it now as normal")
-        return True
-    else:
-        logger.info("creating lock file %s", str(kwargs.config.lockfile))
-        kwargs.config.lockfile.touch()
-        return False
-
 def verify_venv():
     '''
     verifies if the virutal environment (venv) has been enabled
@@ -53,7 +36,8 @@ def verify_file_copying(kwargs):
     '''
     logging.info("verifying that no files are being copied into raw_captures")
     for file in kwargs.config.raw_captures.glob('**/*'):
-        if file.is_file() and not file.name.startswith(".") and not "Thumbs.db" in file.name:
+        if file.is_file() and not file.name.startswith(".") \
+        and not file.name.startswith('$') and not "Thumbs.db" in file.name:
             logger.debug("testing file %s", file)
             while True:
                 try:

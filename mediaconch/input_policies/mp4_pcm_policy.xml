@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<policy type="and" name="pcm_in_mp4">
+  <description>checks if there is pcm audio in mp4 wrapper (not allowed but made by XDCAM)</description>
+  <rule name="General/FileExtension is MP4" value="FileExtension" tracktype="General" occurrence="*" operator="=">MP4</rule>
+  <rule name="Audio/Format is PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+</policy>
