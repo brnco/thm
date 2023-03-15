@@ -350,9 +350,23 @@ def verify_startup(kwargs):
             return False
     return True
 
-def init_log(kwargs):
+def init_log_accession(kwargs):
     '''
-    initalizes log actions
+    initializes log for single accession
+    '''
+    log_filename = pathlib.Path("log-most-recent-accession.txt")
+    log_filepath = str(kwargs.config.logs_path / log_filename)
+    message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
+            datefmt='%Y-%m-%d %H:%M:%S')
+    log_handler = logging.FileHandler(log_filepath)
+    log_handler.setFormatter(message_format)
+    log_handler.setLevel(logging.INFO)
+    logger.addHandler(log_handler)
+    return log_handler, log_filepath
+
+def init_log_full_run(kwargs):
+    '''
+    initalizes log for whole run of script
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
@@ -529,6 +543,7 @@ def main():
         accession here is string of form A2022_001_001_001
         '''
         for accession in sorted(ingests.keys()):
+            accession_log, accession_log_filepath = init_log_accession(kwargs)
             accession_fullpath = kwargs.config.raw_captures / accession
             '''
             check filemaker records for each accession
@@ -650,12 +665,16 @@ def main():
                 logging.info("accession %s processed successfully", accession)
                 if kwargs.send_email:
                     the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+                    '''
                     tmp_log = format_log_for_email(the_log)
                     if not tmp_log:
                         logger.warning("unable to format log for email")
                         tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+                    '''
                     send_email("ingest notification for " + accession,\
-                        "processing successful for " + accession, tmp_log)
+                        "processing successful for " + accession, str(accession_log_path))
+                accession_log.close()
+                accession_log_path.unlink()
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
