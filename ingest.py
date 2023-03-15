@@ -362,7 +362,7 @@ def init_log_accession(kwargs):
     log_handler.setFormatter(message_format)
     log_handler.setLevel(logging.INFO)
     logger.addHandler(log_handler)
-    return log_handler, log_filepath
+    return log_handler, pathlib.Path(log_filepath)
 
 def init_log_full_run(kwargs):
     '''
@@ -511,7 +511,7 @@ def main():
         '''
         kwargs = init_kwargs()
         kwargs = init_config(kwargs)
-        log_ok = init_log(kwargs)
+        log_ok = init_log_full_run(kwargs)
         if not log_ok:
             print("log initialization failed. no log created for this run. quitting...")
             accession = None
@@ -664,29 +664,41 @@ def main():
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                 logging.info("accession %s processed successfully", accession)
                 if kwargs.send_email:
-                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
                     '''
+                    old code I'm keeping here until I'm sure new code works
+                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
                     tmp_log = format_log_for_email(the_log)
                     if not tmp_log:
                         logger.warning("unable to format log for email")
                         tmp_log = "Unable to format log for email, see log file for further details: " + the_log
                     '''
                     send_email("ingest notification for " + accession,\
-                        "processing successful for " + accession, str(accession_log_path))
+                        "processing successful for " + accession, str(accession_log_filepath))
+                '''
+                close the accession log file
+                remove the handler
+                delete (unlink) the accession log file from the OS
+                '''
                 accession_log.close()
-                accession_log_path.unlink()
+                logger.removeHandler(accession_log)
+                accession_log_filepath.unlink()
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(traceback.format_exc())
         if kwargs.send_email:
+            '''
             the_log = logging.getLoggerClass().root.handlers[0].baseFilename
             tmp_log = format_log_for_email(the_log)
             if not tmp_log:
                 logger.warning("unable to format log for email")
                 tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+            '''
             send_email("ingest notification for " + accession, \
-                "processing unsuccessful for " + accession, tmp_log)
+                "processing unsuccessful for " + accession, str(accession_log_filepath))
+            accession_log.close()
+            logger.removeHandler(accession_log)
+            accession_log_filepath.unlink()
 
 if __name__ == "__main__":
     main()
