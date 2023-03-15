@@ -5,3 +5,4 @@ thm-test-backups/
 Thumbs.db
 *.png
 *.pyc
+venv/
