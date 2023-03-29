@@ -508,7 +508,7 @@ def main():
         startup_ok = verify_startup(kwargs)
         if not startup_ok:
             logging.error("startup failed")
-            accession = None
+            accession = "error"
             raise RuntimeError("the script failed due to an error during startup")
         '''
         determine if script is running in test mode
