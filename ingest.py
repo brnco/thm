@@ -356,6 +356,8 @@ def init_log_accession(kwargs):
     '''
     log_filename = pathlib.Path("log-most-recent-accession.txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
+    if log_filepath.is_file():
+        log_filepath.unlink()
     message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
             datefmt='%Y-%m-%d %H:%M:%S')
     log_handler = logging.FileHandler(log_filepath)
