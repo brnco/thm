@@ -248,7 +248,7 @@ def process_accession(accession, files, kwargs):
     _files = []
     if kwargs.rewrap_mp4:
         for mp4_file in files:
-            mov_file = transcodes.rewrap_mp4_streams_in_mov(mp4_file)
+            mov_file = transcodes.rewrap_mp4_streams_in_mov(mp4_file, kwargs)
             if not mov_file:
                 logging.error("there was a problem re-wrapping the mp4 file(s) in mov")
                 return False
@@ -263,12 +263,17 @@ def process_accession(accession, files, kwargs):
             if not files:
                 logging.error("concatenation failed")
                 return False
+    elif ".mov" in files[0].suffix.lower() \
+            and not kwargs.special_collections \
+            and not kwargs.rewrap_mp4:
+        with util.cd(str(accession_fullpath)):
+            pres_file = transcodes.rewrap_single_file_accession(accession, files[0], kwargs)
+            if not pres_file:
+                logging.error("rewrap of single file accession failed")
+                return False
     else:
         file = files[0]
-        if ".MOV" in file.name:
-            ext = ".mov"
-        else:
-            ext = file.suffix
+        ext = file.suffix
         filename = accession + "_pres" + ext
         file.replace(file.parent / filename)
         pres_file = file.parent / filename
@@ -323,10 +328,6 @@ def verify_startup(kwargs):
     '''
     manages startup of script
     '''
-    already_running = startup.verify_already_running(kwargs)
-    if already_running:
-        logging.error("makevideos is already running")
-        return False
     in_venv = startup.verify_venv()
     if not in_venv:
         logging.error("please enable virtual environment and re-run the script")
@@ -348,10 +349,25 @@ def verify_startup(kwargs):
             return False
     return True
 
-
-def init_log(kwargs):
+def init_log_accession(kwargs):
     '''
-    initalizes log actions
+    initializes log for single accession
+    '''
+    log_filename = pathlib.Path("log-most-recent-accession.txt")
+    log_filepath = str(kwargs.config.logs_path / log_filename)
+    if log_filepath.is_file():
+        log_filepath.unlink()
+    message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
+            datefmt='%Y-%m-%d %H:%M:%S')
+    log_handler = logging.FileHandler(log_filepath)
+    log_handler.setFormatter(message_format)
+    log_handler.setLevel(logging.INFO)
+    logger.addHandler(log_handler)
+    return log_handler, pathlib.Path(log_filepath)
+
+def init_log_full_run(kwargs):
+    '''
+    initalizes log for whole run of script
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
     log_filepath = str(kwargs.config.logs_path / log_filename)
@@ -398,7 +414,6 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.lockfile = pathlib.Path(config.get('logs','lockfile'))
     kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
@@ -476,7 +491,7 @@ def init_kwargs():
         kwargs.reset_mediaconch_policy = False
     except:
         kwargs.accession_mediaconch_policy = None
-        kwargs.rest_mediaconch_policy = True
+        kwargs.reset_mediaconch_policy = True
     kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
@@ -502,7 +517,7 @@ def main():
         '''
         kwargs = init_kwargs()
         kwargs = init_config(kwargs)
-        log_ok = init_log(kwargs)
+        log_ok = init_log_full_run(kwargs)
         if not log_ok:
             print("log initialization failed. no log created for this run. quitting...")
             accession = None
@@ -522,7 +537,6 @@ def main():
             accession = "test"
             test(kwargs)
             logging.info("script started in test mode, exiting...")
-            kwargs.config.lockfile.unlink()
             quit()
         '''
         create ingest list
@@ -535,6 +549,7 @@ def main():
         accession here is string of form A2022_001_001_001
         '''
         for accession in sorted(ingests.keys()):
+            accession_log, accession_log_filepath = init_log_accession(kwargs)
             accession_fullpath = kwargs.config.raw_captures / accession
             '''
             check filemaker records for each accession
@@ -614,6 +629,10 @@ def main():
                     raise RuntimeError("the script quit due an error at runtime")
                 logging.debug(hashes)
                 '''
+                reconnect to filemaker
+                '''
+                filemaker_connection, cursor = fm.init_connection(kwargs)
+                '''
                 send checksums to filemaker
                 file transfers are validated post-ingest by Mark Streckers Java app
                 '''
@@ -650,24 +669,41 @@ def main():
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                 logging.info("accession %s processed successfully", accession)
                 if kwargs.send_email:
+                    '''
+                    old code I'm keeping here until I'm sure new code works
                     the_log = logging.getLoggerClass().root.handlers[0].baseFilename
                     tmp_log = format_log_for_email(the_log)
                     if not tmp_log:
                         logger.warning("unable to format log for email")
                         tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-                    send_email("processing successful for " + accession, tmp_log)
+                    '''
+                    send_email("ingest notification for " + accession,\
+                        "processing successful for " + accession, str(accession_log_filepath))
+                '''
+                close the accession log file
+                remove the handler
+                delete (unlink) the accession log file from the OS
+                '''
+                accession_log.close()
+                logger.removeHandler(accession_log)
+                accession_log_filepath.unlink()
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(traceback.format_exc())
         if kwargs.send_email:
+            '''
             the_log = logging.getLoggerClass().root.handlers[0].baseFilename
             tmp_log = format_log_for_email(the_log)
             if not tmp_log:
                 logger.warning("unable to format log for email")
                 tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-            send_email("processing unsuccessful for " + accession, tmp_log)
-    kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
+            '''
+            send_email("ingest notification for " + accession, \
+                "processing unsuccessful for " + accession, str(accession_log_filepath))
+            accession_log.close()
+            logger.removeHandler(accession_log)
+            accession_log_filepath.unlink()
 
 
 if __name__ == "__main__":

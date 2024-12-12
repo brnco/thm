@@ -4,16 +4,11 @@
   <rule name="General/VideoCount is 1" value="VideoCount" tracktype="General" occurrence="*" operator="=">1</rule>
   <rule name="General/AudioCount is 2" value="AudioCount" tracktype="General" occurrence="*" operator="=">2</rule>
   <rule name="General/OtherCount is 1" value="OtherCount" tracktype="General" occurrence="*" operator="=">1</rule>
-  <rule name="General/FileExtension is MOV" value="FileExtension" tracktype="General" occurrence="*" operator="=">MOV</rule>
   <rule name="General/Format is MPEG-4" value="Format" tracktype="General" occurrence="*" operator="=">MPEG-4</rule>
   <rule name="General/Format_Commercial_IfAny is XDCAM HD422" value="Format_Commercial_IfAny" tracktype="General" occurrence="*" operator="=">XDCAM HD422</rule>
   <rule name="General/Format_Profile is QuickTime" value="Format_Profile" tracktype="General" occurrence="*" operator="=">QuickTime</rule>
   <rule name="General/CodecID is qt  " value="CodecID" tracktype="General" occurrence="*" operator="=">qt  </rule>
-  <rule name="General/CodecID_Version is 2007.09" value="CodecID_Version" tracktype="General" occurrence="*" operator="=">2007.09</rule>
-  <rule name="General/CodecID_Compatible is qt  /CDes" value="CodecID_Compatible" tracktype="General" occurrence="*" operator="=">qt  /CDes</rule>
   <rule name="General/FrameRate is 29.970" value="FrameRate" tracktype="General" occurrence="*" operator="=">29.970</rule>
-  <rule name="General/HeaderSize is 40" value="HeaderSize" tracktype="General" occurrence="*" operator="=">40</rule>
-  <rule name="General/IsStreamable is No" value="IsStreamable" tracktype="General" occurrence="*" operator="=">No</rule>
   <rule name="Video/StreamOrder is 0" value="StreamOrder" tracktype="Video" occurrence="*" operator="=">0</rule>
   <rule name="Video/ID is 1" value="ID" tracktype="Video" occurrence="*" operator="=">1</rule>
   <rule name="Video/Format is MPEG Video" value="Format" tracktype="Video" occurrence="*" operator="=">MPEG Video</rule>

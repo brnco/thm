@@ -56,7 +56,7 @@ def run_ffmpeg(cmd):
             format_ffmpeg_log()
             logger.info("ffmpeg ran successfully")
             return True
-    except Excpetion as e:
+    except Exception as e:
         logger.error("there was an issue running ffmpeg")
         logger.error(traceback.format_exc())
         return False
@@ -180,20 +180,39 @@ def detect_interlaced_video(file, kwargs):
     return False
 
 
-def rewrap_mp4_streams_in_mov(mp4_file):
+def rewrap_mp4_streams_in_mov(mp4_file, kwargs):
     '''
     takes input file, assumed mp4 with (non-spec) pcm audio
     and rewraps the streams in mov
     '''
     logger.info("re-wraping audio and video streams in mov")
+    segment = str(file.stem).split("_")[-1]
     mov_file = mp4_file.with_suffix(".mov")
-    ffmpeg_cmd = "ffmpeg -i " + str(mp4_file) + " -c copy -map -0:d? -y " + str(mov_file)
+    ffmpeg_cmd = "ffmpeg -i " + str(mp4_file) + " -c copy -map -0:d? -timecode " \
+        + segment[-2:] + ":00:00;00 -y " + str(mov_file) + kwargs.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("ffmpeg encountered an error during re-wrap")
         return False
     else:
         return mov_file
+
+
+def rewrap_single_file_accession(accession, input_file, kwargs):
+    '''
+    for single file accessions, we need to rewrap the files with correct timecode
+    '''
+    logger.info("rewrapping single video file accession with correct timecode")
+    segment = accession.split("_")[-1]
+    pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mov")
+    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? -timecode " \
+        + segment[-2:] + ":00:00;00 -y " + str(pres_file) + kwargs.ffmpeg_suffix
+    output = run_ffmpeg(ffmpeg_cmd)
+    if not output:
+        logger.error("there was an issue rewrapping that file")
+        return False
+    else:
+        return pres_file
 
 
 def main():
