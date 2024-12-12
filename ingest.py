@@ -30,6 +30,7 @@ import file_validation
 from send_email import send_email, format_log_for_email
 import startup
 
+
 '''
 function definitions
 '''
@@ -70,6 +71,7 @@ def get_files_for_ingest(kwargs):
     logging.debug("%s",str(ingests))
     return ingests
 
+
 def updateFM(hashlist,scriptRepo,logfile):
     logging.info("sending hashes to filemaker")
     for fh in hashlist:
@@ -77,6 +79,7 @@ def updateFM(hashlist,scriptRepo,logfile):
         fdigi = ext.replace(".","")
         output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-uSha","-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     return
+
 
 def verifyFM(hashlist,scriptRepo,logfile):
     logging.info("verifying hashes in filemaker")
@@ -100,6 +103,7 @@ def verifyFM(hashlist,scriptRepo,logfile):
         moveyn = True
     return moveyn
 
+
 def move_files(accession, files, kwargs):
     '''
     moves files from processing directory to preservation server
@@ -108,7 +112,7 @@ def move_files(accession, files, kwargs):
     accession_fullpath = kwargs.config.raw_captures / accession
     try:
         for file in files:
-            if "_pres" in str(file.name) or "dvd.mpg" in str(file.name):
+            if "_pres" in str(file.name):
                 #xendata
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
@@ -144,18 +148,16 @@ def move_files(accession, files, kwargs):
         return False
     return True
 
-def copy_pres_dvd_files(accession, files, kwargs):
+
+def copy_pres_files(accession, files, kwargs):
     '''
-    copys preservation and DVD files to D:\loc and D:\dvd, respectively
+    copys preservation files to D:\loc
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
     for file in files:
         if "_pres" in file.name:
             cmd = "robocopy " + str(accession_fullpath) + " " + \
                 str(kwargs.config.loc) + " " + str(file.name)
-        elif "dvd.mpg" in file.name:
-            cmd = "robocopy " + str(accession_fullpath) + " " + \
-                str(kwargs.config.dvd) + " " + str(file.name)
         else:
             continue
         logger.info("copying %s to %s", file, kwargs.config.loc)
@@ -166,6 +168,7 @@ def copy_pres_dvd_files(accession, files, kwargs):
             logger.error("there was a problem copying %s", file)
             return False
     return True
+
 
 def hash_files(files, kwargs):
     '''
@@ -188,6 +191,7 @@ def hash_files(files, kwargs):
             return False
     logging.info("hashing files completed successfully")
     return hashes
+
 
 def make_derivatives(accession, input_file, kwargs):
     '''
@@ -212,15 +216,6 @@ def make_derivatives(accession, input_file, kwargs):
         logging.error("creation of mp4 with watermark failed")
         return False
     '''
-    mpeg file for DVD
-    accession_dvd.mpeg
-    '''
-    logging.info("creating mpeg DVD file")
-    mpeg_dvd_ok = transcodes.make_mpg_dvd(accession, input_file, kwargs)
-    if not mpeg_dvd_ok:
-        logging.error("creation of mpeg DVD file failed")
-        return False
-    '''
     NOT IMPLEMENTED
     mezzanine mxf
     mezz.mxf
@@ -230,9 +225,10 @@ def make_derivatives(accession, input_file, kwargs):
     if not mxf_mezz_ok:
         logging.error("creation of mxf mezzanine failed")
         return False
-    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok, mxf_mezz_ok]
+    return [mp4_with_tc_ok, mp4_with_logo_ok, mxf_mezz_ok]
     '''
-    return [mp4_with_tc_ok, mp4_with_logo_ok, mpeg_dvd_ok]
+    return [mp4_with_tc_ok, mp4_with_logo_ok]
+
 
 def process_accession(accession, files, kwargs):
     '''
@@ -276,7 +272,6 @@ def process_accession(accession, files, kwargs):
         filename = accession + "_pres" + ext
         file.replace(file.parent / filename)
         pres_file = file.parent / filename
-
     '''
     make derivatives in transcode script
     '''
@@ -287,6 +282,7 @@ def process_accession(accession, files, kwargs):
         return False
     files.append(pres_file)
     return files
+
 
 def test(kwargs):
     '''
@@ -322,6 +318,7 @@ def test(kwargs):
                     logging.info("file is valid mp4")
                     kwargs.rewrap_mp4 = False
 
+
 def verify_startup(kwargs):
     '''
     manages startup of script
@@ -350,6 +347,7 @@ def verify_startup(kwargs):
             logging.error("files not found in raw capture directory")
             return False
     return True
+
 
 def init_log(kwargs):
     '''
@@ -391,6 +389,7 @@ def init_log(kwargs):
     logger.debug("kwargs object: %s", str(kwargs))
     return True
 
+
 def init_config(kwargs):
     '''
     initialize variables and arguments from config file
@@ -408,7 +407,6 @@ def init_config(kwargs):
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
     kwargs.config.loc = pathlib.Path(config.get('fileDestinations','loc'))
-    kwargs.config.dvd = pathlib.Path(config.get('fileDestinations','dvd'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
     kwargs.config.filemaker_user = config.get('filemaker','user')
     kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
@@ -416,9 +414,9 @@ def init_config(kwargs):
         {"input_policies":config.get('mediaconch','input_policies_dir'), \
         "wm_policy":config.get('mediaconch','watermark_mp4'), \
         "tc_policy":config.get('mediaconch','timecode_mp4'), \
-        "dvd_policy":config.get('mediaconch','dvd_mpg'), \
         'mp4_pcm_policy':config.get('mediaconch','mp4_pcm_policy')})
     return kwargs
+
 
 def init_kwargs():
     '''
@@ -449,6 +447,9 @@ def init_kwargs():
         help="disable email notifications")
     parser.add_argument('--test', action='store_true', default=False,\
             help="runs script in test mode")
+    parser.add_argument('--special_collections', action='store_true', default=False,\
+            help="runs the script in 'Special Collections' mode, "
+                        "where original file timecode is preserved")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
@@ -456,6 +457,7 @@ def init_kwargs():
     kwargs.test = args.test
     kwargs.sleep = int(args.sleep)
     kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
+    kwargs.special_collections = args.special_collections
     '''
     next lines flip the boolean values for concatenation and input/output validation
     makes the code more readable in main()
@@ -488,6 +490,7 @@ def init_kwargs():
     else:
         kwargs.print_loglevel = logging.INFO
     return kwargs
+
 
 def main():
     '''
@@ -633,12 +636,11 @@ def main():
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
                         logging.info("files moved successfully")
-                        logging.info("copying preservation and DVD files")
-                        pres_dvd_files_copied_ok = copy_pres_dvd_files(accession, files, kwargs)
-                        if not pres_dvd_files_copied_ok:
-                            logging.error("there was an error moving the preservation and dvd files to")
+                        logging.info("copying preservation files")
+                        pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
+                        if not pres_files_copied_ok:
+                            logging.error("there was an error moving the preservation files to")
                             logging.error(kwargs.config.loc)
-                            logging.error(kwargs.config.dvd)
                             raise RuntimeError("the script failed due to an error at runtime")
                         else:
                             for file in accession_fullpath.iterdir():
@@ -666,6 +668,7 @@ def main():
                 tmp_log = "Unable to format log for email, see log file for further details: " + the_log
             send_email("processing unsuccessful for " + accession, tmp_log)
     kwargs.config.lockfile.unlink() #delete lockfile so script knows it's not already running
+
 
 if __name__ == "__main__":
     main()

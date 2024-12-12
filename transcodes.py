@@ -10,7 +10,10 @@ import subprocess
 import logging
 import pathlib
 import traceback
+
+
 logger = logging.getLogger(__name__)
+
 
 def format_ffmpeg_log():
     '''
@@ -37,6 +40,7 @@ def format_ffmpeg_log():
         logger.error(traceback.format_exc())
         return False
 
+
 def run_ffmpeg(cmd):
     '''
     runs cmd for ffmpeg
@@ -57,26 +61,6 @@ def run_ffmpeg(cmd):
         logger.error(traceback.format_exc())
         return False
 
-def make_mpg_dvd(accession, file, kwargs):
-    '''
-    make mpg for dvd
-    '''
-    logger.info("creating mpeg derivative for DVD")
-    mpeg = accession + "_dvd.mpg"
-    mpeg_fullpath = kwargs.config.raw_captures / accession / mpeg
-    segment = accession.split("_")[-1]
-    if kwargs.is_interlaced:
-        yadif = "yadif,"
-    else:
-        yadif = ""
-    drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
-        "\:00\:00\;00':r=29.97:x=(w-tw)/2:y=h-(2*lh):fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
-    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -target ntsc-dvd -ac 2 -b:v 5000k -vtag xvid -vf ' + yadif + drawtext + \
-        ',scale=720:480" -threads 0 -y ' + str(mpeg_fullpath) + kwargs.ffmpeg_suffix
-    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
-    if not ffmpeg_ok:
-        return False
-    return mpeg_fullpath
 
 def make_mp4_with_tc(accession, file, kwargs):
     '''
@@ -100,6 +84,7 @@ def make_mp4_with_tc(accession, file, kwargs):
         return False
     return mp4_fullpath
 
+
 def make_mp4_with_logo(accession, file, kwargs):
     '''
     creates mp4 derivative with logo
@@ -120,6 +105,7 @@ def make_mp4_with_logo(accession, file, kwargs):
         return False
     return mp4_fullpath
 
+
 def make_mxf_mezz(accession, file, kwargs):
     '''
     creates mxf mezzanine file
@@ -133,6 +119,7 @@ def make_mxf_mezz(accession, file, kwargs):
     if not ffmpeg_ok:
         return False
     return mxf_fullpath
+
 
 def concatenate_raw_captures(accession, files, kwargs):
     '''
@@ -150,8 +137,13 @@ def concatenate_raw_captures(accession, files, kwargs):
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -timecode ' \
-        + segment[-2:] + ':00:00;00 -y ' + str(concat_vid) + kwargs.ffmpeg_suffix
+    ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown '
+    ffmpeg_cmd_timecode = '-timecode ' + segment[-2:] + ':00:00;00 '
+    ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
+    if kwargs.special_collections:
+        ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
+    else:
+        ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_timecode + ffmpeg_cmd_out
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         logger.error("ffmpeg encountered an error during concatenation")
@@ -161,6 +153,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         concat_vid.replace(accession_pres)
         concat_txt_path.unlink()
         return str(accession_pres)
+
 
 def detect_interlaced_video(file, kwargs):
     '''
@@ -186,6 +179,7 @@ def detect_interlaced_video(file, kwargs):
     logger.error("ffprobe unable to detect progressive or interlaced video")
     return False
 
+
 def rewrap_mp4_streams_in_mov(mp4_file):
     '''
     takes input file, assumed mp4 with (non-spec) pcm audio
@@ -200,6 +194,7 @@ def rewrap_mp4_streams_in_mov(mp4_file):
         return False
     else:
         return mov_file
+
 
 def main():
     '''
