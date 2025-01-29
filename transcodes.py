@@ -169,11 +169,13 @@ def detect_interlaced_video(file, kwargs):
         logger.error("ffmpeg encountered an error during interlace detection")
         return False
     else:
+        interlaced_formats = ["tff", "bff", "tb", "bt", "tt"]
         output = ffmpeg_ok.stdout.decode("utf-8").strip()
-        if "tff" in output or "bff" in output or "tb" in output or "bt" in output:
-            kwargs.is_interlaced = True
-            return kwargs
-        elif "progressive" in output or "unknown" in output:
+        for iformat in interlaced_formats:
+            if iformat in output:
+                kwargs.is_interlaced = True
+                return kwargs
+        if "progressive" in output or "unknown" in output:
             kwargs.is_interlaced = False
             return kwargs
     logger.error("ffprobe unable to detect progressive or interlaced video")

@@ -60,7 +60,6 @@ def init_connection(kwargs):
     '''
     conn_str = "DRIVER={FileMaker ODBC};SERVER=192.168.19.3;DATABASE=PBCore_Catalog;PORT=2399;" + \
         "UID=" + kwargs.config.filemaker_user + ";PWD=" + kwargs.config.filemaker_pwd + ";CHARSET=UTF-16"
-    logger.debug(conn_str)
     filemaker_connection = pyodbc.connect(conn_str)
     cursor = filemaker_connection.cursor()
     logger.info("connected to FileMaker successfully")
