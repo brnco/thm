@@ -160,17 +160,17 @@ def detect_interlaced_video(file, kwargs):
     detects if input file is interlaced
     '''
     logger.info("testing %s file for interlaced video", str(file))
-    ffmpeg_cmd = "ffmpeg -filter:v idet -frames:v 360 -an -f rawvideo -y NUL -i " + str(file)
+    #ffmpeg_cmd = "ffmpeg -filter:v idet -frames:v 360 -an -f rawvideo -y NUL -i " + str(file)
     ffmpeg_cmd = "ffprobe -v quiet -select_streams v -show_entries stream=field_order -of csv=p=0 -i " + str(file)
     logger.info(ffmpeg_cmd)
     ffmpeg_ok = subprocess.run(ffmpeg_cmd, capture_output=True)
-    logger.info(ffmpeg_ok.stdout.decode("utf-8").strip())
+    output = ffmpeg_ok.stdout.decode("utf-8").strip()
+    logger.info(f"ffmpeg found this field order: {output}")
     if not ffmpeg_ok.returncode == 0:
         logger.error("ffmpeg encountered an error during interlace detection")
         return False
     else:
         interlaced_formats = ["tff", "bff", "tb", "bt", "tt"]
-        output = ffmpeg_ok.stdout.decode("utf-8").strip()
         for iformat in interlaced_formats:
             if iformat in output:
                 kwargs.is_interlaced = True
