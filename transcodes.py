@@ -78,7 +78,8 @@ def make_mp4_with_tc(accession, file, kwargs):
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + drawtext + \
-        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' + str(mp4_fullpath) + kwargs.ffmpeg_suffix
+        ',scale=420:270" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' + \
+        str(mp4_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -98,7 +99,7 @@ def make_mp4_with_logo(accession, file, kwargs):
         yadif = ""
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.config.watermark_white) + \
         ' -filter_complex ' + yadif + 'overlay=0:0,scale=420:270 ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -y ' \
+        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' \
         + str(mp4_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
@@ -221,7 +222,7 @@ def main():
     '''
     do the thing
     '''
-    print("howdy")
+    print("testing...")
 
 if __name__ == "__main__":
     main()
