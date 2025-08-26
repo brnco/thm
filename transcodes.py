@@ -156,6 +156,28 @@ def concatenate_raw_captures(accession, files, kwargs):
         return str(accession_pres)
 
 
+def detect_frame_dimensions(file, kwargs):
+    '''
+    detects the frame width and height of file
+    '''
+    logger.info(f"getting frame dimensions for {file}")
+    ffmpeg_cmd = "ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x -i " + str(file)
+    logger.info(ffmpeg_cmd)
+    ffmpeg_ok = subprocess.run(ffmpeg_cmd, capture_output=True, shell=True)
+    output = ffmpeg_ok.stdout.decode("utf-8").strip()
+    logger.info(f"ffmpeg found these frame dimensions: {output}")
+    if not ffmpeg_ok.returncode == 0:
+        logger.error("ffmpeg encountered an error during frame dimensions detection")
+        return False
+    wh = output.split("x")
+    if not len(wh) == 2:
+        logger.error("there was a problem parsing that video for frame dimensions")
+        logger.error(f"expected 2 value but got: {wh}")
+    kwargs.frame_width = int(wh[0])
+    kwargs.frame_height = int(wh[1])
+    return kwargs
+
+
 def detect_interlaced_video(file, kwargs):
     '''
     detects if input file is interlaced

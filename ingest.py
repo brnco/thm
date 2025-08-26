@@ -193,6 +193,31 @@ def hash_files(files, kwargs):
     return hashes
 
 
+def get_watermark_for_frame_dimensions(kwargs):
+    '''
+    gets the appropriate watermakr file for given dimensions
+    '''
+    this_dirpath = pathlib.Path(__file__).parent.absolute()
+    png_files = [f for f in this_dirpath.iterdir() if f.is_file() and f.suffix == ".png"]
+    file_comps = {}
+    for file in png_files:
+        file_dimensionsx = file.stem.replace("THM-Watermark", "")
+        file_dimensions = file_dimensionsx.split("x")
+        file_dimensions_w = int(file_dimensions[0])
+        file_dimensions_h = int(file_dimensions[1])
+        file_diff_w = kwargs.frame_width - file_dimensions_w
+        file_diff_h = kwargs.frame_height - file_dimensions_h
+        file_diff = abs(file_diff_w + file_diff_h)
+        file_comps[file] = file_diff
+    print(file_comps)
+    lowest_diff = sorted(file_comps.values())[0]
+    print(lowest_diff)
+    png_file_for_overlay = list(file_comps.keys())[list(file_comps.values()).index(lowest_diff)]
+    print(png_file_for_overlay)
+
+
+
+
 def make_derivatives(accession, input_file, kwargs):
     '''
     manages derivative creation
@@ -211,6 +236,7 @@ def make_derivatives(accession, input_file, kwargs):
     accession_wm.mp4
     '''
     logging.info("creating mp4 with burned-in watermark")
+    kwargs = get_watermark_for_dimensions(kwargs)
     mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwargs)
     if not mp4_with_logo_ok:
         logging.error("creation of mp4 with watermark failed")
@@ -599,6 +625,13 @@ def main():
                 if not kwargs:
                     logger.error("interlace detection failed for accession %s, quitting", accession)
                     raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
+                '''
+                detect frame size for correct png overlay
+                '''
+                kwargs = transcodes.detect_frame_dimensions(ingests[accession][0], kwargs)
+                if not kwargs:
+                    logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
+                    raise RuntimeError("the script quit du to an error detecting the frame dimensions")
                 '''
                 actually process/ transcode the files
                 processing_ok variable is list of full paths to derivative files
