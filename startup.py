@@ -76,17 +76,6 @@ def verify_raw_captures(kwargs):
         logger.info("raw captures ok")
         return raw_captures
 
-def verify_config_filepaths(kwargs):
-    '''
-    checks that files defined in config file exist
-    '''
-    logger.info("verifying watermark and timecode font files exist")
-    if not kwargs.config.watermark_white.is_file():
-        logger.error("The white-watermark file cannot be found." \
-            "Please put the white watermark file at %s", str(kwargs.config.watermark_white))
-        return False
-    return True
-
 def verify_config_drivepaths(kwargs):
     '''
     verifies that drives defined in config file exist

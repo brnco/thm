@@ -364,10 +364,6 @@ def verify_startup(kwargs):
         if not drives_ok:
             logging.error("drives not found")
             return False
-    watermark_file_ok = startup.verify_config_filepaths(kwargs)
-    if not watermark_file_ok:
-        logging.error("timecode and/or watermark files not found")
-        return False
     if not kwargs.mtf:
         raw_captures_files_ok = startup.verify_raw_captures(kwargs)
         if not raw_captures_files_ok:
@@ -440,7 +436,6 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
