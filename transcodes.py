@@ -97,7 +97,7 @@ def make_mp4_with_logo(accession, file, kwargs):
         yadif = "[0]yadif,"
     else:
         yadif = ""
-    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.config.watermark_white) + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.watermark_white) + \
         ' -filter_complex ' + yadif + 'overlay=0:0,scale=420:270 ' \
         + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' \
         + str(mp4_fullpath) + kwargs.ffmpeg_suffix

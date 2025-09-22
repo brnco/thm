@@ -195,7 +195,7 @@ def hash_files(files, kwargs):
 
 def get_watermark_for_frame_dimensions(kwargs):
     '''
-    gets the appropriate watermakr file for given dimensions
+    gets the appropriate watermark file for given dimensions
     '''
     this_dirpath = pathlib.Path(__file__).parent.absolute()
     png_files = [f for f in this_dirpath.iterdir() if f.is_file() and f.suffix == ".png"]
@@ -209,13 +209,13 @@ def get_watermark_for_frame_dimensions(kwargs):
         file_diff_h = kwargs.frame_height - file_dimensions_h
         file_diff = abs(file_diff_w + file_diff_h)
         file_comps[file] = file_diff
-    print(file_comps)
+    #print(file_comps)
     lowest_diff = sorted(file_comps.values())[0]
-    print(lowest_diff)
+    #print(lowest_diff)
     png_file_for_overlay = list(file_comps.keys())[list(file_comps.values()).index(lowest_diff)]
-    print(png_file_for_overlay)
-
-
+    #print(png_file_for_overlay)
+    kwargs.watermark_white = png_file_for_overlay
+    return kwargs
 
 
 def make_derivatives(accession, input_file, kwargs):
@@ -236,7 +236,7 @@ def make_derivatives(accession, input_file, kwargs):
     accession_wm.mp4
     '''
     logging.info("creating mp4 with burned-in watermark")
-    kwargs = get_watermark_for_dimensions(kwargs)
+    kwargs = get_watermark_for_frame_dimensions(kwargs)
     mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwargs)
     if not mp4_with_logo_ok:
         logging.error("creation of mp4 with watermark failed")
@@ -364,10 +364,6 @@ def verify_startup(kwargs):
         if not drives_ok:
             logging.error("drives not found")
             return False
-    watermark_file_ok = startup.verify_config_filepaths(kwargs)
-    if not watermark_file_ok:
-        logging.error("timecode and/or watermark files not found")
-        return False
     if not kwargs.mtf:
         raw_captures_files_ok = startup.verify_raw_captures(kwargs)
         if not raw_captures_files_ok:
@@ -440,7 +436,6 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.watermark_white = pathlib.Path(config.get('transcode','whitewatermark'))
     kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
