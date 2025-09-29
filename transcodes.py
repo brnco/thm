@@ -77,7 +77,7 @@ def make_mp4_with_tc(accession, file, kwargs):
     drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
-        ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + + "crop=trunc(iw/2)*2:trunc(ih/2)*2," + drawtext + \
+            ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + '"crop=trunc(iw/2)*2:trunc(ih/2)*2,' + drawtext[1:] + \
         ',scale=420:-1" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' + \
         str(mp4_fullpath) + kwargs.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
