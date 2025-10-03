@@ -170,9 +170,10 @@ def detect_frame_dimensions(file, kwargs):
         logger.error("ffmpeg encountered an error during frame dimensions detection")
         return False
     wh = output.split("x")
-    if not len(wh) == 2:
-        logger.error("there was a problem parsing that video for frame dimensions")
-        logger.error(f"expected 2 value but got: {wh}")
+    if len(wh) < 2:
+	logger.error("there was a problem detecting frame dimensions")
+	logger.error(f"expected 2 values but got: {wh}")
+	raise RuntimeError(f"The script encountered a problem detecting frame dimensions for {file}")
     kwargs.frame_width = int(wh[0])
     kwargs.frame_height = int(wh[1])
     return kwargs
