@@ -179,7 +179,7 @@ def hash_files(files, kwargs):
     for file in files:
         file = str(file)
         logger.info("hashing " + file)
-        cmd = 'certutil -hashfile "' + file + '"'
+        cmd = 'certutil -hashfile "' + file + '" SHA256'
         logger.debug(cmd)
         output = subprocess.run(cmd, capture_output=True)
         if output.returncode == 0:
