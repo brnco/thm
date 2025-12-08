@@ -30,6 +30,7 @@ import file_validation
 from send_email import send_email, format_log_for_email
 import startup
 
+#logger = logging.getLogger(__name__)
 
 '''
 function definitions
@@ -172,7 +173,7 @@ def copy_pres_files(accession, files, kwargs):
 
 def hash_files(files, kwargs):
     '''
-    creates portable SHA -1 hash for file
+    creates portable SHA256 hash for file
     '''
     logging.info("hashing files")
     hashes = {}
