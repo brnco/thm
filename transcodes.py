@@ -167,8 +167,7 @@ def detect_frame_dimensions(file, kwargs):
     output = ffmpeg_ok.stdout.decode("utf-8").strip()
     logger.info(f"ffmpeg found these frame dimensions: {output}")
     if not ffmpeg_ok.returncode == 0:
-        logger.error("ffmpeg encountered an error during frame dimensions detection")
-        return False
+        raise RuntimeError("ffmpeg encountered an error during frame dimensions detection")
     wh = output.split("x")
     if len(wh) < 2:
         logger.error("there was a problem detecting frame dimensions")
@@ -191,8 +190,7 @@ def detect_interlaced_video(file, kwargs):
     output = ffmpeg_ok.stdout.decode("utf-8").strip()
     logger.info(f"ffmpeg found this field order: {output}")
     if not ffmpeg_ok.returncode == 0:
-        logger.error("ffmpeg encountered an error during interlace detection")
-        return False
+        raise RuntimeError("ffmpeg encountered an error during interlace detection")
     else:
         interlaced_formats = ["tff", "bff", "tb", "bt", "tt", "bb"]
         for iformat in interlaced_formats:
@@ -202,8 +200,7 @@ def detect_interlaced_video(file, kwargs):
         if "progressive" in output or "unknown" in output:
             kwargs.is_interlaced = False
             return kwargs
-    logger.error("ffprobe unable to detect progressive or interlaced video")
-    return False
+    raise RuntimeError("ffprobe unable to detect progressive or interlaced video")
 
 
 def rewrap_mp4_streams_in_mov(mp4_file, kwargs):
