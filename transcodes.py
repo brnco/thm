@@ -194,7 +194,7 @@ def detect_interlaced_video(file, kwargs):
         logger.error("ffmpeg encountered an error during interlace detection")
         return False
     else:
-        interlaced_formats = ["tff", "bff", "tb", "bt", "tt"]
+        interlaced_formats = ["tff", "bff", "tb", "bt", "tt", "bb"]
         for iformat in interlaced_formats:
             if iformat in output:
                 kwargs.is_interlaced = True
