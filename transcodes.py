@@ -127,14 +127,13 @@ def concatenate_raw_captures(accession, files, kwargs):
     concatenates raw captures in accession folder
     '''
     accession_dir = files[0].parent
-    file_ext = files[0].suffix
-    if ".MOV" in file_ext:
-        file_ext = ".mov"
+    in_file_ext = files[0].suffix
+    out_file_ext = ".mxf"
     segment = accession.split("_")[-1]
     logger.info("concatenating input files in directory %s", str(accession_dir))
     concat_txt_path = accession_dir / "concat.txt"
-    concat_vid = concat_txt_path.with_suffix(file_ext)
-    accession_pres = concat_txt_path.with_name(accession + "_pres" + file_ext)
+    concat_vid = concat_txt_path.with_suffix(out_file_ext)
+    accession_pres = concat_txt_path.with_name(accession + "_pres" + out_file_ext)
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
