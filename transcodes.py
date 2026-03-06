@@ -210,7 +210,7 @@ def reencode_mp4_audio_to_pcm(in_mp4_file, kwargs):
     logger.info("re-encoding mp4 with pcm audio")
     segment = str(in_mp4_file.stem).split("_")[-1]
     out_mp4_file = in_mp4_file.with_stem(in_mp4_file.stem + "_pcm")
-    ffmpeg_cmd = "ffmpeg -i " + str(in_mp4_file) + " -c copy -map -0:d? " \
+    ffmpeg_cmd = "ffmpeg -i " + str(in_mp4_file) + " -c:v copy -c:a pcm_s24le -map -0:d? " \
         "-y " + str(out_mp4_file) + kwargs.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
