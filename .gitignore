@@ -1,4 +1,5 @@
 *.txt
+*.log
 processing.pid
 thm-test-backups/
 .DS_Store

@@ -273,14 +273,18 @@ def process_accession(accession, files, kwargs):
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
     _files = []
-    if kwargs.rewrap_mp4:
+    '''
+    if accession contains mp4 files with invalid pcm audio
+    rewrap them as mov
+    '''
+    if kwargs.reencode_mp4_audio:
         for mp4_file in files:
-            mov_file = transcodes.rewrap_mp4_streams_in_mov(mp4_file, kwargs)
-            if not mov_file:
-                logging.error("there was a problem re-wrapping the mp4 file(s) in mov")
+            pcm_mp4_file = transcodes.reencode_mp4_audio_to_pcm(mp4_file, kwargs)
+            if not pcm_mp4_file:
+                logging.error("there was a problem re-encoding the mp4 file(s) with pcm audio")
                 return False
             else:
-                _files.append(mov_file)
+                _files.append(pcm_mp4_file)
         files = _files
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
@@ -314,41 +318,6 @@ def process_accession(accession, files, kwargs):
         return False
     files.append(pres_file)
     return files
-
-
-def test(kwargs):
-    '''
-    here you can define functions/ flows for testing the script
-    '''
-    '''
-    create ingest list
-    technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
-    {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
-    '''
-    ingests = get_files_for_ingest(kwargs)
-    '''
-    loop through ingest list
-    accession here is string of form A2022_001_001_001
-    '''
-    for accession in sorted(ingests.keys()):
-        accession_fullpath = kwargs.config.raw_captures / accession
-        '''
-        check mp4 files for invalid pcm audio
-        '''
-        for file in ingests[accession]:
-            if str(file).endswith(".mp4") or str(file).endswith(".MP4"):
-                logging.info("testing %s for valid audio codec in mp4",file)
-                valid_mp4 = file_validation.detect_valid_mp4(file, kwargs)
-                if not valid_mp4:
-                    if valid_mp4 == None:
-                        logger.error("there was a problem running mediaconch")
-                        raise RuntimeError("MediaConch could not be run")
-                    else:
-                        kwargs.rewrap_mp4 = True
-                        break
-                else:
-                    logging.info("file is valid mp4")
-                    kwargs.rewrap_mp4 = False
 
 
 def verify_startup(kwargs):
@@ -598,22 +567,21 @@ def main():
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
                 '''
-                check mp4 files for invalid pcm audio
+                check mp4 files for pcm audio
                 '''
                 for file in ingests[accession]:
                     if file.suffix == ".mp4" or file.suffix == ".MP4":
-                        logging.info("testing %s for valid audio codec in mp4",file)
-                        valid_mp4 = file_validation.detect_valid_mp4(file, kwargs)
-                        if not valid_mp4:
+                        logging.info("testing %s for audio codec in mp4",file)
+                        pcm_mp4 = file_validation.detect_pcm_mp4(file, kwargs)
+                        if not pcm_mp4:
                             if valid_mp4 == None:
                                 logger.error("there was a problem running mediaconch")
                                 raise RuntimeError("MediaConch could not be run")
                             else:
-                                kwargs.rewrap_mp4 = True
+                                kwargs.reencode_mp4_audio = True
                                 break
                         else:
-                            logging.info("file is valid mp4")
-                            kwargs.rewrap_mp4 = False
+                            kwargs.reencode_mp4_audio = False
                 '''
                 detect interlacing / progressive frame format for input accession
                 '''
