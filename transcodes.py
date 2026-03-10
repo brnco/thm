@@ -137,7 +137,7 @@ def concatenate_raw_captures(accession, files, kwargs):
     with open(concat_txt_path,"a") as concat_txt:
         for file in files:
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown '
+    ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -strict unofficial '
     ffmpeg_cmd_timecode = '-timecode ' + segment[-2:] + ':00:00;00 '
     ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
     if kwargs.special_collections:
@@ -228,7 +228,7 @@ def rewrap_single_file_accession(accession, input_file, kwargs):
     segment = accession.split("_")[-1]
     pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mxf")
     ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? -timecode " \
-        + segment[-2:] + ":00:00;00 -y " + str(pres_file) + kwargs.ffmpeg_suffix
+        + segment[-2:] + ":00:00;00 -strict unofficial -y " + str(pres_file) + kwargs.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("there was an issue rewrapping that file")
