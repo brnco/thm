@@ -294,20 +294,17 @@ def process_accession(accession, files, kwargs):
             if not files:
                 logging.error("concatenation failed")
                 return False
-    elif ".mov" in files[0].suffix.lower() \
-            and not kwargs.special_collections \
-            and not kwargs.rewrap_mp4:
+    else:
+        '''
+        accession contains single file
+        we used to filter out special collections and not re-encode/ rewrap
+        but then we switched to MXF
+        '''
         with util.cd(str(accession_fullpath)):
             pres_file = transcodes.rewrap_single_file_accession(accession, files[0], kwargs)
             if not pres_file:
                 logging.error("rewrap of single file accession failed")
                 return False
-    else:
-        file = files[0]
-        ext = file.suffix
-        filename = accession + "_pres" + ext
-        file.replace(file.parent / filename)
-        pres_file = file.parent / filename
     '''
     make derivatives in transcode script
     '''
@@ -483,7 +480,6 @@ def init_kwargs():
     except:
         kwargs.accession_mediaconch_policy = None
         kwargs.reset_mediaconch_policy = True
-    kwargs.rewrap_mp4 = False
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
