@@ -9,24 +9,29 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def detect_pcm_mp4(file, kwargs):
+def detect_pcm(file, kwargs):
     '''
-    uses MediaConch to detect if mp4 contains pcm audio
+    uses MediaConch to detect if file contains pcm audio
     '''
-    mediaconch_mp4_pcm_policy = kwargs.config.mediaconch.mp4_pcm_policy
-    logger.info("checking for non-standard PCM audio in MP4")
+    mediaconch_pcm_policy = kwargs.config.mediaconch.pcm_in_file_policy
+    logger.info("checking for PCM audio in file")
     logger.info("%s",file)
-    logger.debug("mediaconch -p " + str(mediaconch_mp4_pcm_policy) + " " + str(file))
-    output = subprocess.run(['mediaconch','-p',str(mediaconch_mp4_pcm_policy),str(file)],capture_output=True,shell=True)
+    logger.debug("mediaconch -p " + str(mediaconch_pcm_policy) + " " + str(file))
+    #output = subprocess.run(['mediaconch','-p',str(mediaconch_pcm_policy),str(file)],capture_output=True,shell=True)
+    output = subprocess.run('mediaconch -p ' + str(mediaconch_pcm_policy) + " " + str(file), capture_output=True, shell=True)
     logger.debug(output.stdout.decode('utf-8'))
     stdout = output.stdout.decode('utf-8')
     if stdout.startswith('pass'):
-        logger.info("MP4 detected with PCM audio")
+        logger.info("file detected with PCM audio")
         return True
+    elif stdout.startswith("Usage"):
+        logger.error(stdout)
+        raise RuntimeError("there was a problem running MediaConch")
     else:
-        logger.info("MP4 does not contain PCM audio")
+        logger.info("file does not contain PCM audio")
         logger.info("this file or set of files will be re-encoded with PCM")
         return False
+
 
 def load_mediaconch_policies(kwargs):
     '''

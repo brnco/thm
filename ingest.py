@@ -277,14 +277,14 @@ def process_accession(accession, files, kwargs):
     if accession contains mp4 files with invalid pcm audio
     rewrap them as mov
     '''
-    if kwargs.reencode_mp4_audio:
-        for mp4_file in files:
-            pcm_mp4_file = transcodes.reencode_mp4_audio_to_pcm(mp4_file, kwargs)
-            if not pcm_mp4_file:
-                logging.error("there was a problem re-encoding the mp4 file(s) with pcm audio")
+    if kwargs.reencode_audio:
+        for in_file in files:
+            pcm_file = transcodes.reencode_audio_to_pcm(in_file, kwargs)
+            if not pcm_file:
+                logging.error("there was a problem re-encoding the file(s) with pcm audio")
                 return False
             else:
-                _files.append(pcm_mp4_file)
+                _files.append(pcm_file)
         files = _files
     if kwargs.input_concatenation and len(files) > 1:
         with util.cd(str(accession_fullpath)):
@@ -414,10 +414,11 @@ def init_config(kwargs):
     kwargs.config.filemaker_user = config.get('filemaker','user')
     kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
     kwargs.config.mediaconch = util.d( \
-        {"input_policies":config.get('mediaconch','input_policies_dir'), \
-        "wm_policy":config.get('mediaconch','watermark_mp4'), \
-        "tc_policy":config.get('mediaconch','timecode_mp4'), \
-        'mp4_pcm_policy':config.get('mediaconch','mp4_pcm_policy')})
+        {"input_policies": config.get('mediaconch','input_policies_dir'), \
+        "wm_policy": config.get('mediaconch','watermark_mp4'), \
+        "tc_policy": config.get('mediaconch','timecode_mp4'), \
+        'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
+        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy')})
     return kwargs
 
 
@@ -563,21 +564,20 @@ def main():
                     else:
                         kwargs.accession_mediaconch_policy = accession_mediaconch_policy
                 '''
-                check mp4 files for pcm audio
+                check files for pcm audio
                 '''
                 for file in ingests[accession]:
-                    if file.suffix == ".mp4" or file.suffix == ".MP4":
-                        logging.info("testing %s for audio codec in mp4",file)
-                        pcm_mp4 = file_validation.detect_pcm_mp4(file, kwargs)
-                        if not pcm_mp4:
-                            if valid_mp4 == None:
-                                logger.error("there was a problem running mediaconch")
-                                raise RuntimeError("MediaConch could not be run")
-                            else:
-                                kwargs.reencode_mp4_audio = True
-                                break
+                    logging.info(f"testing {file} for pcm audio codec")
+                    pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
+                    if not pcm_audio_in_file:
+                        if pcm_audio_in_file == None:
+                            logger.error("there was a problem running mediaconch")
+                            raise RuntimeError("MediaConch could not be run")
                         else:
-                            kwargs.reencode_mp4_audio = False
+                            kwargs.reencode_audio = True
+                            break
+                    else:
+                        kwargs.reencode_audio = False
                 '''
                 detect interlacing / progressive frame format for input accession
                 '''

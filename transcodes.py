@@ -202,22 +202,21 @@ def detect_interlaced_video(file, kwargs):
     raise RuntimeError("ffprobe unable to detect progressive or interlaced video")
 
 
-def reencode_mp4_audio_to_pcm(in_mp4_file, kwargs):
+def reencode_audio_to_pcm(in_file, kwargs):
     '''
-    takes input mp4 file with pcm audio
-    outputs new mp4 with pcm audio
+    takes input file with pcm audio
+    outputs new file with pcm audio
     '''
-    logger.info("re-encoding mp4 with pcm audio")
-    segment = str(in_mp4_file.stem).split("_")[-1]
-    out_mp4_file = in_mp4_file.with_stem(in_mp4_file.stem + "_pcm")
-    ffmpeg_cmd = "ffmpeg -i " + str(in_mp4_file) + " -c:v copy -c:a pcm_s24le -map -0:d? " \
-        "-y " + str(out_mp4_file) + kwargs.ffmpeg_suffix
+    logger.info("re-encoding file with pcm audio")
+    out_file = in_file.with_stem(in_file.stem + "_pcm")
+    ffmpeg_cmd = "ffmpeg -i " + str(in_file) + " -c:v copy -c:a pcm_s24le -map -0:d? " \
+        "-y " + str(out_file) + kwargs.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
-        logger.error("ffmpeg encountered an error during re-wrap")
+        logger.error("ffmpeg encountered an error during re-encoding")
         return False
     else:
-        return out_mp4_file
+        return out_file
 
 
 def rewrap_single_file_accession(accession, input_file, kwargs):

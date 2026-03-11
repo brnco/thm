@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<policy type="and" name="pcm_in_file">
+  <description>checks if there is pcm audio in file</description>
+  <rule name="Audio/Format is PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+</policy>
