@@ -7,7 +7,37 @@ import util
 import subprocess
 import logging
 
+
 logger = logging.getLogger(__name__)
+
+
+def detect_video_codec(file, kwargs):
+    '''
+    detects if video codec is valid for presevration
+    ProRes/ ProResHD
+    DNxHD/ DNxHR
+    h.264
+    JPEG2000
+    '''
+    logger.info("checking for valid preservation video codec in file")
+    mediaconch_video_policy = kwargs.config.mediaconch.accepted_video_codecs_policy
+    logger.info("checking for valid video codec in file")
+    logger.debug("mediaconch -p " + str(mediaconch_video_policy) + " " + str(file))
+    output = subprocess.run('mediaconch -p ' + str(mediaconch_video_policy) + str(file),
+                            capture_output=True, shell=True)
+    logger.debug(output.stdout.decode('utf-8'))
+    stdout = output.stdout.decode('utf-8')
+    if stdout.startswith('pass'):
+        logger.info('file contains valid preservation video codec')
+        return True
+    elif stdout.startswith('Usage'):
+        logger.error(stdout)
+        raise RuntimeError("There was a problem running MediaConch")
+    else:
+        logger.info('file does not contain valid video preservation codec')
+        logger.info('this file or set of files will be re-encoded with JPEG2000')
+        return False
+
 
 def detect_pcm(file, kwargs):
     '''
@@ -18,7 +48,8 @@ def detect_pcm(file, kwargs):
     logger.info("%s",file)
     logger.debug("mediaconch -p " + str(mediaconch_pcm_policy) + " " + str(file))
     #output = subprocess.run(['mediaconch','-p',str(mediaconch_pcm_policy),str(file)],capture_output=True,shell=True)
-    output = subprocess.run('mediaconch -p ' + str(mediaconch_pcm_policy) + " " + str(file), capture_output=True, shell=True)
+    output = subprocess.run('mediaconch -p ' + str(mediaconch_pcm_policy) + " " + str(file),
+                            capture_output=True, shell=True)
     logger.debug(output.stdout.decode('utf-8'))
     stdout = output.stdout.decode('utf-8')
     if stdout.startswith('pass'):

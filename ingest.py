@@ -418,7 +418,8 @@ def init_config(kwargs):
         "wm_policy": config.get('mediaconch','watermark_mp4'), \
         "tc_policy": config.get('mediaconch','timecode_mp4'), \
         'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
-        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy')})
+        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy') \
+        'accepted_video_codecs_policy': config.get('mediaconch','accepted_video_codecs_policy')})
     return kwargs
 
 
@@ -541,13 +542,23 @@ def main():
             h.264
             JPEG2000
             '''
-            logging.info("checking input files for valid preservation codecs")
+            logging.info("checking input files for valid preservation video codecs")
             for file in ingests[accession]:
                 logging.info(f"testing {file} for valid preservation video codec")
-                file_validation.validate_input(accession, ingests[accession], kwargs)
+                valid_video_in_file = file_validation.detect_video_codec(file, kwargs)
+                if not valid_video_in_file:
+                    if valid_video_in_file ==  None:
+                        logger.error("there was a problem running mediaconch")
+                        raise RuntimeError("MediaConch could not be run")
+                    else:
+                        kwargs.reencode_video = True
+                        break
+                else:
+                    kwargs.reencode_video = False
             '''
             check files for pcm audio
             '''
+            logging.info("checking input files for pcm audio")
             for file in ingests[accession]:
                 logging.info(f"testing {file} for pcm audio codec")
                 pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
