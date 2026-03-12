@@ -443,8 +443,6 @@ def init_kwargs():
             help="continue processing accessions even if 1 fails")
     parser.add_argument('--no_concat', action='store_true', default=False,\
             help="disable concatenation of input files")
-    parser.add_argument('--no_input_validation', action='store_true', default=False, \
-        help="disable mediaconch file validation on input files and _pres output file")
     parser.add_argument('--no_copy', action='store_true', default=False, \
         help="disable file copying to sunnas / xendata, useful for testing")
     parser.add_argument('--no_email', action='store_true', default=False, \
@@ -463,24 +461,13 @@ def init_kwargs():
     kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
     kwargs.special_collections = args.special_collections
     '''
-    next lines flip the boolean values for concatenation and input/output validation
+    next line flips the boolean values for concatenation
     makes the code more readable in main()
     '''
-    kwargs.input_validation = operator.not_(args.no_input_validation)
     kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
-    '''
-    sets mediaconch location
-    sets flag for running each accession against all MC policies
-    --i.e. different accessions in XDCAM or ProRes can be run in the same batch
-    '''
-    try:
-        kwargs.accession_mediaconch_policy = pathlib.Path(args.mediaconch_policy)
-        kwargs.reset_mediaconch_policy = False
-    except:
-        kwargs.accession_mediaconch_policy = None
-        kwargs.reset_mediaconch_policy = True
+    kwargs.foo = "bar"
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
@@ -547,139 +534,121 @@ def main():
             if not filemaker_ok:
                 logging.error("FileMaker record not found for %s", accession)
                 raise RuntimeError("The script could not connect to FileMaker")
-            else:
-                '''
-                do input validation on files, if requested
-                '''
-                if kwargs.input_validation:
-                    logging.info("running mediaconch policies against input files to determine valid inputs")
-                    accession_mediaconch_policy = file_validation.validate_input(accession, \
-                            ingests[accession], kwargs)
-                    if not accession_mediaconch_policy:
-                        logging.error("mediainfo input validation failed for accession %s, quitting", \
-                                str(accession))
-                        logging.info("to process this accession, try running this script with" + \
-                                "--no_input_validation flag")
-                        raise RuntimeError("the script quit due to an error validating input video files")
+            '''
+            check files for valid video codecs
+            ProRes/ ProResHQ
+            DNxHD/ DNxHR
+            h.264
+            JPEG2000
+            '''
+            logging.info("checking input files for valid preservation codecs")
+            for file in ingests[accession]:
+                logging.info(f"testing {file} for valid preservation video codec")
+                file_validation.validate_input(accession, ingests[accession], kwargs)
+            '''
+            check files for pcm audio
+            '''
+            for file in ingests[accession]:
+                logging.info(f"testing {file} for pcm audio codec")
+                pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
+                if not pcm_audio_in_file:
+                    if pcm_audio_in_file == None:
+                        logger.error("there was a problem running mediaconch")
+                        raise RuntimeError("MediaConch could not be run")
                     else:
-                        kwargs.accession_mediaconch_policy = accession_mediaconch_policy
-                '''
-                check files for pcm audio
-                '''
-                for file in ingests[accession]:
-                    logging.info(f"testing {file} for pcm audio codec")
-                    pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
-                    if not pcm_audio_in_file:
-                        if pcm_audio_in_file == None:
-                            logger.error("there was a problem running mediaconch")
-                            raise RuntimeError("MediaConch could not be run")
-                        else:
-                            kwargs.reencode_audio = True
-                            break
-                    else:
-                        kwargs.reencode_audio = False
-                '''
-                detect interlacing / progressive frame format for input accession
-                '''
-                kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
-                if not kwargs:
-                    logger.error("interlace detection failed for accession %s, quitting", accession)
-                    raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
-                '''
-                detect frame size for correct png overlay
-                '''
-                kwargs = transcodes.detect_frame_dimensions(ingests[accession][0], kwargs)
-                if not kwargs:
-                    logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
-                    raise RuntimeError("the script quit du to an error detecting the frame dimensions")
-                '''
-                actually process/ transcode the files
-                processing_ok variable is list of full paths to derivative files
-                '''
-                files = processing_ok = process_accession(accession, ingests[accession], kwargs)
-                if not processing_ok:
-                    logging.error("processing for accession %s failed. See log for details",str(accession))
-                    if kwargs.continue_on_error:
-                        pass
-                    else:
-                        logging.info("script instructed to quit on processing error. Exiting...")
+                        kwargs.reencode_audio = True
                         break
-                '''
-                do output validation on preservation file, if requested
-                '''
-                if kwargs.input_validation:
-                    output_pres_ok = file_validation.validate_output(accession, files, kwargs)
-                    if not output_pres_ok:
-                        logging.error("preservation file did not pass validation, quitting...")
-                        raise RuntimeError("the script quit due to an error validating output video preservation file")
-                '''
-                create checksums for each derivative
-                hashes is dictionary of full_filepath:hash pairs
-                '''
-                hashes = hash_files(files, kwargs)
-                if not hashes:
-                    logging.error("file hashing failed")
-                    raise RuntimeError("the script quit due an error at runtime")
-                logging.debug(hashes)
-                '''
-                reconnect to filemaker
-                '''
-                filemaker_connection, cursor = fm.init_connection(kwargs)
-                '''
-                send checksums to filemaker
-                file transfers are validated post-ingest by Mark Streckers Java app
-                '''
-                kwargs.id = accession
-                for file in hashes.keys():
-                    file = pathlib.Path(file)
-                    kwargs.hash = hashes[str(file)]
-                    kwargs.filename = str(file.name)
-                    fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
-                    if not fm_updates_ok:
-                        logging.error("FileMaker update for hashes failed")
-                        raise RuntimeError("the script failed due to an error at runtime")
-                '''
-                send file data to various places
-                '''
-                if kwargs.copy_files:
-                    files_moved_ok = move_files(accession, files, kwargs)
-                    if not files_moved_ok:
-                        logging.error("file transfer to preservation storage failed")
+                else:
+                    kwargs.reencode_audio = False
+            '''
+            detect interlacing / progressive frame format for input accession
+            '''
+            kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
+            if not kwargs:
+                logger.error("interlace detection failed for accession %s, quitting", accession)
+                raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
+            '''
+            detect frame size for correct png overlay
+            '''
+            kwargs = transcodes.detect_frame_dimensions(ingests[accession][0], kwargs)
+            if not kwargs:
+                logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
+                raise RuntimeError("the script quit du to an error detecting the frame dimensions")
+            '''
+            actually process/ transcode the files
+            processing_ok variable is list of full paths to derivative files
+            '''
+            files = processing_ok = process_accession(accession, ingests[accession], kwargs)
+            if not processing_ok:
+                raise RuntimeError("there was a problem processing that accession, see log for details")
+            '''
+            create checksums for each derivative
+            hashes is dictionary of full_filepath:hash pairs
+            '''
+            hashes = hash_files(files, kwargs)
+            if not hashes:
+                logging.error("file hashing failed")
+                raise RuntimeError("the script quit due an error at runtime")
+            logging.debug(hashes)
+            '''
+            reconnect to filemaker
+            '''
+            filemaker_connection, cursor = fm.init_connection(kwargs)
+            '''
+            send checksums to filemaker
+            file transfers are validated post-ingest by Mark Streckers Java app
+            '''
+            kwargs.id = accession
+            for file in hashes.keys():
+                file = pathlib.Path(file)
+                kwargs.hash = hashes[str(file)]
+                kwargs.filename = str(file.name)
+                fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
+                if not fm_updates_ok:
+                    logging.error("FileMaker update for hashes failed")
+                    raise RuntimeError("the script failed due to an error at runtime")
+            '''
+            send file data to various places
+            '''
+            if kwargs.copy_files:
+                files_moved_ok = move_files(accession, files, kwargs)
+                if not files_moved_ok:
+                    logging.error("file transfer to preservation storage failed")
+                    raise RuntimeError("the script failed due to an error at runtime")
+                else:
+                    logging.info("files moved successfully")
+                    logging.info("copying preservation files")
+                    pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
+                    if not pres_files_copied_ok:
+                        logging.error("there was an error moving the preservation files to")
+                        logging.error(kwargs.config.loc)
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
-                        logging.info("files moved successfully")
-                        logging.info("copying preservation files")
-                        pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
-                        if not pres_files_copied_ok:
-                            logging.error("there was an error moving the preservation files to")
-                            logging.error(kwargs.config.loc)
-                            raise RuntimeError("the script failed due to an error at runtime")
-                        else:
-                            for file in accession_fullpath.iterdir():
-                                logging.debug(file)
-                                file.unlink()
-                            time.sleep(1)
-                            accession_fullpath.rmdir() #deletes accession dir we just processed
-                logging.info("accession %s processed successfully", accession)
-                if kwargs.send_email:
-                    '''
-                    old code I'm keeping here until I'm sure new code works
-                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
-                    tmp_log = format_log_for_email(the_log)
-                    if not tmp_log:
-                        logger.warning("unable to format log for email")
-                        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-                    '''
-                    send_email("ingest notification for " + accession,\
+                        for file in accession_fullpath.iterdir():
+                            logging.debug(file)
+                            file.unlink()
+                        time.sleep(1)
+                        accession_fullpath.rmdir() #deletes accession dir we just processed
+                    logging.info("accession %s processed successfully", accession)
+            if kwargs.send_email:
+                '''
+                old code I'm keeping here until I'm sure new code works
+                the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+                tmp_log = format_log_for_email(the_log)
+                if not tmp_log:
+                    logger.warning("unable to format log for email")
+                    tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+                '''
+                send_email("ingest notification for " + accession,\
                         "processing successful for " + accession, str(accession_log_filepath))
-                '''
-                close the accession log file
-                remove the handler
-                delete (unlink) the accession log file from the OS
-                '''
-                accession_log.close()
-                logger.removeHandler(accession_log)
-                accession_log_filepath.unlink()
+            '''
+            close the accession log file
+            remove the handler
+            delete (unlink) the accession log file from the OS
+            '''
+            accession_log.close()
+            logger.removeHandler(accession_log)
+            accession_log_filepath.unlink()
     except Exception as e:
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
