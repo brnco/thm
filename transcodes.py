@@ -122,6 +122,47 @@ def make_mxf_mezz(accession, file, kwargs):
     return mxf_fullpath
 
 
+def reencode_accession(accession, files, kwargs):
+    '''
+    if files in accession folder need to be reencoded for preservation
+    that process managed here
+    '''
+    for input_file in files:
+        segment = accession.split("_")[-1]
+        output_file = input_file.with_suffix(".mxf")
+        if kwargs.reencode_video and kwargs.reencode_audio:
+            '''
+            ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le file.mxf
+            '''
+            ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
+                    " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a pcm_s24le -strict unofficial -ignore_unknown "
+        elif kwargs.reencode_audio:
+            '''
+            ffmpeg -i file -c:v copy -c:a pcm_s24le file.mxf
+            '''
+            ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
+                    " -map 0:v -map 0:a -c:v copy -c:a pcm_s24le -strict unofficial -ignore_unknown "
+        elif kwargs.reencode_video:
+            '''
+            ffmpeg -i file -c:v jpeg2000 -c:a copy file.mxf
+            '''
+            ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
+                    " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a copy -strict unofficial -ignore_unknown "
+        ffmpeg_cmd_timecode = '-timecode ' + segment[-2:] + ':00:00;00 '
+        ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
+        if kwargs.special_collections:
+            ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
+        else:
+            ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_timecode + ffmpeg_cmd_out
+        ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
+        if not ffmpeg_ok:
+            raise RuntimeError("ffmpeg encountered an error during reencoding")
+        else:
+            logger.info("reencoding completed successfully")
+            files.append(out_file)
+    return files
+
+
 def concatenate_raw_captures(accession, files, kwargs):
     '''
     concatenates raw captures in accession folder
@@ -146,8 +187,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_timecode + ffmpeg_cmd_out
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
-        logger.error("ffmpeg encountered an error during concatenation")
-        return False
+        raise RuntimeError("ffmpeg encountered an error during concatenation")
     else:
         logger.info("concatenation completed successfully")
         concat_vid.replace(accession_pres)

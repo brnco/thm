@@ -273,38 +273,28 @@ def process_accession(accession, files, kwargs):
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
     _files = []
-    '''
-    if accession contains mp4 files with invalid pcm audio
-    rewrap them as mov
-    '''
-    if kwargs.reencode_audio:
-        for in_file in files:
-            pcm_file = transcodes.reencode_audio_to_pcm(in_file, kwargs)
-            if not pcm_file:
-                logging.error("there was a problem re-encoding the file(s) with pcm audio")
-                return False
-            else:
-                _files.append(pcm_file)
+    if kwargs.reencode_audio or kwargs.reencode_video:
+        _files = transcodes.reencode_accession(accession, files, kwargs) 
         files = _files
-    if kwargs.input_concatenation and len(files) > 1:
+    if len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
             pres_file = transcodes.concatenate_raw_captures(accession, files, kwargs)
             pres_file = pathlib.Path(pres_file)
-            if not files:
-                logging.error("concatenation failed")
-                return False
     else:
         '''
         accession contains single file
         we used to filter out special collections and not re-encode/ rewrap
         but then we switched to MXF
         '''
-        with util.cd(str(accession_fullpath)):
-            pres_file = transcodes.rewrap_single_file_accession(accession, files[0], kwargs)
-            if not pres_file:
-                logging.error("rewrap of single file accession failed")
-                return False
+        if not files[0].suffix == ".mxf":
+            with util.cd(str(accession_fullpath)):
+                pres_file = transcodes.rewrap_single_file_accession(accession, files[0], kwargs)
+                if not pres_file:
+                    logging.error("rewrap of single file accession failed")
+                    return False
+        else:
+            pres_file = files[0]
     '''
     make derivatives in transcode script
     '''
@@ -418,7 +408,7 @@ def init_config(kwargs):
         "wm_policy": config.get('mediaconch','watermark_mp4'), \
         "tc_policy": config.get('mediaconch','timecode_mp4'), \
         'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
-        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy') \
+        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy'), \
         'accepted_video_codecs_policy': config.get('mediaconch','accepted_video_codecs_policy')})
     return kwargs
 
@@ -438,18 +428,10 @@ def init_kwargs():
             help='the input folder(s)')
     parser.add_argument('--sleep', default=0, \
             help="set script to run after n seconds, useful if file is copying")
-    parser.add_argument('--mediaconch_policy', default=None,\
-            help="run input/output validation against specified mediaconch policy at path")
-    parser.add_argument('--continue_on_error', action='store_true', default=False,\
-            help="continue processing accessions even if 1 fails")
-    parser.add_argument('--no_concat', action='store_true', default=False,\
-            help="disable concatenation of input files")
     parser.add_argument('--no_copy', action='store_true', default=False, \
         help="disable file copying to sunnas / xendata, useful for testing")
     parser.add_argument('--no_email', action='store_true', default=False, \
         help="disable email notifications")
-    parser.add_argument('--test', action='store_true', default=False,\
-            help="runs script in test mode")
     parser.add_argument('--special_collections', action='store_true', default=False,\
             help="runs the script in 'Special Collections' mode, "
                         "where original file timecode is preserved")
@@ -461,14 +443,8 @@ def init_kwargs():
     kwargs.sleep = int(args.sleep)
     kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
     kwargs.special_collections = args.special_collections
-    '''
-    next line flips the boolean values for concatenation
-    makes the code more readable in main()
-    '''
-    kwargs.input_concatenation = operator.not_(args.no_concat)
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
-    kwargs.foo = "bar"
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
