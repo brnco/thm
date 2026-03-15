@@ -6,6 +6,7 @@ import pathlib
 import util
 import subprocess
 import logging
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ def detect_video_codec(file, kwargs):
     logger.debug("mediaconch -p " + str(mediaconch_video_policy) + " " + str(file))
     output = subprocess.run('mediaconch -p ' + str(mediaconch_video_policy) + str(file),
                             capture_output=True, shell=True)
+    time.sleep(1)
     logger.debug(output.stdout.decode('utf-8'))
     stdout = output.stdout.decode('utf-8')
     if stdout.startswith('pass'):

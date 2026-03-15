@@ -483,14 +483,6 @@ def main():
             accession = None
             raise RuntimeError("the script failed due to an error during startup")
         '''
-        determine if script is running in test mode
-        '''
-        if kwargs.test:
-            accession = "test"
-            test(kwargs)
-            logging.info("script started in test mode, exiting...")
-            quit()
-        '''
         create ingest list
         technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
         {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
