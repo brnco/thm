@@ -435,6 +435,8 @@ def init_kwargs():
     parser.add_argument('--special_collections', action='store_true', default=False,\
             help="runs the script in 'Special Collections' mode, "
                         "where original file timecode is preserved")
+    parser.add_argument('--dev', action='store_true', default=False, \
+            help="runs the script in 'developer mode' (for testing)")
     args = parser.parse_args()
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
@@ -445,6 +447,7 @@ def init_kwargs():
     kwargs.special_collections = args.special_collections
     kwargs.copy_files = operator.not_(args.no_copy)
     kwargs.send_email = operator.not_(args.no_email)
+    kwargs.dev_mode = args.dev
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
@@ -495,14 +498,15 @@ def main():
         for accession in sorted(ingests.keys()):
             accession_log, accession_log_filepath = init_log_accession(kwargs)
             accession_fullpath = kwargs.config.raw_captures / accession
-            '''
-            check filemaker records for each accession
-            '''
-            filemaker_connection, cursor = fm.init_connection(kwargs)
-            filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
-            if not filemaker_ok:
-                logging.error("FileMaker record not found for %s", accession)
-                raise RuntimeError("The script could not connect to FileMaker")
+            if not kwargs.dev_mode:
+                '''
+                check filemaker records for each accession
+                '''
+                filemaker_connection, cursor = fm.init_connection(kwargs)
+                filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
+                if not filemaker_ok:
+                    logging.error("FileMaker record not found for %s", accession)
+                    raise RuntimeError("The script could not connect to FileMaker")
             '''
             check files for valid video codecs
             ProRes/ ProResHQ
@@ -569,57 +573,58 @@ def main():
                 logging.error("file hashing failed")
                 raise RuntimeError("the script quit due an error at runtime")
             logging.debug(hashes)
-            '''
-            reconnect to filemaker
-            '''
-            filemaker_connection, cursor = fm.init_connection(kwargs)
-            '''
-            send checksums to filemaker
-            file transfers are validated post-ingest by Mark Streckers Java app
-            '''
-            kwargs.id = accession
-            for file in hashes.keys():
-                file = pathlib.Path(file)
-                kwargs.hash = hashes[str(file)]
-                kwargs.filename = str(file.name)
-                fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
-                if not fm_updates_ok:
-                    logging.error("FileMaker update for hashes failed")
-                    raise RuntimeError("the script failed due to an error at runtime")
-            '''
-            send file data to various places
-            '''
-            if kwargs.copy_files:
-                files_moved_ok = move_files(accession, files, kwargs)
-                if not files_moved_ok:
-                    logging.error("file transfer to preservation storage failed")
-                    raise RuntimeError("the script failed due to an error at runtime")
-                else:
-                    logging.info("files moved successfully")
-                    logging.info("copying preservation files")
-                    pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
-                    if not pres_files_copied_ok:
-                        logging.error("there was an error moving the preservation files to")
-                        logging.error(kwargs.config.loc)
+            if not kwargs.dev_mode:
+                '''
+                reconnect to filemaker
+                '''
+                filemaker_connection, cursor = fm.init_connection(kwargs)
+                '''
+                send checksums to filemaker
+                file transfers are validated post-ingest by Mark Streckers Java app
+                '''
+                kwargs.id = accession
+                for file in hashes.keys():
+                    file = pathlib.Path(file)
+                    kwargs.hash = hashes[str(file)]
+                    kwargs.filename = str(file.name)
+                    fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
+                    if not fm_updates_ok:
+                        logging.error("FileMaker update for hashes failed")
+                        raise RuntimeError("the script failed due to an error at runtime")
+                '''
+                send file data to various places
+                '''
+                if kwargs.copy_files:
+                    files_moved_ok = move_files(accession, files, kwargs)
+                    if not files_moved_ok:
+                        logging.error("file transfer to preservation storage failed")
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
-                        for file in accession_fullpath.iterdir():
-                            logging.debug(file)
-                            file.unlink()
-                        time.sleep(1)
-                        accession_fullpath.rmdir() #deletes accession dir we just processed
-                    logging.info("accession %s processed successfully", accession)
-            if kwargs.send_email:
-                '''
-                old code I'm keeping here until I'm sure new code works
-                the_log = logging.getLoggerClass().root.handlers[0].baseFilename
-                tmp_log = format_log_for_email(the_log)
-                if not tmp_log:
-                    logger.warning("unable to format log for email")
-                    tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-                '''
-                send_email("ingest notification for " + accession,\
-                        "processing successful for " + accession, str(accession_log_filepath))
+                        logging.info("files moved successfully")
+                        logging.info("copying preservation files")
+                        pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
+                        if not pres_files_copied_ok:
+                            logging.error("there was an error moving the preservation files to")
+                            logging.error(kwargs.config.loc)
+                            raise RuntimeError("the script failed due to an error at runtime")
+                        else:
+                            for file in accession_fullpath.iterdir():
+                                logging.debug(file)
+                                file.unlink()
+                            time.sleep(1)
+                            accession_fullpath.rmdir() #deletes accession dir we just processed
+                        logging.info("accession %s processed successfully", accession)
+                if kwargs.send_email:
+                    '''
+                    old code I'm keeping here until I'm sure new code works
+                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
+                    tmp_log = format_log_for_email(the_log)
+                    if not tmp_log:
+                        logger.warning("unable to format log for email")
+                        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
+                    '''
+                    send_email("ingest notification for " + accession,\
+                            "processing successful for " + accession, str(accession_log_filepath))
             '''
             close the accession log file
             remove the handler
