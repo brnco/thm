@@ -127,7 +127,9 @@ def reencode_accession(accession, files, kwargs):
     if files in accession folder need to be reencoded for preservation
     that process managed here
     '''
+    _files = []
     for input_file in files:
+        logger.info(f"reencoding {input_file}")
         segment = accession.split("_")[-1]
         output_file = input_file.with_suffix(".mxf")
         if kwargs.reencode_video and kwargs.reencode_audio:
@@ -148,8 +150,8 @@ def reencode_accession(accession, files, kwargs):
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
                     " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a copy -strict unofficial -ignore_unknown "
-        ffmpeg_cmd_timecode = '-timecode ' + segment[-2:] + ':00:00;00 '
-        ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
+        ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
+        ffmpeg_cmd_out = '-y ' + str(output_file) + kwargs.ffmpeg_suffix
         if kwargs.special_collections:
             ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
         else:
@@ -159,8 +161,8 @@ def reencode_accession(accession, files, kwargs):
             raise RuntimeError("ffmpeg encountered an error during reencoding")
         else:
             logger.info("reencoding completed successfully")
-            files.append(out_file)
-    return files
+            _files.append(output_file)
+    return _files
 
 
 def concatenate_raw_captures(accession, files, kwargs):
@@ -176,10 +178,10 @@ def concatenate_raw_captures(accession, files, kwargs):
     concat_vid = concat_txt_path.with_suffix(out_file_ext)
     accession_pres = concat_txt_path.with_name(accession + "_pres" + out_file_ext)
     with open(concat_txt_path,"a") as concat_txt:
-        for file in files:
+        for file in sorted(files):
             concat_txt.write('file ' + str(file.name) + "\n")
     ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -strict unofficial '
-    ffmpeg_cmd_timecode = '-timecode ' + segment[-2:] + ':00:00;00 '
+    ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
     ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
     if kwargs.special_collections:
         ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
@@ -225,7 +227,7 @@ def detect_interlaced_video(file, kwargs):
     #ffmpeg_cmd = "ffmpeg -filter:v idet -frames:v 360 -an -f rawvideo -y NUL -i " + str(file)
     ffmpeg_cmd = "ffprobe -v quiet -select_streams v -show_entries stream=field_order -of csv=p=0 -i " + str(file)
     logger.info(ffmpeg_cmd)
-    ffmpeg_ok = subprocess.run(ffmpeg_cmd, capture_output=True)
+    ffmpeg_ok = subprocess.run(ffmpeg_cmd, capture_output=True, shell=True)
     output = ffmpeg_ok.stdout.decode("utf-8").strip()
     logger.info(f"ffmpeg found this field order: {output}")
     if not ffmpeg_ok.returncode == 0:

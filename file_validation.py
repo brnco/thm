@@ -24,7 +24,7 @@ def detect_video_codec(file, kwargs):
     mediaconch_video_policy = kwargs.config.mediaconch.accepted_video_codecs_policy
     logger.info("checking for valid video codec in file")
     logger.debug("mediaconch -p " + str(mediaconch_video_policy) + " " + str(file))
-    output = subprocess.run('mediaconch -p ' + str(mediaconch_video_policy) + str(file),
+    output = subprocess.run('mediaconch -p ' + str(mediaconch_video_policy) + " " + str(file),
                             capture_output=True, shell=True)
     time.sleep(1)
     logger.debug(output.stdout.decode('utf-8'))

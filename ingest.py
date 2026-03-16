@@ -63,7 +63,7 @@ def get_files_for_ingest(kwargs):
             and path.suffix in kwargs.config.filetypes.input]
         for file in raw_captures:
             grandcestors = file.parents[1]
-            accession_number = str(file.parent).replace(str(file.parent.parent),"").replace("\\","")
+            accession_number = str(file.parent).replace(str(file.parent.parent),"").replace("\\","").replace("/","")
             try:
                 ingests[accession_number].append(file)
             except:
@@ -272,10 +272,10 @@ def process_accession(accession, files, kwargs):
     output is also full path
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
-    _files = []
     if kwargs.reencode_audio or kwargs.reencode_video:
         _files = transcodes.reencode_accession(accession, files, kwargs) 
         files = _files
+        logger.debug(files)
     if len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
@@ -441,7 +441,6 @@ def init_kwargs():
     kwargs = util.d({})
     kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
     kwargs.input = args.input
-    kwargs.test = args.test
     kwargs.sleep = int(args.sleep)
     kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
     kwargs.special_collections = args.special_collections
