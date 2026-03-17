@@ -268,8 +268,9 @@ def rewrap_single_file_accession(accession, input_file, kwargs):
     logger.info("rewrapping single video file accession with correct timecode")
     segment = accession.split("_")[-1]
     pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mxf")
-    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? -timecode " \
-        + segment[-2:] + ":00:00;00 -strict unofficial -y " + str(pres_file) + kwargs.ffmpeg_suffix
+    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? " \
+            '-timecode "' + segment[-2:] + ':00:00;00" -strict unofficial -y ' \
+            + str(pres_file) + kwargs.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("there was an issue rewrapping that file")
