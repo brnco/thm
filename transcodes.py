@@ -131,7 +131,7 @@ def reencode_accession(accession, files, kwargs):
     for input_file in files:
         logger.info(f"reencoding {input_file}")
         segment = accession.split("_")[-1]
-        output_file = input_file.with_suffix(".mxf")
+        output_file = input_file.with_name(accession + "_pres.mxf")
         if kwargs.reencode_video and kwargs.reencode_audio:
             '''
             ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le file.mxf
