@@ -101,17 +101,3 @@ def verify_config_drivepaths(kwargs):
         return False
     logger.info("drives mounted ok")
     return True
-
-def verify_filemaker_records(kwargs):
-    '''
-    verifies that filemaker record exists for each accession
-    '''
-    for dirs,subdirs,files in os.walk(rawCaptures):
-        for s in subdirs:
-            output = subprocess.Popen(["python","fm-stuff.py","-qExist","-id",s],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = output.communicate()
-            if not out:
-                msg = "The video script is unable to run because there is not an accession record for " + s + " in FileMaker"
-                subprocess.call(["python","send-email.py","-txt",msg,'-att',logfile])
-                log(logfile,msg)
-                sys.exit()

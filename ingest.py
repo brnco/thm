@@ -73,38 +73,6 @@ def get_files_for_ingest(kwargs):
     return ingests
 
 
-def updateFM(hashlist,scriptRepo,logfile):
-    logging.info("sending hashes to filemaker")
-    for fh in hashlist:
-        fname,ext = os.path.splitext(fh)
-        fdigi = ext.replace(".","")
-        output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-uSha","-id",fname,"-hash",hashlist[fh],"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    return
-
-
-def verifyFM(hashlist,scriptRepo,logfile):
-    logging.info("verifying hashes in filemaker")
-    verifiedwrong = []
-    for fh in hashlist:
-        fname,ext=os.path.splitext(fh)
-        fdigi = ext.replace(".","")
-        sys.stdout.flush()
-        output = subprocess.Popen(["python",os.path.join(scriptRepo,"fm-stuff.py"),"-qSha","-id",fname,"-fdigi",fdigi],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        fmhash = output.communicate()
-        if any(hashlist[fh] in foo for foo in fmhash):
-            logging.info("hash of %s verified correctly as: %s", str(fh), str(fmhash))
-        else:
-            logging.error("hash of %s verified incorrectly", str(fh))
-            logging.error("makevideos calculated hash of: %s", hashlist[fh])
-            logging.error("filemaker hash stored is: %s", str(fmhash))
-            verifiedwrong.append(str(fh))
-    if verifiedwrong:
-        moveyn = False
-    else:
-        moveyn = True
-    return moveyn
-
-
 def move_files(accession, files, kwargs):
     '''
     moves files from processing directory to preservation server
