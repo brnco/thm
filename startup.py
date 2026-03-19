@@ -2,7 +2,7 @@
 '''
 handles aspects of starting script
 verifies drives are attached
-verifies there's not a file copying into D:\incoming
+verifies there's not a file copying into D:/incoming
 '''
 import logging
 import pathlib
@@ -22,7 +22,7 @@ def verify_venv():
         logger.error("the script could not be started because the virtual environment has not been enabled")
         logger.info("to enable the virtual environment for this script," \
             + " run the below code in cmd.exe, while in the code repo directory (C:\\Users\\archadmin\\code\\thm)")
-        logger.info("venv\Scripts\\activate.bat")
+        logger.info("venv/Scripts/activate.bat")
         return False
     return True
 

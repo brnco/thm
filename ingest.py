@@ -152,7 +152,7 @@ def move_files(accession, files, kwargs):
 
 def copy_pres_files(accession, files, kwargs):
     '''
-    copys preservation files to D:\loc
+    copys preservation files to D:/loc
     '''
     accession_fullpath = kwargs.config.raw_captures / accession
     for file in files:
@@ -487,7 +487,7 @@ def main():
         '''
         create ingest list
         technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
-        {A2022_012_001_001:['D:\file1.mov','D:\file2.mov'],A2022_034_001_001:['D:\file3.mov', 'D\:file4.mov']}
+        {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
         '''
         ingests = get_files_for_ingest(kwargs)
         '''
