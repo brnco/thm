@@ -373,8 +373,6 @@ def init_config(kwargs):
     kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
     kwargs.config.mediaconch = util.d( \
         {"input_policies": config.get('mediaconch','input_policies_dir'), \
-        "wm_policy": config.get('mediaconch','watermark_mp4'), \
-        "tc_policy": config.get('mediaconch','timecode_mp4'), \
         'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
         'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy'), \
         'accepted_video_codecs_policy': config.get('mediaconch','accepted_video_codecs_policy')})
