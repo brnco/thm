@@ -366,7 +366,7 @@ def init_config(kwargs):
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
     kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
     kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
-    kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
+    #kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
     kwargs.config.loc = pathlib.Path(config.get('fileDestinations','loc'))
     kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
     kwargs.config.filemaker_user = config.get('filemaker','user')
