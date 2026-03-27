@@ -69,6 +69,10 @@ def get_files_for_ingest(kwargs):
             except:
                 ingests[accession_number] = []
                 ingests[accession_number].append(file)
+    if not ingests:
+        logger.error("There are files in the raw capture directory, but their extensions "
+                        "do not match the allowed extensions in the config file")
+        raise RuntimeError("There was a problem detecting files in the raw capture directory")
     logging.debug("%s",str(ingests))
     return ingests
 
