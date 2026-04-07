@@ -44,6 +44,10 @@ def get_files_for_ingest(kwargs):
         for accession in kwargs.input:
             ingests[accession] = []
             accession_path = kwargs.config.raw_captures / accession
+            lockfile = [path for path in accession_path.glob('processing.lock')]
+            if lockfile:
+                logger.info(f"Accession {accession} already in progress")
+                continue
             raw_captures = [path for path in accession_path.glob('*.*') \
                     if not any(part.startswith('.') for part in path.parts) \
                     and not any(part.startswith('Thumbs.db') for part in path.parts) \
@@ -103,9 +107,12 @@ def move_files(accession, files, kwargs):
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
             if output.returncode < 2:
-                if not "pres" in str(file.name):
+                logger.debug("copy completed successfully")
+                if not "_pres" in str(file.name):
                     #move files up to their anchor X:\ or whatever
-                    copyto_file.replace(copyto_parent / file.name)
+                    logger.debug(f"moving {file} to parent {copyto_parent}")
+                    copyto_file_complete = copyto_file.replace(copyto_parent / file.name)
+                    logger.debug(f"file moved to {copyto_file_complete}")
                 else:
                     continue
             else:
