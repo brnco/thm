@@ -32,53 +32,112 @@ import startup
 
 #logger = logging.getLogger(__name__)
 
-'''
-function definitions
-'''
 def get_files_for_ingest(kwargs):
     '''
-    parses raw_captures directory for files to work on
+    parses hm_interviews and special_collections directories
+    gets files to work on
     '''
     ingests = util.d({})
     if kwargs.input:
+        '''
+        ingest one or more single accessions
+        could be either HM interview(s) or special collection(s)
+        '''
         for accession in kwargs.input:
-            ingests[accession] = []
-            accession_path = kwargs.config.raw_captures / accession
-            lockfile = [path for path in accession_path.glob('processing.lock')]
-            if lockfile:
-                logger.info(f"Accession {accession} already in progress")
-                continue
-            raw_captures = [path for path in accession_path.glob('*.*') \
-                    if not any(part.startswith('.') for part in path.parts) \
-                    and not any(part.startswith('Thumbs.db') for part in path.parts) \
-                    and not any(part.startswith('$') for part in path.parts) \
-                    and path.suffix in kwargs.config.filetypes.input]
-            ingests[accession] = raw_captures
-            for file in accession_path.iterdir():
-                if not file.suffix in kwargs.config.filetypes.input:
-                    logging.warning("the file " + str(file) + " does not have appropriate extension")
-                    logging.warning("this file will not be processed")
+            files_to_process = []
+            spec_coll_dir = kwargs.config.special_colls_dir / accession
+            hm_intv_dir = kwargs.config.hm_interviews_dir / accession
+            if spec_coll_dir.is_dir():
+                '''
+                parse special collections directory for files
+                '''
+                if kwargs.special_collections:
+                    lockfile = detect_lockfile(spec_coll_dir, True)
+                else:
+                    lockfile = detect_lockfile(spec_coll_dir)
+                if lockfile:
+                    continue
+                files_to_process = detect_files_at_path(spec_coll_dir, kwargs)
+                return {accession: files_to_process}
+            elif hm_intv_dir.is_dir() and kwargs.special_collections:
+                logger.error(f"--special_collections flag provided for accession {accession}"
+                            + " however accession directory exists in hm_interviews folder {hm_intv_dir}")
+                logger.error("Please move the accession directory to special collections folder"
+                            + " or remove --special_collections flag")
+                raise RuntimeError("Input options incompatible with accession folder location")
+            elif hm_intv_dir.is_dir():
+                '''
+                parse hm interviews directory for files
+                '''
+                lockfile = detect_lockfile(hm_intv_dir, True)
+                if lockfile:
+                    continue
+                files_to_process = detect_files_at_path(hm_intv_dir, kwargs)
+                return {accession: files_to_process}
+            else:
+                logger.error("accession folder does not exist at either expected location:")
+                logger.error(f"{spec_coll_dir}")
+                logger.error(f"{hm_intv_dir}")
+                raise RuntimeError("could not find accession directory location")
+        if not files_to_process:
+            raise RuntimeError(f"Accession folder could not be found or is processing already")
     else:
-        accession_path = kwargs.config.raw_captures
-        raw_captures = [path for path in accession_path.glob('**/*.*') \
-            if not any(part.startswith('.') for part in path.parts) \
-            and not any(part.startswith('Thumbs.db') for part in path.parts) \
-            and not any(part.startswith('$') for part in path.parts) \
-            and path.suffix in kwargs.config.filetypes.input]
-        for file in raw_captures:
-            grandcestors = file.parents[1]
-            accession_number = str(file.parent).replace(str(file.parent.parent),"").replace("\\","").replace("/","")
-            try:
-                ingests[accession_number].append(file)
-            except:
-                ingests[accession_number] = []
-                ingests[accession_number].append(file)
-    if not ingests:
-        logger.error("There are files in the raw capture directory, but their extensions "
-                        "do not match the allowed extensions in the config file")
-        raise RuntimeError("There was a problem detecting files in the raw capture directory")
-    logging.debug("%s",str(ingests))
-    return ingests
+        if kwargs.special_collections:
+            '''
+            ok go through special collections directory from config
+            '''
+            accessions_path = kwargs.config.special_colls_dir
+        else:
+            '''
+            go through the hm_interviews directory from config
+            '''
+            accessions_path = kwargs.config.hm_interviews_dir
+        '''
+        return list of files to work on
+        from the first accession found without a lockfile
+        '''
+        accessions = [x for x in accessions_path.iterdir() if x.is_dir()]
+        logger.debug(accessions)
+        if not accessions:
+            raise RuntimeError(f"Accessions directory {accessions_path} is empty")
+        for accession in accessions:
+            files_to_process = []
+            lockfile = [path for path in accession.glob('processing.lock')]
+            if lockfile:
+                continue
+            files_to_process = detect_files_at_path(accession, kwargs)
+            return {accession.stem: files_to_process}
+        if not files_to_process:
+            logger.warning("All accessions are being processed")
+            exit()
+
+
+def detect_lockfile(dir_path, give_warning=False):
+    '''
+    detects lockfile at path
+    displays warning if we think the user expects there not to be a lockfile there
+    '''
+    lockfile = [path for path in spec_coll_dir.glob('processing.lock')]
+    if lockfile:
+        if give_warning:
+            logger.warning(f"processing.lock file found in {dir_path}")
+            logger.warning(f"accesison {dir_path.stem} is already being processed, "
+            + "or did not complete its last processing attempt.")
+            logger.warning("please check the directory and other terminal windows")
+        return True
+    return False
+
+
+def detect_files_at_path(accession_path, kwargs):
+    '''
+    actually detects if there's files to be processed in a given accession directory
+    '''
+    raw_captures = [path for path in accession_path.glob('*.*') \
+        if not any(part.startswith('.') for part in path.parts) \
+        and not any(part.startswith('Thumbs.db') for part in path.parts) \
+        and not any(part.startswith('$') for part in path.parts) \
+        and path.suffix in kwargs.config.filetypes.input]
+    return raw_captures
 
 
 def move_files(accession, files, kwargs):
@@ -292,7 +351,7 @@ def verify_startup(kwargs):
     '''
     in_venv = startup.verify_venv()
     if not in_venv:
-        logging.error("please enable virtual environment and re-run the script")
+        logger.error("please enable virtual environment and re-run the script")
         return False
     files_done_copying = startup.verify_file_copying(kwargs)
     if kwargs.copy_files:
@@ -300,12 +359,15 @@ def verify_startup(kwargs):
         if not drives_ok:
             logging.error("drives not found")
             return False
-    if not kwargs.mtf:
-        raw_captures_files_ok = startup.verify_raw_captures(kwargs)
-        if not raw_captures_files_ok:
-            logging.error("files not found in raw capture directory")
-            return False
+    dirs_exist = startup.verify_incoming_dirs_exist(kwargs)
+    if not dirs_exist:
+        logger.error("the directory with the incoming footage cannot be found")
+        logger.error("this is probably an error with the config file")
+        logger.error("Please check video-post-processing-config.txt "
+                + "and verify the directory paths are spelled correctly")
+        return False
     return True
+
 
 def init_log_accession(kwargs):
     '''
@@ -372,7 +434,8 @@ def init_config(kwargs):
     config = configparser.ConfigParser()
     config.read(kwargs.script_dir / "video-post-process-config.txt")
     kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.raw_captures = pathlib.Path(config.get('transcode','rawCaptureDir'))
+    kwargs.config.hm_interviews_dir = pathlib.Path(config.get('ingest','HM_interviews'))
+    kwargs.config.special_colls_dir = pathlib.Path(config.get('ingest','special_collections'))
     kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
     kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
     kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
@@ -467,13 +530,15 @@ def main():
         {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
         '''
         ingests = get_files_for_ingest(kwargs)
+        logger.debug(ingests)
+        input("yo")
         '''
         loop through ingest list
         accession here is string of form A2022_001_001_001
         '''
         for accession in sorted(ingests.keys()):
             accession_log, accession_log_filepath = init_log_accession(kwargs)
-            accession_fullpath = kwargs.config.raw_captures / accession
+            #accession_fullpath = kwargs.config.raw_captures / accession
             if not kwargs.dev_mode:
                 '''
                 check filemaker records for each accession
@@ -610,6 +675,10 @@ def main():
             logger.removeHandler(accession_log)
             accession_log_filepath.unlink()
     except Exception as e:
+        try:
+            foo = accession
+        except Exception:
+            accession = "startup"
         logging.error("processing of accession %s unsuccessful", accession)
         logging.error("ingest.py encountered an error:")
         logging.error(traceback.format_exc())
@@ -621,6 +690,7 @@ def main():
                 logger.warning("unable to format log for email")
                 tmp_log = "Unable to format log for email, see log file for further details: " + the_log
             '''
+            
             send_email("ingest notification for " + accession, \
                 "processing unsuccessful for " + accession, str(accession_log_filepath))
             accession_log.close()
