@@ -25,7 +25,7 @@ import microservice scripts
 '''
 import util
 import transcodes
-import filemaker_handler as fm
+import filemaker.filemaker_handler as fm
 import file_validation
 from send_email import send_email, format_log_for_email
 import startup
@@ -188,11 +188,11 @@ def make_derivatives(accession, input_file, kwargs):
     return [mp4_with_tc_ok, mp4_with_logo_ok]
 
 
-def process_accession(accession, files, kwargs):
+def process_accession(accession_number, files, kwargs):
     '''
     manages processing of single accession
     '''
-    logging.info("Processing accession %s", accession)
+    logging.info(f"Processing accession {accession_number}")
     '''
     concatenates files by default
     flag for --no_concatenation evaluated here
@@ -202,15 +202,15 @@ def process_accession(accession, files, kwargs):
     output is list of single concatenated file, named for accession_pres.mov
     output is also full path
     '''
-    accession_fullpath = kwargs.config.raw_captures / accession
+    accession_fullpath = files[0].parent
     if kwargs.reencode_audio or kwargs.reencode_video:
-        _files = transcodes.reencode_accession(accession, files, kwargs) 
+        _files = transcodes.reencode_accession(accession_number, files, kwargs) 
         files = _files
         logger.debug(files)
     if len(files) > 1:
         with util.cd(str(accession_fullpath)):
-            logging.info("concatenating raw files in accession dir: %s", str(accession_fullpath))
-            pres_file = transcodes.concatenate_raw_captures(accession, files, kwargs)
+            logging.info(f"concatenating raw files in accession dir: {accession_fullpath}")
+            pres_file = transcodes.concatenate_raw_captures(accession_number, files, kwargs)
             pres_file = pathlib.Path(pres_file)
     else:
         '''
@@ -220,7 +220,7 @@ def process_accession(accession, files, kwargs):
         '''
         if not files[0].suffix == ".mxf":
             with util.cd(str(accession_fullpath)):
-                pres_file = transcodes.rewrap_single_file_accession(accession, files[0], kwargs)
+                pres_file = transcodes.rewrap_single_file_accession(accession_number, files[0], kwargs)
                 if not pres_file:
                     logging.error("rewrap of single file accession failed")
                     return False
@@ -230,7 +230,7 @@ def process_accession(accession, files, kwargs):
     make derivatives in transcode script
     '''
     with util.cd(str(accession_fullpath)):
-        files = make_derivatives(accession, pres_file, kwargs)
+        files = make_derivatives(accession_number, pres_file, kwargs)
     if not files:
         logging.error("derivative creation failed")
         return False
@@ -253,6 +253,7 @@ def init_log_accession(kwargs):
     log_handler.setLevel(logging.INFO)
     logger.addHandler(log_handler)
     return log_handler, pathlib.Path(log_filepath)
+
 
 def init_log_full_run(kwargs):
     '''
@@ -379,7 +380,7 @@ def init():
     log_ok = init_log_full_run(kwargs)
     if not log_ok:
         print("log initialization failed. no log created for this run. quitting...")
-        accession = "startup"
+        accession_number = "startup"
         quit()
     if kwargs.sleep:
         logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
@@ -423,36 +424,43 @@ def main():
             {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
             '''
             accession_to_process = startup.get_files_for_ingest(kwargs)
-            accession = next(iter(accession_to_process))
-            accession_fullpath = accession_to_process[accession][0].parent
+            accession_number = next(iter(accession_to_process))
+            accession_fullpath = accession_to_process[accession_number][0].parent
             '''
             if a directory has files copying into it
             add it to a list
             if all the dirs in the raw_captures directory are in the list
             log it and quit
             '''
-            if accession in check_accessions:
+            if accession_number in check_accessions:
                 logger.warning("all accessions appear to be processing or have files copying into them")
                 logger.warning("exiting...")
                 quit()
             accession_files_done_copying = startup.verify_file_copying(accession_to_process)
             if not accession_files_done_copying:
-                check_accessions.append(accession)
+                check_accessions.append(accession_number)
                 continue
             logger.debug(accession_to_process)
-            logger.info(f"processing {accession}")
+            logger.info(f"processing {accession_number}")
             logger.info(f"at path {accession_fullpath}")
-            input("yo")
+            '''
+            init logs for this accession
+            '''
             accession_log, accession_log_filepath = init_log_accession(kwargs)
-            #accession_fullpath = kwargs.config.raw_captures / accession
+            '''
+            init lockfile
+            '''
+            lockfile_path = accession_fullpath / "processing.lock"
+            logger.debug(f"creating lockfile at {lockfile_path}")
+            lockfile_path.touch()
+            '''
+            check filemaker records for each accession
+            '''
             if not kwargs.dev_mode:
-                '''
-                check filemaker records for each accession
-                '''
                 filemaker_connection, cursor = fm.init_connection(kwargs)
-                filemaker_ok = fm.verify_record_exists(accession, cursor, kwargs)
+                filemaker_ok = fm.verify_record_exists(accession_number, cursor, kwargs)
                 if not filemaker_ok:
-                    logging.error("FileMaker record not found for %s", accession)
+                    logging.error(f"FileMaker record not found for {accession_number}")
                     raise RuntimeError("The script could not connect to FileMaker")
             '''
             check files for valid video codecs
@@ -462,7 +470,7 @@ def main():
             JPEG2000
             '''
             logging.info("checking input files for valid preservation video codecs")
-            for file in ingests[accession]:
+            for file in accession_to_process[accession_number]:
                 logging.info(f"testing {file} for valid preservation video codec")
                 valid_video_in_file = file_validation.detect_video_codec(file, kwargs)
                 if not valid_video_in_file:
@@ -478,7 +486,7 @@ def main():
             check files for pcm audio
             '''
             logging.info("checking input files for pcm audio")
-            for file in ingests[accession]:
+            for file in accession_to_process[accession_number]:
                 logging.info(f"testing {file} for pcm audio codec")
                 pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
                 if not pcm_audio_in_file:
@@ -493,14 +501,14 @@ def main():
             '''
             detect interlacing / progressive frame format for input accession
             '''
-            kwargs = transcodes.detect_interlaced_video(ingests[accession][0], kwargs)
+            kwargs = transcodes.detect_interlaced_video(accession_to_process[accession_number][0], kwargs)
             if not kwargs:
-                logger.error("interlace detection failed for accession %s, quitting", accession)
+                logger.error(f"interlace detection failed for accession {accession_number}, quitting")
                 raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
             '''
             detect frame size for correct png overlay
             '''
-            kwargs = transcodes.detect_frame_dimensions(ingests[accession][0], kwargs)
+            kwargs = transcodes.detect_frame_dimensions(accession_to_process[accession_number][0], kwargs)
             if not kwargs:
                 logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
                 raise RuntimeError("the script quit du to an error detecting the frame dimensions")
@@ -508,14 +516,15 @@ def main():
             actually process/ transcode the files
             processing_ok variable is list of full paths to derivative files
             '''
-            files = processing_ok = process_accession(accession, ingests[accession], kwargs)
+            output_files = processing_ok = process_accession(accession_number, 
+                                            accession_to_process[accession_number], kwargs)
             if not processing_ok:
                 raise RuntimeError("there was a problem processing that accession, see log for details")
             '''
             create checksums for each derivative
             hashes is dictionary of full_filepath:hash pairs
             '''
-            hashes = hash_files(files, kwargs)
+            hashes = hash_files(output_files, kwargs)
             if not hashes:
                 logging.error("file hashing failed")
                 raise RuntimeError("the script quit due an error at runtime")
@@ -529,27 +538,27 @@ def main():
                 send checksums to filemaker
                 file transfers are validated post-ingest by Mark Streckers Java app
                 '''
-                kwargs.id = accession
+                kwargs.id = accession_number
                 for file in hashes.keys():
                     file = pathlib.Path(file)
                     kwargs.hash = hashes[str(file)]
                     kwargs.filename = str(file.name)
-                    fm_updates_ok = fm.update_hash(accession, cursor, filemaker_connection, kwargs)
+                    fm_updates_ok = fm.update_hash(accession_number, cursor, filemaker_connection, kwargs)
                     if not fm_updates_ok:
                         logging.error("FileMaker update for hashes failed")
-                        raise RuntimeError("the script failed due to an error at runtime")
+                        raise RuntimeError("the script failed due to a FileMaker-related error at runtime")
                 '''
                 send file data to various places
                 '''
                 if kwargs.copy_files:
-                    files_moved_ok = move_files(accession, files, kwargs)
+                    files_moved_ok = move_files(accession_number, output_files, kwargs)
                     if not files_moved_ok:
                         logging.error("file transfer to preservation storage failed")
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
                         logging.info("files moved successfully")
                         logging.info("copying preservation files")
-                        pres_files_copied_ok = copy_pres_files(accession, files, kwargs)
+                        pres_files_copied_ok = copy_pres_files(accession_number, output_files, kwargs)
                         if not pres_files_copied_ok:
                             logging.error("there was an error moving the preservation files to")
                             logging.error(kwargs.config.loc)
@@ -559,19 +568,12 @@ def main():
                                 logging.debug(file)
                                 file.unlink()
                             time.sleep(1)
+                            lockfile.unlink()
                             accession_fullpath.rmdir() #deletes accession dir we just processed
-                        logging.info("accession %s processed successfully", accession)
+                        logging.info(f"accession {accession_number} processed successfully")
                 if kwargs.send_email:
-                    '''
-                    old code I'm keeping here until I'm sure new code works
-                    the_log = logging.getLoggerClass().root.handlers[0].baseFilename
-                    tmp_log = format_log_for_email(the_log)
-                    if not tmp_log:
-                        logger.warning("unable to format log for email")
-                        tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-                    '''
-                    send_email("ingest notification for " + accession,\
-                            "processing successful for " + accession, str(accession_log_filepath))
+                    send_email("ingest notification for " + accession_number,\
+                            "processing successful for " + accession_number, str(accession_log_filepath))
             '''
             close the accession log file
             remove the handler
@@ -582,23 +584,19 @@ def main():
             accession_log_filepath.unlink()
     except Exception as e:
         try:
-            foo = accession
+            lockfile_path.unlink()
+        except FileNotFoundError:
+            pass
+        try:
+            foo = accession_number
         except Exception:
-            accession = "startup"
-        logging.error("processing of accession %s unsuccessful", accession)
+            accession_number = "startup"
+        logging.error(f"processing of accession {accession_number} unsuccessful")
         logging.error("ingest.py encountered an error:")
         logging.error(traceback.format_exc())
         if kwargs.send_email:
-            '''
-            the_log = logging.getLoggerClass().root.handlers[0].baseFilename
-            tmp_log = format_log_for_email(the_log)
-            if not tmp_log:
-                logger.warning("unable to format log for email")
-                tmp_log = "Unable to format log for email, see log file for further details: " + the_log
-            '''
-            
-            send_email("ingest notification for " + accession, \
-                "processing unsuccessful for " + accession, str(accession_log_filepath))
+            send_email("ingest notification for " + accession_number, \
+                "processing unsuccessful for " + accession_number, str(accession_log_filepath))
             accession_log.close()
             logger.removeHandler(accession_log)
             accession_log_filepath.unlink()
