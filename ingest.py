@@ -32,113 +32,6 @@ import startup
 
 #logger = logging.getLogger(__name__)
 
-def get_files_for_ingest(kwargs):
-    '''
-    parses hm_interviews and special_collections directories
-    gets files to work on
-    '''
-    ingests = util.d({})
-    if kwargs.input:
-        '''
-        ingest one or more single accessions
-        could be either HM interview(s) or special collection(s)
-        '''
-        for accession in kwargs.input:
-            files_to_process = []
-            spec_coll_dir = kwargs.config.special_colls_dir / accession
-            hm_intv_dir = kwargs.config.hm_interviews_dir / accession
-            if spec_coll_dir.is_dir():
-                '''
-                parse special collections directory for files
-                '''
-                if kwargs.special_collections:
-                    lockfile = detect_lockfile(spec_coll_dir, True)
-                else:
-                    lockfile = detect_lockfile(spec_coll_dir)
-                if lockfile:
-                    continue
-                files_to_process = detect_files_at_path(spec_coll_dir, kwargs)
-                return {accession: files_to_process}
-            elif hm_intv_dir.is_dir() and kwargs.special_collections:
-                logger.error(f"--special_collections flag provided for accession {accession}"
-                            + " however accession directory exists in hm_interviews folder {hm_intv_dir}")
-                logger.error("Please move the accession directory to special collections folder"
-                            + " or remove --special_collections flag")
-                raise RuntimeError("Input options incompatible with accession folder location")
-            elif hm_intv_dir.is_dir():
-                '''
-                parse hm interviews directory for files
-                '''
-                lockfile = detect_lockfile(hm_intv_dir, True)
-                if lockfile:
-                    continue
-                files_to_process = detect_files_at_path(hm_intv_dir, kwargs)
-                return {accession: files_to_process}
-            else:
-                logger.error("accession folder does not exist at either expected location:")
-                logger.error(f"{spec_coll_dir}")
-                logger.error(f"{hm_intv_dir}")
-                raise RuntimeError("could not find accession directory location")
-        if not files_to_process:
-            raise RuntimeError(f"Accession folder could not be found or is processing already")
-    else:
-        if kwargs.special_collections:
-            '''
-            ok go through special collections directory from config
-            '''
-            accessions_path = kwargs.config.special_colls_dir
-        else:
-            '''
-            go through the hm_interviews directory from config
-            '''
-            accessions_path = kwargs.config.hm_interviews_dir
-        '''
-        return list of files to work on
-        from the first accession found without a lockfile
-        '''
-        accessions = [x for x in accessions_path.iterdir() if x.is_dir()]
-        logger.debug(accessions)
-        if not accessions:
-            raise RuntimeError(f"Accessions directory {accessions_path} is empty")
-        for accession in accessions:
-            files_to_process = []
-            lockfile = [path for path in accession.glob('processing.lock')]
-            if lockfile:
-                continue
-            files_to_process = detect_files_at_path(accession, kwargs)
-            return {accession.stem: files_to_process}
-        if not files_to_process:
-            logger.warning("All accessions are being processed")
-            exit()
-
-
-def detect_lockfile(dir_path, give_warning=False):
-    '''
-    detects lockfile at path
-    displays warning if we think the user expects there not to be a lockfile there
-    '''
-    lockfile = [path for path in spec_coll_dir.glob('processing.lock')]
-    if lockfile:
-        if give_warning:
-            logger.warning(f"processing.lock file found in {dir_path}")
-            logger.warning(f"accesison {dir_path.stem} is already being processed, "
-            + "or did not complete its last processing attempt.")
-            logger.warning("please check the directory and other terminal windows")
-        return True
-    return False
-
-
-def detect_files_at_path(accession_path, kwargs):
-    '''
-    actually detects if there's files to be processed in a given accession directory
-    '''
-    raw_captures = [path for path in accession_path.glob('*.*') \
-        if not any(part.startswith('.') for part in path.parts) \
-        and not any(part.startswith('Thumbs.db') for part in path.parts) \
-        and not any(part.startswith('$') for part in path.parts) \
-        and path.suffix in kwargs.config.filetypes.input]
-    return raw_captures
-
 
 def move_files(accession, files, kwargs):
     '''
@@ -529,7 +422,7 @@ def main():
             technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
             {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
             '''
-            accession_to_process = get_files_for_ingest(kwargs)
+            accession_to_process = startup.get_files_for_ingest(kwargs)
             accession = next(iter(accession_to_process))
             accession_fullpath = accession_to_process[accession][0].parent
             '''
