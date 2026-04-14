@@ -238,6 +238,64 @@ def process_accession(accession_number, files, kwargs):
     return files
 
 
+def get_codecs_frameformat_size(accession_to_process, kwargs):
+    '''
+    gets the codec info, frame format, and frame size
+    sets relevant transcode vars in kwargs
+    '''
+    accession_number = next(iter(accession_to_process))
+    '''
+    check files for valid video codecs
+    ProRes/ ProResHQ
+    DNxHD/ DNxHR
+    h.264
+    JPEG2000
+    '''
+    logging.info("checking input files for valid preservation video codecs")
+    for file in accession_to_process[accession_number]:
+        logging.info(f"testing {file} for valid preservation video codec")
+        valid_video_in_file = file_validation.detect_video_codec(file, kwargs)
+        if not valid_video_in_file:
+            if valid_video_in_file ==  None:
+                logger.error("there was a problem running mediaconch")
+                raise RuntimeError("MediaConch could not be run")
+            else:
+                kwargs.reencode_video = True
+                break
+        else:
+            kwargs.reencode_video = False
+    '''
+    check files for pcm audio
+    '''
+    logging.info("checking input files for pcm audio")
+    for file in accession_to_process[accession_number]:
+        logging.info(f"testing {file} for pcm audio codec")
+        pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
+        if not pcm_audio_in_file:
+            if pcm_audio_in_file == None:
+                logger.error("there was a problem running mediaconch")
+                raise RuntimeError("MediaConch could not be run")
+            else:
+                kwargs.reencode_audio = True
+                break
+        else:
+            kwargs.reencode_audio = False
+    '''
+    detect interlacing / progressive frame format for input accession
+    '''
+    kwargs = transcodes.detect_interlaced_video(accession_to_process[accession_number][0], kwargs)
+    if not kwargs:
+        logger.error(f"interlace detection failed for accession {accession_number}, quitting")
+        raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
+    '''
+    detect frame size for correct png overlay
+    '''
+    kwargs = transcodes.detect_frame_dimensions(accession_to_process[accession_number][0], kwargs)
+    if not kwargs:
+        logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
+        raise RuntimeError("the script quit du to an error detecting the frame dimensions")
+
+
 def init_log_accession(kwargs):
     '''
     initializes log for single accession
@@ -463,55 +521,9 @@ def main():
                     logging.error(f"FileMaker record not found for {accession_number}")
                     raise RuntimeError("The script could not connect to FileMaker")
             '''
-            check files for valid video codecs
-            ProRes/ ProResHQ
-            DNxHD/ DNxHR
-            h.264
-            JPEG2000
+            get relevant codec, frame format, and frame size info
             '''
-            logging.info("checking input files for valid preservation video codecs")
-            for file in accession_to_process[accession_number]:
-                logging.info(f"testing {file} for valid preservation video codec")
-                valid_video_in_file = file_validation.detect_video_codec(file, kwargs)
-                if not valid_video_in_file:
-                    if valid_video_in_file ==  None:
-                        logger.error("there was a problem running mediaconch")
-                        raise RuntimeError("MediaConch could not be run")
-                    else:
-                        kwargs.reencode_video = True
-                        break
-                else:
-                    kwargs.reencode_video = False
-            '''
-            check files for pcm audio
-            '''
-            logging.info("checking input files for pcm audio")
-            for file in accession_to_process[accession_number]:
-                logging.info(f"testing {file} for pcm audio codec")
-                pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
-                if not pcm_audio_in_file:
-                    if pcm_audio_in_file == None:
-                        logger.error("there was a problem running mediaconch")
-                        raise RuntimeError("MediaConch could not be run")
-                    else:
-                        kwargs.reencode_audio = True
-                        break
-                else:
-                    kwargs.reencode_audio = False
-            '''
-            detect interlacing / progressive frame format for input accession
-            '''
-            kwargs = transcodes.detect_interlaced_video(accession_to_process[accession_number][0], kwargs)
-            if not kwargs:
-                logger.error(f"interlace detection failed for accession {accession_number}, quitting")
-                raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
-            '''
-            detect frame size for correct png overlay
-            '''
-            kwargs = transcodes.detect_frame_dimensions(accession_to_process[accession_number][0], kwargs)
-            if not kwargs:
-                logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
-                raise RuntimeError("the script quit du to an error detecting the frame dimensions")
+            kwargs = get_codecs_frameformat_size(accession_to_process, kwargs)
             '''
             actually process/ transcode the files
             processing_ok variable is list of full paths to derivative files
