@@ -345,30 +345,6 @@ def process_accession(accession, files, kwargs):
     return files
 
 
-def verify_startup(kwargs):
-    '''
-    manages startup of script
-    '''
-    in_venv = startup.verify_venv()
-    if not in_venv:
-        logger.error("please enable virtual environment and re-run the script")
-        return False
-    files_done_copying = startup.verify_file_copying(kwargs)
-    if kwargs.copy_files:
-        drives_ok = startup.verify_config_drivepaths(kwargs)
-        if not drives_ok:
-            logging.error("drives not found")
-            return False
-    dirs_exist = startup.verify_incoming_dirs_exist(kwargs)
-    if not dirs_exist:
-        logger.error("the directory with the incoming footage cannot be found")
-        logger.error("this is probably an error with the config file")
-        logger.error("Please check video-post-processing-config.txt "
-                + "and verify the directory paths are spelled correctly")
-        return False
-    return True
-
-
 def init_log_accession(kwargs):
     '''
     initializes log for single accession
@@ -501,6 +477,34 @@ def init_kwargs():
     return kwargs
 
 
+def init():
+    '''
+    initializes the script, returns args from config and cli
+    '''
+    kwargs = init_kwargs()
+    kwargs = init_config(kwargs)
+    log_ok = init_log_full_run(kwargs)
+    if not log_ok:
+        print("log initialization failed. no log created for this run. quitting...")
+        accession = "startup"
+        quit()
+    if kwargs.sleep:
+        logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
+        time.sleep(kwargs.sleep)
+    in_venv = startup.verify_venv()
+    if not in_venv:
+        logger.error("please enable virtual environment and re-run the script")
+        quit()
+    dirs_exist = startup.verify_incoming_dirs_exist(kwargs)
+    if not dirs_exist:
+        logger.error("the directory with the incoming footage cannot be found")
+        logger.error("this is probably an error with the config file")
+        logger.error("Please check video-post-processing-config.txt "
+                + "and verify the directory paths are spelled correctly")
+        quit()
+    return kwargs
+
+
 def main():
     '''
     manages the running of the script
@@ -509,34 +513,43 @@ def main():
         '''
         initialization
         '''
-        kwargs = init_kwargs()
-        kwargs = init_config(kwargs)
-        log_ok = init_log_full_run(kwargs)
-        if not log_ok:
-            print("log initialization failed. no log created for this run. quitting...")
-            accession = None
-            quit()
-        if kwargs.sleep:
-            logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
-            time.sleep(kwargs.sleep)
-        startup_ok = verify_startup(kwargs)
-        if not startup_ok:
-            logging.error("startup failed")
-            accession = None
-            raise RuntimeError("the script failed due to an error during startup")
-        '''
-        create ingest list
-        technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
-        {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
-        '''
-        ingests = get_files_for_ingest(kwargs)
-        logger.debug(ingests)
-        input("yo")
-        '''
-        loop through ingest list
-        accession here is string of form A2022_001_001_001
-        '''
-        for accession in sorted(ingests.keys()):
+        kwargs = init()
+        check_accessions = []
+        while True:
+            '''
+            initialize for processing a single accession
+            check that drives are still mounted
+            '''
+            drives_ok = startup.verify_config_drivepaths(kwargs)
+            if not drives_ok:
+                logger.error("Drive paths from config unable to be located, please ensure they're mounted")
+                raise RuntimeError("The drives configured in the video-post-processing.txt could not be found")
+            '''
+            create ingest list
+            technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
+            {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
+            '''
+            accession_to_process = get_files_for_ingest(kwargs)
+            accession = next(iter(accession_to_process))
+            accession_fullpath = accession_to_process[accession][0].parent
+            '''
+            if a directory has files copying into it
+            add it to a list
+            if all the dirs in the raw_captures directory are in the list
+            log it and quit
+            '''
+            if accession in check_accessions:
+                logger.warning("all accessions appear to be processing or have files copying into them")
+                logger.warning("exiting...")
+                quit()
+            accession_files_done_copying = startup.verify_file_copying(accession_to_process)
+            if not accession_files_done_copying:
+                check_accessions.append(accession)
+                continue
+            logger.debug(accession_to_process)
+            logger.info(f"processing {accession}")
+            logger.info(f"at path {accession_fullpath}")
+            input("yo")
             accession_log, accession_log_filepath = init_log_accession(kwargs)
             #accession_fullpath = kwargs.config.raw_captures / accession
             if not kwargs.dev_mode:

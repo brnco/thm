@@ -26,32 +26,29 @@ def verify_venv():
         return False
     return True
 
-def verify_file_copying(kwargs):
+
+def verify_file_copying(accession_to_process):
     '''
-    checks if something is copying into the raw capture dir
+    checks if something is copying into the folder we're trying to process
 
     does so by renaming the file to a temporary filename, then naming back
     on Windows, files can only be used by 1 IO process at a time
-    so, if a file is copying, renaming raises OSError, script tries again 120seconds later
+    so, if a file is copying, renaming raises OSError
+    returns False if that happens
     '''
-    logging.info("verifying that no files are being copied into raw_captures")
-    incoming_folders = [kwargs.config.hm_interviews_dir, kwargs.config.special_colls_dir]
-    for folder in incoming_folders:
-        for file in folder.glob('**/*'):
-            if file.is_file() and not file.name.startswith(".") \
-            and not file.name.startswith('$') and not "Thumbs.db" in file.name:
-                logger.debug("testing file %s", file)
-                while True:
-                    try:
-                        real_file = file
-                        tmp_file = pathlib.Path(str(file) + "_")
-                        file.rename(tmp_file)
-                        time.sleep(1)
-                        tmp_file.rename(real_file)
-                        break
-                    except OSError:
-                        logger.debug(traceback.format_exc())
-                        time.sleep(120)
+    accession_number = next(iter(accession_to_process))
+    accession_fullpath = accession_to_process[accession_number][0].parent
+    logging.info(f"verifying that no files are being copied into accession dir {accession_fullpath}")
+    for file in accession_to_process[accession_number]:
+        logger.debug(f"testing {file}")
+        try:
+            real_file = file
+            tmp_file = pathlib.Path(str(file) + "_")
+            file.rename(tmp_file)
+            time.sleep(1)
+            tmp_file.rename(real_file)
+        except OSError:
+            return False
     return True
 
 
