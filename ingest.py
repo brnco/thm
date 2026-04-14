@@ -360,7 +360,7 @@ def init_config(kwvars):
     '''
     kwvars.config = util.d({})
     config = configparser.ConfigParser()
-    config.read(kwvars.script_dir / "video-post-process-config.txt")
+    config.read(kwvars.script_dir / "video-post-processing.config")
     kwvars.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
     kwvars.config.hm_interviews_dir = pathlib.Path(config.get('ingest','HM_interviews'))
     kwvars.config.special_colls_dir = pathlib.Path(config.get('ingest','special_collections'))
