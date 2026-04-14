@@ -33,28 +33,28 @@ import startup
 #logger = logging.getLogger(__name__)
 
 
-def move_files(accession, files, kwargs):
+def move_files(accession, files, kwvars):
     '''
     moves files from processing directory to preservation server
     '''
     logging.info("moving files from processing dir to preservation")
-    accession_fullpath = kwargs.config.raw_captures / accession
+    accession_fullpath = kwvars.config.raw_captures / accession
     try:
         for file in files:
             if "_pres" in str(file.name):
                 #xendata
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
-                    str(kwargs.config.xendatacopyto) + " " + str(file.name)
-                copyto_parent = kwargs.config.xendata
-                copyto_file = kwargs.config.xendatacopyto / file.name
+                    str(kwvars.config.xendatacopyto) + " " + str(file.name)
+                copyto_parent = kwvars.config.xendata
+                copyto_file = kwvars.config.xendatacopyto / file.name
             if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
                 #sunnas
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
-                    str(kwargs.config.sunnascopyto) + " " + str(file.name)
-                copyto_parent = kwargs.config.sunnas
-                copyto_file = kwargs.config.sunnascopyto / file.name
+                    str(kwvars.config.sunnascopyto) + " " + str(file.name)
+                copyto_parent = kwvars.config.sunnas
+                copyto_file = kwvars.config.sunnascopyto / file.name
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
@@ -81,18 +81,18 @@ def move_files(accession, files, kwargs):
     return True
 
 
-def copy_pres_files(accession, files, kwargs):
+def copy_pres_files(accession, files, kwvars):
     '''
     copys preservation files to D:/loc
     '''
-    accession_fullpath = kwargs.config.raw_captures / accession
+    accession_fullpath = kwvars.config.raw_captures / accession
     for file in files:
         if "_pres" in file.name:
             cmd = "robocopy " + str(accession_fullpath) + " " + \
-                str(kwargs.config.loc) + " " + str(file.name)
+                str(kwvars.config.loc) + " " + str(file.name)
         else:
             continue
-        logger.info("copying %s to %s", file, kwargs.config.loc)
+        logger.info("copying %s to %s", file, kwvars.config.loc)
         output = subprocess.run(cmd, capture_output=True)
         if output.returncode < 2:
             logger.info("file copied successfully")
@@ -102,7 +102,7 @@ def copy_pres_files(accession, files, kwargs):
     return True
 
 
-def hash_files(files, kwargs):
+def hash_files(files, kwvars):
     '''
     creates portable SHA256 hash for file
     '''
@@ -125,7 +125,7 @@ def hash_files(files, kwargs):
     return hashes
 
 
-def get_watermark_for_frame_dimensions(kwargs):
+def get_watermark_for_frame_dimensions(kwvars):
     '''
     gets the appropriate watermark file for given dimensions
     '''
@@ -137,8 +137,8 @@ def get_watermark_for_frame_dimensions(kwargs):
         file_dimensions = file_dimensionsx.split("x")
         file_dimensions_w = int(file_dimensions[0])
         file_dimensions_h = int(file_dimensions[1])
-        file_diff_w = kwargs.frame_width - file_dimensions_w
-        file_diff_h = kwargs.frame_height - file_dimensions_h
+        file_diff_w = kwvars.frame_width - file_dimensions_w
+        file_diff_h = kwvars.frame_height - file_dimensions_h
         file_diff = abs(file_diff_w + file_diff_h)
         file_comps[file] = file_diff
     #print(file_comps)
@@ -146,11 +146,11 @@ def get_watermark_for_frame_dimensions(kwargs):
     #print(lowest_diff)
     png_file_for_overlay = list(file_comps.keys())[list(file_comps.values()).index(lowest_diff)]
     #print(png_file_for_overlay)
-    kwargs.watermark_white = png_file_for_overlay
-    return kwargs
+    kwvars.watermark_white = png_file_for_overlay
+    return kwvars
 
 
-def make_derivatives(accession, input_file, kwargs):
+def make_derivatives(accession, input_file, kwvars):
     '''
     manages derivative creation
     '''
@@ -159,7 +159,7 @@ def make_derivatives(accession, input_file, kwargs):
     accession_tc.mp4
     '''
     logging.info("creating mp4 with burned-in timecode")
-    mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, input_file, kwargs)
+    mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, input_file, kwvars)
     if not mp4_with_tc_ok:
         logging.error("creation of mp4 with burned-in timecode failed")
         return False
@@ -168,8 +168,8 @@ def make_derivatives(accession, input_file, kwargs):
     accession_wm.mp4
     '''
     logging.info("creating mp4 with burned-in watermark")
-    kwargs = get_watermark_for_frame_dimensions(kwargs)
-    mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwargs)
+    kwvars = get_watermark_for_frame_dimensions(kwvars)
+    mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwvars)
     if not mp4_with_logo_ok:
         logging.error("creation of mp4 with watermark failed")
         return False
@@ -179,7 +179,7 @@ def make_derivatives(accession, input_file, kwargs):
     mezz.mxf
 
     logging.info("creating mxf mezzanine")
-    mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwargs)
+    mxf_mezz_ok = transcodes.make_mxf_mezz(accession, file, kwvars)
     if not mxf_mezz_ok:
         logging.error("creation of mxf mezzanine failed")
         return False
@@ -188,7 +188,7 @@ def make_derivatives(accession, input_file, kwargs):
     return [mp4_with_tc_ok, mp4_with_logo_ok]
 
 
-def process_accession(accession_number, files, kwargs):
+def process_accession(accession_number, files, kwvars):
     '''
     manages processing of single accession
     '''
@@ -203,14 +203,14 @@ def process_accession(accession_number, files, kwargs):
     output is also full path
     '''
     accession_fullpath = files[0].parent
-    if kwargs.reencode_audio or kwargs.reencode_video:
-        _files = transcodes.reencode_accession(accession_number, files, kwargs) 
+    if kwvars.reencode_audio or kwvars.reencode_video:
+        _files = transcodes.reencode_accession(accession_number, files, kwvars) 
         files = _files
         logger.debug(files)
     if len(files) > 1:
         with util.cd(str(accession_fullpath)):
             logging.info(f"concatenating raw files in accession dir: {accession_fullpath}")
-            pres_file = transcodes.concatenate_raw_captures(accession_number, files, kwargs)
+            pres_file = transcodes.concatenate_raw_captures(accession_number, files, kwvars)
             pres_file = pathlib.Path(pres_file)
     else:
         '''
@@ -220,7 +220,7 @@ def process_accession(accession_number, files, kwargs):
         '''
         if not files[0].suffix == ".mxf":
             with util.cd(str(accession_fullpath)):
-                pres_file = transcodes.rewrap_single_file_accession(accession_number, files[0], kwargs)
+                pres_file = transcodes.rewrap_single_file_accession(accession_number, files[0], kwvars)
                 if not pres_file:
                     logging.error("rewrap of single file accession failed")
                     return False
@@ -230,7 +230,7 @@ def process_accession(accession_number, files, kwargs):
     make derivatives in transcode script
     '''
     with util.cd(str(accession_fullpath)):
-        files = make_derivatives(accession_number, pres_file, kwargs)
+        files = make_derivatives(accession_number, pres_file, kwvars)
     if not files:
         logging.error("derivative creation failed")
         return False
@@ -238,10 +238,10 @@ def process_accession(accession_number, files, kwargs):
     return files
 
 
-def get_codecs_frameformat_size(accession_to_process, kwargs):
+def get_codecs_frameformat_size(accession_to_process, kwvars):
     '''
     gets the codec info, frame format, and frame size
-    sets relevant transcode vars in kwargs
+    sets relevant transcode vars in kwvars
     '''
     accession_number = next(iter(accession_to_process))
     '''
@@ -254,54 +254,54 @@ def get_codecs_frameformat_size(accession_to_process, kwargs):
     logging.info("checking input files for valid preservation video codecs")
     for file in accession_to_process[accession_number]:
         logging.info(f"testing {file} for valid preservation video codec")
-        valid_video_in_file = file_validation.detect_video_codec(file, kwargs)
+        valid_video_in_file = file_validation.detect_video_codec(file, kwvars)
         if not valid_video_in_file:
             if valid_video_in_file ==  None:
                 logger.error("there was a problem running mediaconch")
                 raise RuntimeError("MediaConch could not be run")
             else:
-                kwargs.reencode_video = True
+                kwvars.reencode_video = True
                 break
         else:
-            kwargs.reencode_video = False
+            kwvars.reencode_video = False
     '''
     check files for pcm audio
     '''
     logging.info("checking input files for pcm audio")
     for file in accession_to_process[accession_number]:
         logging.info(f"testing {file} for pcm audio codec")
-        pcm_audio_in_file = file_validation.detect_pcm(file, kwargs)
+        pcm_audio_in_file = file_validation.detect_pcm(file, kwvars)
         if not pcm_audio_in_file:
             if pcm_audio_in_file == None:
                 logger.error("there was a problem running mediaconch")
                 raise RuntimeError("MediaConch could not be run")
             else:
-                kwargs.reencode_audio = True
+                kwvars.reencode_audio = True
                 break
         else:
-            kwargs.reencode_audio = False
+            kwvars.reencode_audio = False
     '''
     detect interlacing / progressive frame format for input accession
     '''
-    kwargs = transcodes.detect_interlaced_video(accession_to_process[accession_number][0], kwargs)
-    if not kwargs:
+    kwvars = transcodes.detect_interlaced_video(accession_to_process[accession_number][0], kwvars)
+    if not kwvars:
         logger.error(f"interlace detection failed for accession {accession_number}, quitting")
         raise RuntimeError("the script quit due to an error detecting interlaced/ progressive video")
     '''
     detect frame size for correct png overlay
     '''
-    kwargs = transcodes.detect_frame_dimensions(accession_to_process[accession_number][0], kwargs)
-    if not kwargs:
+    kwvars = transcodes.detect_frame_dimensions(accession_to_process[accession_number][0], kwvars)
+    if not kwvars:
         logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
         raise RuntimeError("the script quit du to an error detecting the frame dimensions")
 
 
-def init_log_accession(kwargs):
+def init_log_accession(kwvars):
     '''
     initializes log for single accession
     '''
     log_filename = pathlib.Path("log-most-recent-accession.txt")
-    log_filepath = kwargs.config.logs_path / log_filename
+    log_filepath = kwvars.config.logs_path / log_filename
     if log_filepath.is_file():
         log_filepath.unlink()
     message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
@@ -313,12 +313,12 @@ def init_log_accession(kwargs):
     return log_handler, pathlib.Path(log_filepath)
 
 
-def init_log_full_run(kwargs):
+def init_log_full_run(kwvars):
     '''
     initalizes log for whole run of script
     '''
     log_filename = pathlib.Path("log-" + time.strftime("%Y-%m-%d %H-%M-%S", time.localtime()) + ".txt")
-    log_filepath = str(kwargs.config.logs_path / log_filename)
+    log_filepath = str(kwvars.config.logs_path / log_filename)
     message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
             datefmt='%Y-%m-%d %H:%M:%S')
     global logger
@@ -326,10 +326,10 @@ def init_log_full_run(kwargs):
     '''
     make a handler for log file, add to logger
     '''
-    if not kwargs.config.logs_path.is_dir():
+    if not kwvars.config.logs_path.is_dir():
         print("ERROR: logs directory not found")
         print("ERROR: please create a directory at:")
-        print(kwargs.config.logs_path)
+        print(kwvars.config.logs_path)
         print("alternatively, change the logs location in post-processing config txt file")
         return False
     log_handler = logging.FileHandler(log_filepath)
@@ -341,7 +341,7 @@ def init_log_full_run(kwargs):
     '''
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(message_format)
-    stream_handler.setLevel(kwargs.print_loglevel)
+    stream_handler.setLevel(kwvars.print_loglevel)
     logger.addHandler(stream_handler)
     logger.setLevel(logging.DEBUG)
     '''
@@ -350,42 +350,42 @@ def init_log_full_run(kwargs):
             stream=sys.stdout, encoding='utf-8', level=logging.DEBUG)
     '''
     logger.info("initializing script and log")
-    logger.debug("kwargs object: %s", str(kwargs))
+    logger.debug("kwvars object: %s", str(kwvars))
     return True
 
 
-def init_config(kwargs):
+def init_config(kwvars):
     '''
     initialize variables and arguments from config file
     '''
-    kwargs.config = util.d({})
+    kwvars.config = util.d({})
     config = configparser.ConfigParser()
-    config.read(kwargs.script_dir / "video-post-process-config.txt")
-    kwargs.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
-    kwargs.config.hm_interviews_dir = pathlib.Path(config.get('ingest','HM_interviews'))
-    kwargs.config.special_colls_dir = pathlib.Path(config.get('ingest','special_collections'))
-    kwargs.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
-    kwargs.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
-    kwargs.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
-    kwargs.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
-    #kwargs.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
-    kwargs.config.loc = pathlib.Path(config.get('fileDestinations','loc'))
-    kwargs.config.filetypes = util.d({"input":config.get('filetypes','input')})
-    kwargs.config.filemaker_user = config.get('filemaker','user')
-    kwargs.config.filemaker_pwd = config.get('filemaker','pwd')
-    kwargs.config.mediaconch = util.d( \
+    config.read(kwvars.script_dir / "video-post-process-config.txt")
+    kwvars.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
+    kwvars.config.hm_interviews_dir = pathlib.Path(config.get('ingest','HM_interviews'))
+    kwvars.config.special_colls_dir = pathlib.Path(config.get('ingest','special_collections'))
+    kwvars.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
+    kwvars.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
+    kwvars.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
+    kwvars.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
+    #kwvars.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
+    kwvars.config.loc = pathlib.Path(config.get('fileDestinations','loc'))
+    kwvars.config.filetypes = util.d({"input":config.get('filetypes','input')})
+    kwvars.config.filemaker_user = config.get('filemaker','user')
+    kwvars.config.filemaker_pwd = config.get('filemaker','pwd')
+    kwvars.config.mediaconch = util.d( \
         {"input_policies": config.get('mediaconch','input_policies_dir'), \
         'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
         'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy'), \
         'accepted_video_codecs_policy': config.get('mediaconch','accepted_video_codecs_policy')})
-    return kwargs
+    return kwvars
 
 
-def init_kwargs():
+def init_kwvars():
     '''
     initialize variables and arguments from command line
 
-    "kwargs" = KeyWordArguments - this is a single object/ dictionary that stores most of our variables
+    "kwvars" = KeyWordArguments - this is a single object/ dictionary that stores most of our variables
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
     parser.add_argument('-v','--verbose', action='store_true',default=False,\
@@ -406,55 +406,55 @@ def init_kwargs():
     parser.add_argument('--dev', action='store_true', default=False, \
             help="runs the script in 'developer mode' (for testing)")
     args = parser.parse_args()
-    kwargs = util.d({})
-    kwargs.script_dir = pathlib.Path(__file__).parent.absolute()
-    kwargs.input = args.input
-    kwargs.sleep = int(args.sleep)
-    kwargs.ffmpeg_suffix = " 2> ffmpeg.log"
-    kwargs.special_collections = args.special_collections
-    kwargs.copy_files = operator.not_(args.no_copy)
-    kwargs.send_email = operator.not_(args.no_email)
-    kwargs.dev_mode = args.dev
+    kwvars = util.d({})
+    kwvars.script_dir = pathlib.Path(__file__).parent.absolute()
+    kwvars.input = args.input
+    kwvars.sleep = int(args.sleep)
+    kwvars.ffmpeg_suffix = " 2> ffmpeg.log"
+    kwvars.special_collections = args.special_collections
+    kwvars.copy_files = operator.not_(args.no_copy)
+    kwvars.send_email = operator.not_(args.no_email)
+    kwvars.dev_mode = args.dev
     '''
     next lines set console output verbosity
     running script with both -qv is possible, but the -v will override the -q
     log file unaffected by either choice, logs debug and up
     '''
     if args.verbose:
-        kwargs.print_loglevel = logging.DEBUG
+        kwvars.print_loglevel = logging.DEBUG
     elif args.quiet:
-        kwargs.print_loglevel = logging.WARNING
+        kwvars.print_loglevel = logging.WARNING
     else:
-        kwargs.print_loglevel = logging.INFO
-    return kwargs
+        kwvars.print_loglevel = logging.INFO
+    return kwvars
 
 
 def init():
     '''
     initializes the script, returns args from config and cli
     '''
-    kwargs = init_kwargs()
-    kwargs = init_config(kwargs)
-    log_ok = init_log_full_run(kwargs)
+    kwvars = init_kwvars()
+    kwvars = init_config(kwvars)
+    log_ok = init_log_full_run(kwvars)
     if not log_ok:
         print("log initialization failed. no log created for this run. quitting...")
         accession_number = "startup"
         quit()
-    if kwargs.sleep:
-        logging.info("script will resume in " + str(kwargs.sleep) + " seconds")
-        time.sleep(kwargs.sleep)
+    if kwvars.sleep:
+        logging.info("script will resume in " + str(kwvars.sleep) + " seconds")
+        time.sleep(kwvars.sleep)
     in_venv = startup.verify_venv()
     if not in_venv:
         logger.error("please enable virtual environment and re-run the script")
         quit()
-    dirs_exist = startup.verify_incoming_dirs_exist(kwargs)
+    dirs_exist = startup.verify_incoming_dirs_exist(kwvars)
     if not dirs_exist:
         logger.error("the directory with the incoming footage cannot be found")
         logger.error("this is probably an error with the config file")
         logger.error("Please check video-post-processing-config.txt "
                 + "and verify the directory paths are spelled correctly")
         quit()
-    return kwargs
+    return kwvars
 
 
 def main():
@@ -465,14 +465,14 @@ def main():
         '''
         initialization
         '''
-        kwargs = init()
+        kwvars = init()
         check_accessions = []
         while True:
             '''
             initialize for processing a single accession
             check that drives are still mounted
             '''
-            drives_ok = startup.verify_config_drivepaths(kwargs)
+            drives_ok = startup.verify_config_drivepaths(kwvars)
             if not drives_ok:
                 logger.error("Drive paths from config unable to be located, please ensure they're mounted")
                 raise RuntimeError("The drives configured in the video-post-processing.txt could not be found")
@@ -481,7 +481,7 @@ def main():
             technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
             {A2022_012_001_001:['D:/file1.mov','D:/file2.mov'],A2022_034_001_001:['D:/file3.mov', 'D/:file4.mov']}
             '''
-            accession_to_process = startup.get_files_for_ingest(kwargs)
+            accession_to_process = startup.get_files_for_ingest(kwvars)
             accession_number = next(iter(accession_to_process))
             accession_fullpath = accession_to_process[accession_number][0].parent
             '''
@@ -504,7 +504,7 @@ def main():
             '''
             init logs for this accession
             '''
-            accession_log, accession_log_filepath = init_log_accession(kwargs)
+            accession_log, accession_log_filepath = init_log_accession(kwvars)
             '''
             init lockfile
             '''
@@ -514,66 +514,66 @@ def main():
             '''
             check filemaker records for each accession
             '''
-            if not kwargs.dev_mode:
-                filemaker_connection, cursor = fm.init_connection(kwargs)
-                filemaker_ok = fm.verify_record_exists(accession_number, cursor, kwargs)
+            if not kwvars.dev_mode:
+                filemaker_connection, cursor = fm.init_connection(kwvars)
+                filemaker_ok = fm.verify_record_exists(accession_number, cursor, kwvars)
                 if not filemaker_ok:
                     logging.error(f"FileMaker record not found for {accession_number}")
                     raise RuntimeError("The script could not connect to FileMaker")
             '''
             get relevant codec, frame format, and frame size info
             '''
-            kwargs = get_codecs_frameformat_size(accession_to_process, kwargs)
+            kwvars = get_codecs_frameformat_size(accession_to_process, kwvars)
             '''
             actually process/ transcode the files
             processing_ok variable is list of full paths to derivative files
             '''
             output_files = processing_ok = process_accession(accession_number, 
-                                            accession_to_process[accession_number], kwargs)
+                                            accession_to_process[accession_number], kwvars)
             if not processing_ok:
                 raise RuntimeError("there was a problem processing that accession, see log for details")
             '''
             create checksums for each derivative
             hashes is dictionary of full_filepath:hash pairs
             '''
-            hashes = hash_files(output_files, kwargs)
+            hashes = hash_files(output_files, kwvars)
             if not hashes:
                 logging.error("file hashing failed")
                 raise RuntimeError("the script quit due an error at runtime")
             logging.debug(hashes)
-            if not kwargs.dev_mode:
+            if not kwvars.dev_mode:
                 '''
                 reconnect to filemaker
                 '''
-                filemaker_connection, cursor = fm.init_connection(kwargs)
+                filemaker_connection, cursor = fm.init_connection(kwvars)
                 '''
                 send checksums to filemaker
                 file transfers are validated post-ingest by Mark Streckers Java app
                 '''
-                kwargs.id = accession_number
+                kwvars.id = accession_number
                 for file in hashes.keys():
                     file = pathlib.Path(file)
-                    kwargs.hash = hashes[str(file)]
-                    kwargs.filename = str(file.name)
-                    fm_updates_ok = fm.update_hash(accession_number, cursor, filemaker_connection, kwargs)
+                    kwvars.hash = hashes[str(file)]
+                    kwvars.filename = str(file.name)
+                    fm_updates_ok = fm.update_hash(accession_number, cursor, filemaker_connection, kwvars)
                     if not fm_updates_ok:
                         logging.error("FileMaker update for hashes failed")
                         raise RuntimeError("the script failed due to a FileMaker-related error at runtime")
                 '''
                 send file data to various places
                 '''
-                if kwargs.copy_files:
-                    files_moved_ok = move_files(accession_number, output_files, kwargs)
+                if kwvars.copy_files:
+                    files_moved_ok = move_files(accession_number, output_files, kwvars)
                     if not files_moved_ok:
                         logging.error("file transfer to preservation storage failed")
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
                         logging.info("files moved successfully")
                         logging.info("copying preservation files")
-                        pres_files_copied_ok = copy_pres_files(accession_number, output_files, kwargs)
+                        pres_files_copied_ok = copy_pres_files(accession_number, output_files, kwvars)
                         if not pres_files_copied_ok:
                             logging.error("there was an error moving the preservation files to")
-                            logging.error(kwargs.config.loc)
+                            logging.error(kwvars.config.loc)
                             raise RuntimeError("the script failed due to an error at runtime")
                         else:
                             for file in accession_fullpath.iterdir():
@@ -583,7 +583,7 @@ def main():
                             lockfile.unlink()
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                         logging.info(f"accession {accession_number} processed successfully")
-                if kwargs.send_email:
+                if kwvars.send_email:
                     send_email("ingest notification for " + accession_number,\
                             "processing successful for " + accession_number, str(accession_log_filepath))
             '''
@@ -606,7 +606,7 @@ def main():
         logging.error(f"processing of accession {accession_number} unsuccessful")
         logging.error("ingest.py encountered an error:")
         logging.error(traceback.format_exc())
-        if kwargs.send_email:
+        if kwvars.send_email:
             send_email("ingest notification for " + accession_number, \
                 "processing unsuccessful for " + accession_number, str(accession_log_filepath))
             accession_log.close()

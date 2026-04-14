@@ -62,15 +62,15 @@ def run_ffmpeg(cmd):
         return False
 
 
-def make_mp4_with_tc(accession, file, kwargs):
+def make_mp4_with_tc(accession, file, kwvars):
     '''
     creates mp4 with burned in timecode
     '''
     logger.info("creating mp4 derivative with burned-in timecode")
     mp4 = accession + "_tc.mp4"
-    mp4_fullpath = kwargs.config.raw_captures / accession / mp4
+    mp4_fullpath = kwvars.config.raw_captures / accession / mp4
     segment = accession.split("_")[-1]
-    if kwargs.is_interlaced:
+    if kwvars.is_interlaced:
         yadif = "yadif,"
     else:
         yadif = ""
@@ -79,41 +79,41 @@ def make_mp4_with_tc(accession, file, kwargs):
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
             ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + '"crop=trunc(iw/2)*2:trunc(ih/2)*2,' + drawtext[1:] + \
         ',scale=420:trunc(ow/a/2)*2" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' + \
-        str(mp4_fullpath) + kwargs.ffmpeg_suffix
+        str(mp4_fullpath) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
     return mp4_fullpath
 
 
-def make_mp4_with_logo(accession, file, kwargs):
+def make_mp4_with_logo(accession, file, kwvars):
     '''
     creates mp4 derivative with logo
     '''
     logger.info("creating mp4 derivative with logo")
     mp4 = accession + "_wm.mp4"
-    mp4_fullpath = kwargs.config.raw_captures / accession / mp4
-    if kwargs.is_interlaced:
+    mp4_fullpath = kwvars.config.raw_captures / accession / mp4
+    if kwvars.is_interlaced:
         yadif = "[0]yadif,"
     else:
         yadif = ""
-    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwargs.watermark_white) + \
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwvars.watermark_white) + \
             ' -filter_complex ' + yadif + '"overlay=0:0,crop=trunc(iw/2)*2:trunc(ih/2)*2,scale=420:trunc(ow/a/2)*2" ' \
         + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' \
-        + str(mp4_fullpath) + kwargs.ffmpeg_suffix
+        + str(mp4_fullpath) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
     return mp4_fullpath
 
 
-def make_mxf_mezz(accession, file, kwargs):
+def make_mxf_mezz(accession, file, kwvars):
     '''
     creates mxf mezzanine file
     '''
     logger.info("creating mxf mezzanine file")
     mxf = accession + "_mezz.mxf"
-    mxf_fullpath = kwargs.config.raw_captures / accession / mxf
+    mxf_fullpath = kwvars.config.raw_captures / accession / mxf
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
         ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + str(mxf_fullpath)
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
@@ -122,7 +122,7 @@ def make_mxf_mezz(accession, file, kwargs):
     return mxf_fullpath
 
 
-def reencode_accession(accession, files, kwargs):
+def reencode_accession(accession, files, kwvars):
     '''
     if files in accession folder need to be reencoded for preservation
     that process managed here
@@ -132,27 +132,27 @@ def reencode_accession(accession, files, kwargs):
         logger.info(f"reencoding {input_file}")
         segment = accession.split("_")[-1]
         output_file = input_file.with_name(accession + "_pres.mxf")
-        if kwargs.reencode_video and kwargs.reencode_audio:
+        if kwvars.reencode_video and kwvars.reencode_audio:
             '''
             ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
                     " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a pcm_s24le -strict unofficial -ignore_unknown "
-        elif kwargs.reencode_audio:
+        elif kwvars.reencode_audio:
             '''
             ffmpeg -i file -c:v copy -c:a pcm_s24le file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
                     " -map 0:v -map 0:a -c:v copy -c:a pcm_s24le -strict unofficial -ignore_unknown "
-        elif kwargs.reencode_video:
+        elif kwvars.reencode_video:
             '''
             ffmpeg -i file -c:v jpeg2000 -c:a copy file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
                     " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a copy -strict unofficial -ignore_unknown "
         ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
-        ffmpeg_cmd_out = '-y ' + str(output_file) + kwargs.ffmpeg_suffix
-        if kwargs.special_collections:
+        ffmpeg_cmd_out = '-y ' + str(output_file) + kwvars.ffmpeg_suffix
+        if kwvars.special_collections:
             ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
         else:
             ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_timecode + ffmpeg_cmd_out
@@ -165,7 +165,7 @@ def reencode_accession(accession, files, kwargs):
     return _files
 
 
-def concatenate_raw_captures(accession, files, kwargs):
+def concatenate_raw_captures(accession, files, kwvars):
     '''
     concatenates raw captures in accession folder
     '''
@@ -182,8 +182,8 @@ def concatenate_raw_captures(accession, files, kwargs):
             concat_txt.write('file ' + str(file.name) + "\n")
     ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -strict unofficial '
     ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
-    ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwargs.ffmpeg_suffix
-    if kwargs.special_collections:
+    ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwvars.ffmpeg_suffix
+    if kwvars.special_collections:
         ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_out
     else:
         ffmpeg_cmd = ffmpeg_cmd_base + ffmpeg_cmd_timecode + ffmpeg_cmd_out
@@ -197,7 +197,7 @@ def concatenate_raw_captures(accession, files, kwargs):
         return str(accession_pres)
 
 
-def detect_frame_dimensions(file, kwargs):
+def detect_frame_dimensions(file, kwvars):
     '''
     detects the frame width and height of file
     '''
@@ -214,12 +214,12 @@ def detect_frame_dimensions(file, kwargs):
         logger.error("there was a problem detecting frame dimensions")
         logger.error(f"expected 2 values but got: {wh}")
         raise RuntimeError(f"The script encountered a problem detecting frame dimensions for {file}")
-    kwargs.frame_width = int(wh[0])
-    kwargs.frame_height = int(wh[1])
-    return kwargs
+    kwvars.frame_width = int(wh[0])
+    kwvars.frame_height = int(wh[1])
+    return kwvars
 
 
-def detect_interlaced_video(file, kwargs):
+def detect_interlaced_video(file, kwvars):
     '''
     detects if input file is interlaced
     '''
@@ -236,15 +236,15 @@ def detect_interlaced_video(file, kwargs):
         interlaced_formats = ["tff", "bff", "tb", "bt", "tt", "bb"]
         for iformat in interlaced_formats:
             if iformat in output:
-                kwargs.is_interlaced = True
-                return kwargs
+                kwvars.is_interlaced = True
+                return kwvars
         if "progressive" in output or "unknown" in output:
-            kwargs.is_interlaced = False
-            return kwargs
+            kwvars.is_interlaced = False
+            return kwvars
     raise RuntimeError("ffprobe unable to detect progressive or interlaced video")
 
 
-def reencode_audio_to_pcm(in_file, kwargs):
+def reencode_audio_to_pcm(in_file, kwvars):
     '''
     takes input file with pcm audio
     outputs new file with pcm audio
@@ -252,7 +252,7 @@ def reencode_audio_to_pcm(in_file, kwargs):
     logger.info("re-encoding file with pcm audio")
     out_file = in_file.with_stem(in_file.stem + "_pcm")
     ffmpeg_cmd = "ffmpeg -i " + str(in_file) + " -c:v copy -c:a pcm_s24le -map -0:d? " \
-        "-y " + str(out_file) + kwargs.ffmpeg_suffix
+        "-y " + str(out_file) + kwvars.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("ffmpeg encountered an error during re-encoding")
@@ -261,7 +261,7 @@ def reencode_audio_to_pcm(in_file, kwargs):
         return out_file
 
 
-def rewrap_single_file_accession(accession, input_file, kwargs):
+def rewrap_single_file_accession(accession, input_file, kwvars):
     '''
     for single file accessions, we need to rewrap the files with correct timecode
     '''
@@ -270,7 +270,7 @@ def rewrap_single_file_accession(accession, input_file, kwargs):
     pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mxf")
     ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? " \
             '-timecode "' + segment[-2:] + ':00:00;00" -strict unofficial -y ' \
-            + str(pres_file) + kwargs.ffmpeg_suffix
+            + str(pres_file) + kwvars.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("there was an issue rewrapping that file")

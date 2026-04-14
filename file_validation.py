@@ -12,7 +12,7 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def detect_video_codec(file, kwargs):
+def detect_video_codec(file, kwvars):
     '''
     detects if video codec is valid for presevration
     ProRes/ ProResHD
@@ -21,7 +21,7 @@ def detect_video_codec(file, kwargs):
     JPEG2000
     '''
     logger.info("checking for valid preservation video codec in file")
-    mediaconch_video_policy = kwargs.config.mediaconch.accepted_video_codecs_policy
+    mediaconch_video_policy = kwvars.config.mediaconch.accepted_video_codecs_policy
     logger.info("checking for valid video codec in file")
     logger.debug("mediaconch -p " + str(mediaconch_video_policy) + " " + str(file))
     output = subprocess.run('mediaconch -p ' + str(mediaconch_video_policy) + " " + str(file),
@@ -41,11 +41,11 @@ def detect_video_codec(file, kwargs):
         return False
 
 
-def detect_pcm(file, kwargs):
+def detect_pcm(file, kwvars):
     '''
     uses MediaConch to detect if file contains pcm audio
     '''
-    mediaconch_pcm_policy = kwargs.config.mediaconch.pcm_in_file_policy
+    mediaconch_pcm_policy = kwvars.config.mediaconch.pcm_in_file_policy
     logger.info("checking for PCM audio in file")
     logger.info("%s",file)
     logger.debug("mediaconch -p " + str(mediaconch_pcm_policy) + " " + str(file))
@@ -66,54 +66,54 @@ def detect_pcm(file, kwargs):
         return False
 
 
-def load_mediaconch_policies(kwargs):
+def load_mediaconch_policies(kwvars):
     '''
     loads policies from folder in config file
     '''
-    true_parent = pathlib.Path(kwargs.config.mediaconch.input_policies)
+    true_parent = pathlib.Path(kwvars.config.mediaconch.input_policies)
     childs = true_parent.glob('**/*.xml')
     mediaconch_policies = []
     for child in childs:
         if str(child.parent) == str(true_parent):
             mediaconch_policies.append(child)
     if not mediaconch_policies:
-        logger.error("no mediaconch policies found at config path: %s", str(kwargs.config.mediaconch.input_policies))
+        logger.error("no mediaconch policies found at config path: %s", str(kwvars.config.mediaconch.input_policies))
         return False
     return mediaconch_policies
 
-def validate_output(accession, files, kwargs):
+def validate_output(accession, files, kwvars):
     '''
     validates output video files
 
     logger.info("validating derivative files for %s", accession)
     for file in files:
-        if "_pres" in str(file) and not kwargs.input_validation:
+        if "_pres" in str(file) and not kwvars.input_validation:
             #skip _pres file if input file(s) not validated
             #continue in this context means (move to next iteration of containing loop)
             continue
         if file.suffix == ".mov":
-            logger.info("validating %s against mediaconch policy %s", (file, kwargs.accession_mediaconch_policy))
+            logger.info("validating %s against mediaconch policy %s", (file, kwvars.accession_mediaconch_policy))
         #elif file.suffix == "_mezz.mxf":
-            #logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.mezz_policy))
+            #logger.info("validating %s against mediaconch policy %s", (file, kwvars.config.mediaconch.mezz_policy))
         elif file.suffix == ".mp4":
             if "_wm" in str(file):
-                logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.wm_policy))
+                logger.info("validating %s against mediaconch policy %s", (file, kwvars.config.mediaconch.wm_policy))
             elif "_tc" in str(file):
-                logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.tc_policy))
+                logger.info("validating %s against mediaconch policy %s", (file, kwvars.config.mediaconch.tc_policy))
         elif file.suffix == ".mpg":
-            logger.info("validating %s against mediaconch policy %s", (file, kwargs.config.mediaconch.dvd_policy))
+            logger.info("validating %s against mediaconch policy %s", (file, kwvars.config.mediaconch.dvd_policy))
     '''
     logger.debug("output validation not yet implemented")
     return True
 
-def validate_input(accession, files, kwargs):
+def validate_input(accession, files, kwvars):
     '''
     validates input video files
     '''
-    if not kwargs.accession_mediaconch_policy or kwargs.reset_mediaconch_policy is True:
-        mediaconch_policies = load_mediaconch_policies(kwargs)
+    if not kwvars.accession_mediaconch_policy or kwvars.reset_mediaconch_policy is True:
+        mediaconch_policies = load_mediaconch_policies(kwvars)
     else:
-        mediaconch_policies = [kwargs.accession_mediaconch_policy]
+        mediaconch_policies = [kwvars.accession_mediaconch_policy]
     policy_passes = []
     for file in files:
         for policy in mediaconch_policies:

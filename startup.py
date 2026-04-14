@@ -13,34 +13,34 @@ import util
 logger = logging.getLogger(__name__)
 
 
-def get_files_for_ingest(kwargs):
+def get_files_for_ingest(kwvars):
     '''
     parses hm_interviews and special_collections directories
     gets files to work on
     '''
     ingests = util.d({})
-    if kwargs.input:
+    if kwvars.input:
         '''
         ingest one or more single accessions
         could be either HM interview(s) or special collection(s)
         '''
-        for accession in kwargs.input:
+        for accession in kwvars.input:
             files_to_process = []
-            spec_coll_dir = kwargs.config.special_colls_dir / accession
-            hm_intv_dir = kwargs.config.hm_interviews_dir / accession
+            spec_coll_dir = kwvars.config.special_colls_dir / accession
+            hm_intv_dir = kwvars.config.hm_interviews_dir / accession
             if spec_coll_dir.is_dir():
                 '''
                 parse special collections directory for files
                 '''
-                if kwargs.special_collections:
+                if kwvars.special_collections:
                     lockfile = detect_lockfile(spec_coll_dir, True)
                 else:
                     lockfile = detect_lockfile(spec_coll_dir)
                 if lockfile:
                     continue
-                files_to_process = detect_files_at_path(spec_coll_dir, kwargs)
+                files_to_process = detect_files_at_path(spec_coll_dir, kwvars)
                 return {accession: files_to_process}
-            elif hm_intv_dir.is_dir() and kwargs.special_collections:
+            elif hm_intv_dir.is_dir() and kwvars.special_collections:
                 logger.error(f"--special_collections flag provided for accession {accession}"
                             + " however accession directory exists in hm_interviews folder {hm_intv_dir}")
                 logger.error("Please move the accession directory to special collections folder"
@@ -53,7 +53,7 @@ def get_files_for_ingest(kwargs):
                 lockfile = detect_lockfile(hm_intv_dir, True)
                 if lockfile:
                     continue
-                files_to_process = detect_files_at_path(hm_intv_dir, kwargs)
+                files_to_process = detect_files_at_path(hm_intv_dir, kwvars)
                 return {accession: files_to_process}
             else:
                 logger.error("accession folder does not exist at either expected location:")
@@ -63,16 +63,16 @@ def get_files_for_ingest(kwargs):
         if not files_to_process:
             raise RuntimeError(f"Accession folder could not be found or is processing already")
     else:
-        if kwargs.special_collections:
+        if kwvars.special_collections:
             '''
             ok go through special collections directory from config
             '''
-            accessions_path = kwargs.config.special_colls_dir
+            accessions_path = kwvars.config.special_colls_dir
         else:
             '''
             go through the hm_interviews directory from config
             '''
-            accessions_path = kwargs.config.hm_interviews_dir
+            accessions_path = kwvars.config.hm_interviews_dir
         '''
         return list of files to work on
         from the first accession found without a lockfile
@@ -86,7 +86,7 @@ def get_files_for_ingest(kwargs):
             lockfile = [path for path in accession.glob('processing.lock')]
             if lockfile:
                 continue
-            files_to_process = detect_files_at_path(accession, kwargs)
+            files_to_process = detect_files_at_path(accession, kwvars)
             return {accession.stem: files_to_process}
         if not files_to_process:
             logger.warning("All accessions are being processed")
@@ -109,7 +109,7 @@ def detect_lockfile(dir_path, give_warning=False):
     return False
 
 
-def detect_files_at_path(accession_path, kwargs):
+def detect_files_at_path(accession_path, kwvars):
     '''
     actually detects if there's files to be processed in a given accession directory
     '''
@@ -117,7 +117,7 @@ def detect_files_at_path(accession_path, kwargs):
         if not any(part.startswith('.') for part in path.parts) \
         and not any(part.startswith('Thumbs.db') for part in path.parts) \
         and not any(part.startswith('$') for part in path.parts) \
-        and path.suffix in kwargs.config.filetypes.input]
+        and path.suffix in kwvars.config.filetypes.input]
     return raw_captures
 
 
@@ -162,40 +162,40 @@ def verify_file_copying(accession_to_process):
     return True
 
 
-def verify_incoming_dirs_exist(kwargs):
+def verify_incoming_dirs_exist(kwvars):
     '''
     verifies that the directories containing incoming footage
     as defined int he config files video-post-processing-config.txt
     exists
     '''
-    if not kwargs.config.hm_interviews_dir.is_dir() \
-        or not kwargs.config.special_colls_dir.is_dir():
+    if not kwvars.config.hm_interviews_dir.is_dir() \
+        or not kwvars.config.special_colls_dir.is_dir():
         return False
     return True
 
 
-def verify_config_drivepaths(kwargs):
+def verify_config_drivepaths(kwvars):
     '''
     verifies that drives defined in config file exist
     '''
     logger.info("verifying that drives are mounted")
-    if not kwargs.config.sunnas.is_dir():
+    if not kwvars.config.sunnas.is_dir():
         logger.error("The video script is unable to run because SUNNAS is not mounted as expected. " \
-        "Please mount SUNNAS on XCluster at %s", str(kwargs.config.sunnas))
+        "Please mount SUNNAS on XCluster at %s", str(kwvars.config.sunnas))
         return False
-    if not kwargs.config.sunnascopyto.is_dir():
+    if not kwvars.config.sunnascopyto.is_dir():
         logger.error("The video script is unable to run because the 'copy to' folder on Sunnas cannot be found." \
-        "Please mount SUNNAS on XCluster and ensure this directory exists ", str(kwargs.config.sunnascopyto))
+        "Please mount SUNNAS on XCluster and ensure this directory exists ", str(kwvars.config.sunnascopyto))
         return False
-    if not kwargs.config.xendata.is_dir():
+    if not kwvars.config.xendata.is_dir():
         logger.error("The video script is unable to run because Xendata is not mounted as expected. " \
-        "Please mount Xendata on XCluster at ", str(kwargs.config.xendata))
+        "Please mount Xendata on XCluster at ", str(kwvars.config.xendata))
         return False
-    if not kwargs.config.xendatacopyto.is_dir():
+    if not kwvars.config.xendatacopyto.is_dir():
         logger.error("The video script is unable to run because \
             the 'copy to' folder on Xendata cannot be found." \
             "Please mount Xendata on XCluster and ensure this directory exists %s", \
-            str(kwargs.config.xendatacopyto))
+            str(kwvars.config.xendatacopyto))
         return False
     logger.info("drives mounted ok")
     return True
