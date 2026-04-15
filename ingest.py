@@ -38,7 +38,7 @@ def move_files(accession, files, kwvars):
     moves files from processing directory to preservation server
     '''
     logging.info("moving files from processing dir to preservation")
-    accession_fullpath = kwvars.config.raw_captures / accession
+    accession_fullpath = files[0].parent
     try:
         for file in files:
             if "_pres" in str(file.name):
@@ -85,7 +85,7 @@ def copy_pres_files(accession, files, kwvars):
     '''
     copys preservation files to D:/loc
     '''
-    accession_fullpath = kwvars.config.raw_captures / accession
+    accession_fullpath = files[0].parent
     for file in files:
         if "_pres" in file.name:
             cmd = "robocopy " + str(accession_fullpath) + " " + \
@@ -294,6 +294,7 @@ def get_codecs_frameformat_size(accession_to_process, kwvars):
     if not kwvars:
         logger.error(f"frame dimensions detection failed for accession {accession}, quitting")
         raise RuntimeError("the script quit du to an error detecting the frame dimensions")
+    return kwvars
 
 
 def init_log_accession(kwvars):

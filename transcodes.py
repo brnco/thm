@@ -67,8 +67,7 @@ def make_mp4_with_tc(accession, file, kwvars):
     creates mp4 with burned in timecode
     '''
     logger.info("creating mp4 derivative with burned-in timecode")
-    mp4 = accession + "_tc.mp4"
-    mp4_fullpath = kwvars.config.raw_captures / accession / mp4
+    mp4 = file.with_name(accession + "_tc.mp4")
     segment = accession.split("_")[-1]
     if kwvars.is_interlaced:
         yadif = "yadif,"
@@ -78,12 +77,13 @@ def make_mp4_with_tc(accession, file, kwvars):
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
             ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + '"crop=trunc(iw/2)*2:trunc(ih/2)*2,' + drawtext[1:] + \
-        ',scale=420:trunc(ow/a/2)*2" -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' + \
-        str(mp4_fullpath) + kwvars.ffmpeg_suffix
+        ',scale=420:trunc(ow/a/2)*2" -c:a aac -ar 44100 -ac 2 -map -0:d? ' + \
+        '-threads 0 -movflags +faststart -y ' + \
+        str(mp4) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
-    return mp4_fullpath
+    return mp4
 
 
 def make_mp4_with_logo(accession, file, kwvars):
@@ -91,35 +91,20 @@ def make_mp4_with_logo(accession, file, kwvars):
     creates mp4 derivative with logo
     '''
     logger.info("creating mp4 derivative with logo")
-    mp4 = accession + "_wm.mp4"
-    mp4_fullpath = kwvars.config.raw_captures / accession / mp4
+    mp4 = file.with_name(accession + "_wm.mp4")
     if kwvars.is_interlaced:
         yadif = "[0]yadif,"
     else:
         yadif = ""
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwvars.watermark_white) + \
             ' -filter_complex ' + yadif + '"overlay=0:0,crop=trunc(iw/2)*2:trunc(ih/2)*2,scale=420:trunc(ow/a/2)*2" ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? -threads 0 -movflags +faststart -y ' \
-        + str(mp4_fullpath) + kwvars.ffmpeg_suffix
+        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? ' \
+        + '-threads 0 -movflags +faststart -y ' \
+        + str(mp4) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
-    return mp4_fullpath
-
-
-def make_mxf_mezz(accession, file, kwvars):
-    '''
-    creates mxf mezzanine file
-    '''
-    logger.info("creating mxf mezzanine file")
-    mxf = accession + "_mezz.mxf"
-    mxf_fullpath = kwvars.config.raw_captures / accession / mxf
-    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
-        ' -c:v libx264 -pix_fmt yuv422p -b:v 15000k -r 30/1.001 -c:a pcm_s24le -map 0:v -map 0:a -map -0:d? -threads 0 -y ' + str(mxf_fullpath)
-    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
-    if not ffmpeg_ok:
-        return False
-    return mxf_fullpath
+    return mp4
 
 
 def reencode_accession(accession, files, kwvars):
