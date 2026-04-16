@@ -2,6 +2,5 @@
 <policy type="or" name="accepted input codecs for THM preservation">
   <rule name="Video/Format is ProRes" value="Format" tracktype="Video" occurrence="*" operator="=">ProRes</rule>
   <rule name="Video/Format is VC-3/DNxHD/DNxHR" value="Format" tracktype="Video" occurrence="*" operator="=">VC-3</rule>
-  <rule name="Video/Format is AVC/h264" value="Format" tracktype="Video" occurrence="*" operator="=">AVC</rule>
   <rule name="Video/Format is JPEG 2000" value="Format" tracktype="Video" occurrence="*" operator="=">JPEG 2000</rule>
 </policy>
