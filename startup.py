@@ -32,10 +32,11 @@ def get_files_for_ingest(kwvars):
                 '''
                 parse special collections directory for files
                 '''
-                if kwvars.special_collections:
-                    lockfile = detect_lockfile(spec_coll_dir, True)
-                else:
-                    lockfile = detect_lockfile(spec_coll_dir)
+                if not kwvars.special_collections:
+                    logger.error(f"accession directory {spec_coll_dir} found but --special_collections flag not specified")
+                    logger.error("please use the --special_collections flag when running this script to process this accession")
+                    raise RuntimeError("missing input option --special_collections")
+                lockfile = detect_lockfile(spec_coll_dir)
                 if lockfile:
                     continue
                 files_to_process = detect_files_at_path(spec_coll_dir, kwvars)
