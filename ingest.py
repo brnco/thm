@@ -37,7 +37,7 @@ def move_files(accession, files, kwvars):
     '''
     moves files from processing directory to preservation server
     '''
-    logging.info("moving files from processing dir to preservation")
+    logger.info("moving files from processing dir to preservation")
     accession_fullpath = files[0].parent
     try:
         for file in files:
@@ -106,7 +106,7 @@ def hash_files(files, kwvars):
     '''
     creates portable SHA256 hash for file
     '''
-    logging.info("hashing files")
+    logger.info("hashing files")
     hashes = {}
     for file in files:
         file = str(file)
@@ -121,7 +121,7 @@ def hash_files(files, kwvars):
         else:
             logging.error(output.stderr)
             return False
-    logging.info("hashing files completed successfully")
+    logger.info("hashing files completed successfully")
     return hashes
 
 
@@ -158,20 +158,20 @@ def make_derivatives(accession, input_file, kwvars):
     mp4 with timecode
     accession_tc.mp4
     '''
-    logging.info("creating mp4 with burned-in timecode")
+    logger.info("creating mp4 with burned-in timecode")
     mp4_with_tc_ok = transcodes.make_mp4_with_tc(accession, input_file, kwvars)
     if not mp4_with_tc_ok:
-        logging.error("creation of mp4 with burned-in timecode failed")
+        logger.error("creation of mp4 with burned-in timecode failed")
         return False
     '''
     mp4 with watermark
     accession_wm.mp4
     '''
-    logging.info("creating mp4 with burned-in watermark")
+    logger.info("creating mp4 with burned-in watermark")
     kwvars = get_watermark_for_frame_dimensions(kwvars)
     mp4_with_logo_ok = transcodes.make_mp4_with_logo(accession, input_file, kwvars)
     if not mp4_with_logo_ok:
-        logging.error("creation of mp4 with watermark failed")
+        logger.error("creation of mp4 with watermark failed")
         return False
     '''
     NOT IMPLEMENTED
@@ -192,7 +192,7 @@ def process_accession(accession_number, files, kwvars):
     '''
     manages processing of single accession
     '''
-    logging.info(f"Processing accession {accession_number}")
+    logger.info(f"Processing accession {accession_number}")
     '''
     concatenates files by default
     flag for --no_concatenation evaluated here
@@ -209,7 +209,7 @@ def process_accession(accession_number, files, kwvars):
         logger.debug(files)
     if len(files) > 1:
         with util.cd(str(accession_fullpath)):
-            logging.info(f"concatenating raw files in accession dir: {accession_fullpath}")
+            logger.info(f"concatenating raw files in accession dir: {accession_fullpath}")
             pres_file = transcodes.concatenate_raw_captures(accession_number, files, kwvars)
             pres_file = pathlib.Path(pres_file)
     else:
@@ -222,7 +222,7 @@ def process_accession(accession_number, files, kwvars):
             with util.cd(str(accession_fullpath)):
                 pres_file = transcodes.rewrap_single_file_accession(accession_number, files[0], kwvars)
                 if not pres_file:
-                    logging.error("rewrap of single file accession failed")
+                    logger.error("rewrap of single file accession failed")
                     return False
         else:
             pres_file = files[0]
@@ -232,7 +232,7 @@ def process_accession(accession_number, files, kwvars):
     with util.cd(str(accession_fullpath)):
         files = make_derivatives(accession_number, pres_file, kwvars)
     if not files:
-        logging.error("derivative creation failed")
+        logger.error("derivative creation failed")
         return False
     files.append(pres_file)
     return files
@@ -251,9 +251,9 @@ def get_codecs_frameformat_size(accession_to_process, kwvars):
     h.264
     JPEG2000
     '''
-    logging.info("checking input files for valid preservation video codecs")
+    logger.info("checking input files for valid preservation video codecs")
     for file in accession_to_process[accession_number]:
-        logging.info(f"testing {file} for valid preservation video codec")
+        logger.info(f"testing {file} for valid preservation video codec")
         valid_video_in_file = file_validation.detect_video_codec(file, kwvars)
         if not valid_video_in_file:
             if valid_video_in_file ==  None:
@@ -267,9 +267,9 @@ def get_codecs_frameformat_size(accession_to_process, kwvars):
     '''
     check files for pcm audio
     '''
-    logging.info("checking input files for pcm audio")
+    logger.info("checking input files for pcm audio")
     for file in accession_to_process[accession_number]:
-        logging.info(f"testing {file} for pcm audio codec")
+        logger.info(f"testing {file} for pcm audio codec")
         pcm_audio_in_file = file_validation.detect_pcm(file, kwvars)
         if not pcm_audio_in_file:
             if pcm_audio_in_file == None:
@@ -442,7 +442,7 @@ def init():
         accession_number = "startup"
         quit()
     if kwvars.sleep:
-        logging.info("script will resume in " + str(kwvars.sleep) + " seconds")
+        logger.info("script will resume in " + str(kwvars.sleep) + " seconds")
         time.sleep(kwvars.sleep)
     in_venv = startup.verify_venv()
     if not in_venv:
@@ -469,6 +469,7 @@ def main():
         kwvars = init()
         check_accessions = []
         while True:
+            logger.info("initializing script to process single accession...")
             '''
             initialize for processing a single accession
             check that drives are still mounted
@@ -519,7 +520,7 @@ def main():
                 filemaker_connection, cursor = fm.init_connection(kwvars)
                 filemaker_ok = fm.verify_record_exists(accession_number, cursor, kwvars)
                 if not filemaker_ok:
-                    logging.error(f"FileMaker record not found for {accession_number}")
+                    logger.error(f"FileMaker record not found for {accession_number}")
                     raise RuntimeError("The script could not connect to FileMaker")
             '''
             get relevant codec, frame format, and frame size info
@@ -539,9 +540,9 @@ def main():
             '''
             hashes = hash_files(output_files, kwvars)
             if not hashes:
-                logging.error("file hashing failed")
+                logger.error("file hashing failed")
                 raise RuntimeError("the script quit due an error at runtime")
-            logging.debug(hashes)
+            logger.debug(hashes)
             if not kwvars.dev_mode:
                 '''
                 reconnect to filemaker
@@ -558,7 +559,7 @@ def main():
                     kwvars.filename = str(file.name)
                     fm_updates_ok = fm.update_hash(accession_number, cursor, filemaker_connection, kwvars)
                     if not fm_updates_ok:
-                        logging.error("FileMaker update for hashes failed")
+                        logger.error("FileMaker update for hashes failed")
                         raise RuntimeError("the script failed due to a FileMaker-related error at runtime")
                 '''
                 send file data to various places
@@ -566,23 +567,23 @@ def main():
                 if kwvars.copy_files:
                     files_moved_ok = move_files(accession_number, output_files, kwvars)
                     if not files_moved_ok:
-                        logging.error("file transfer to preservation storage failed")
+                        logger.error("file transfer to preservation storage failed")
                         raise RuntimeError("the script failed due to an error at runtime")
                     else:
-                        logging.info("files moved successfully")
-                        logging.info("copying preservation files")
+                        logger.info("files moved successfully")
+                        logger.info("copying preservation files")
                         pres_files_copied_ok = copy_pres_files(accession_number, output_files, kwvars)
                         if not pres_files_copied_ok:
-                            logging.error("there was an error moving the preservation files to")
-                            logging.error(kwvars.config.loc)
+                            logger.error("there was an error moving the preservation files to")
+                            logger.error(kwvars.config.loc)
                             raise RuntimeError("the script failed due to an error at runtime")
                         else:
+                            logger.debug("deleting source files...")
                             for file in accession_fullpath.iterdir():
-                                logging.debug(file)
+                                logger.debug(file)
                                 file.unlink() #actually deletes lockfile too
                             time.sleep(1)
                             accession_fullpath.rmdir() #deletes accession dir we just processed
-                        logging.info(f"accession {accession_number} processed successfully")
                 if kwvars.send_email:
                     send_email("ingest notification for " + accession_number,\
                             "processing successful for " + accession_number, str(accession_log_filepath))
@@ -594,6 +595,8 @@ def main():
             accession_log.close()
             logger.removeHandler(accession_log)
             accession_log_filepath.unlink()
+            logger.info(f"accession {accession_number} processed successfully")
+            logger.info("---------------------------------------------------")
     except Exception as e:
         try:
             lockfile_path.unlink()
@@ -603,15 +606,15 @@ def main():
             foo = accession_number
         except Exception:
             accession_number = "startup"
-        logging.error(f"processing of accession {accession_number} unsuccessful")
-        logging.error("ingest.py encountered an error:")
-        logging.error(traceback.format_exc())
+        logger.error(f"processing of accession {accession_number} unsuccessful")
+        logger.error("ingest.py encountered an error:")
+        logger.error(traceback.format_exc())
         if kwvars.send_email:
             send_email("ingest notification for " + accession_number, \
                 "processing unsuccessful for " + accession_number, str(accession_log_filepath))
-            accession_log.close()
-            logger.removeHandler(accession_log)
-            accession_log_filepath.unlink()
+        accession_log.close()
+        logger.removeHandler(accession_log)
+        accession_log_filepath.unlink()
 
 
 if __name__ == "__main__":
