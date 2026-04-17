@@ -579,9 +579,8 @@ def main():
                         else:
                             for file in accession_fullpath.iterdir():
                                 logging.debug(file)
-                                file.unlink()
+                                file.unlink() #actually deletes lockfile too
                             time.sleep(1)
-                            lockfile_path.unlink()
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                         logging.info(f"accession {accession_number} processed successfully")
                 if kwvars.send_email:
