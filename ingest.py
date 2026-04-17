@@ -581,7 +581,7 @@ def main():
                                 logging.debug(file)
                                 file.unlink()
                             time.sleep(1)
-                            lockfile.unlink()
+                            lockfile_path.unlink()
                             accession_fullpath.rmdir() #deletes accession dir we just processed
                         logging.info(f"accession {accession_number} processed successfully")
                 if kwvars.send_email:
