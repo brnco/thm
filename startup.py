@@ -99,7 +99,7 @@ def detect_lockfile(dir_path, give_warning=False):
     detects lockfile at path
     displays warning if we think the user expects there not to be a lockfile there
     '''
-    lockfile = [path for path in spec_coll_dir.glob('processing.lock')]
+    lockfile = [path for path in dir_path.glob('processing.lock')]
     if lockfile:
         if give_warning:
             logger.warning(f"processing.lock file found in {dir_path}")
@@ -151,7 +151,7 @@ def verify_file_copying(accession_to_process):
     accession_fullpath = accession_to_process[accession_number][0].parent
     logging.info(f"verifying that no files are being copied into accession dir {accession_fullpath}")
     for file in accession_to_process[accession_number]:
-        logger.debug(f"testing {file}")
+        logger.debug(f"testing file: {file}")
         try:
             real_file = file
             tmp_file = pathlib.Path(str(file) + "_")
