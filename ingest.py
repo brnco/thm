@@ -225,7 +225,12 @@ def process_accession(accession_number, files, kwvars):
                     logger.error("rewrap of single file accession failed")
                     return False
         else:
+            '''
+            single file accession that is MXF
+            '''
             pres_file = files[0]
+            _pres_file = pres_file.with_stem(pres_file.stem + "_pres")
+            pres_file = pres_file.rename(_pres_file)
     '''
     make derivatives in transcode script
     '''
@@ -468,6 +473,7 @@ def main():
         '''
         kwvars = init()
         check_accessions = []
+        accessions_processed = []
         while True:
             logger.info("initializing script to process single accession...")
             '''
@@ -587,6 +593,11 @@ def main():
                 if kwvars.send_email:
                     send_email("ingest notification for " + accession_number,\
                             "processing successful for " + accession_number, str(accession_log_filepath))
+            else:
+                '''
+                need to delete the lockfile explicitly in dev mode
+                '''
+                lockfile_path.unlink()
             '''
             close the accession log file
             remove the handler
@@ -597,10 +608,17 @@ def main():
             accession_log_filepath.unlink()
             logger.info(f"accession {accession_number} processed successfully")
             logger.info("---------------------------------------------------")
+            '''
+            add this accession to the list of accessions that have been processed
+            if we've processed every accession defined in the CLI input, we're done
+            '''
+            accessions_processed.append(accession_number)
+            if len(accessions_processed) == len(kwvars.input):
+                quit()
     except Exception as e:
         try:
             lockfile_path.unlink()
-        except FileNotFoundError:
+        except (FileNotFoundError, UnboundLocalError):
             pass
         try:
             foo = accession_number
@@ -612,9 +630,12 @@ def main():
         if kwvars.send_email:
             send_email("ingest notification for " + accession_number, \
                 "processing unsuccessful for " + accession_number, str(accession_log_filepath))
-        accession_log.close()
-        logger.removeHandler(accession_log)
-        accession_log_filepath.unlink()
+        try:
+            accession_log.close()
+            logger.removeHandler(accession_log)
+            accession_log_filepath.unlink()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

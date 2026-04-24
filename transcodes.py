@@ -76,10 +76,14 @@ def make_mp4_with_tc(accession, file, kwvars):
     drawtext = '"drawtext=fontfile=' + r"'C\:\\Windows\\Fonts\\arial.ttf':timecode='"+ segment[-2:] + \
         "\:00\:00\;00':r=29.97:x=(w-text_w)/2:y=(h-text_h)/1.2:fontcolor=white:fontsize=72:box=1:boxcolor=0x00000099"
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
-            ' -c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -vf ' +  yadif + '"crop=trunc(iw/2)*2:trunc(ih/2)*2,' + drawtext[1:] + \
-        ',scale=420:trunc(ow/a/2)*2" -c:a aac -ar 44100 -ac 2 -map -0:d? ' + \
-        '-threads 0 -movflags +faststart -y ' + \
-        str(mp4) + kwvars.ffmpeg_suffix
+            ' -map 0:v -map 0:a? -map -0:d? ' + \
+            '-c:v libx264 -b:v 372k -r 29.97 -pix_fmt yuv420p ' + \
+            '-vf setparams="auto:tv:bt709:bt709:bt709:auto",' + \
+             yadif + '"crop=trunc(iw/2)*2:trunc(ih/2)*2,' + drawtext[1:] + \
+            ',scale=420:trunc(ow/a/2)*2" ' + \
+            '-c:a aac -ar 44100 -ac 2  ' + \
+            '-threads 0 -movflags +faststart -y ' + \
+            str(mp4) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -97,10 +101,13 @@ def make_mp4_with_logo(accession, file, kwvars):
     else:
         yadif = ""
     ffmpeg_cmd = 'ffmpeg -i ' + str(file) + ' -i ' + str(kwvars.watermark_white) + \
-            ' -filter_complex ' + yadif + '"overlay=0:0,crop=trunc(iw/2)*2:trunc(ih/2)*2,scale=420:trunc(ow/a/2)*2" ' \
-        + '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 -c:a aac -ar 44100 -ac 2 -map -0:d? ' \
-        + '-threads 0 -movflags +faststart -y ' \
-        + str(mp4) + kwvars.ffmpeg_suffix
+            ' -filter_complex ' + \
+            yadif + '"setparams=auto:tv:bt709:bt709:bt709:auto,' + \
+            'overlay=0:0,crop=trunc(iw/2)*2:trunc(ih/2)*2,scale=420:trunc(ow/a/2)*2" ' + \
+            '-c:v libx264 -b:v 372k -pix_fmt yuv420p -r 29.97 ' + \
+            '-c:a aac -ar 44100 -ac 2  ' + \
+            '-map -0:d? -threads 0 -movflags +faststart -y ' + \
+            str(mp4) + kwvars.ffmpeg_suffix
     ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
     if not ffmpeg_ok:
         return False
@@ -122,19 +129,19 @@ def reencode_accession(accession, files, kwvars):
             ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
-                    " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a pcm_s24le -strict unofficial -ignore_unknown "
+                    " -map 0:v -map 0:a? -c:v jpeg2000 -pred 1 -c:a pcm_s24le -strict unofficial -ignore_unknown "
         elif kwvars.reencode_audio:
             '''
             ffmpeg -i file -c:v copy -c:a pcm_s24le file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
-                    " -map 0:v -map 0:a -c:v copy -c:a pcm_s24le -strict unofficial -ignore_unknown "
+                    " -map 0:v -map 0:a? -c:v copy -c:a pcm_s24le -strict unofficial -ignore_unknown "
         elif kwvars.reencode_video:
             '''
             ffmpeg -i file -c:v jpeg2000 -c:a copy file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
-                    " -map 0:v -map 0:a -c:v jpeg2000 -pred 1 -c:a copy -strict unofficial -ignore_unknown "
+                    " -map 0:v -map 0:a? -c:v jpeg2000 -pred 1 -c:a copy -strict unofficial -ignore_unknown "
         ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
         ffmpeg_cmd_out = '-y ' + str(output_file) + kwvars.ffmpeg_suffix
         if kwvars.special_collections:
@@ -165,7 +172,7 @@ def concatenate_raw_captures(accession, files, kwvars):
     with open(concat_txt_path,"a") as concat_txt:
         for file in sorted(files):
             concat_txt.write('file ' + str(file.name) + "\n")
-    ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a -c:v copy -c:a copy -ignore_unknown -strict unofficial '
+    ffmpeg_cmd_base = 'ffmpeg -f concat -dn -i concat.txt -map 0:v -map 0:a? -c:v copy -c:a copy -ignore_unknown -strict unofficial '
     ffmpeg_cmd_timecode = '-timecode "' + segment[-2:] + ':00:00;00" '
     ffmpeg_cmd_out = '-y ' + str(concat_vid) + kwvars.ffmpeg_suffix
     if kwvars.special_collections:
@@ -229,23 +236,6 @@ def detect_interlaced_video(file, kwvars):
     raise RuntimeError("ffprobe unable to detect progressive or interlaced video")
 
 
-def reencode_audio_to_pcm(in_file, kwvars):
-    '''
-    takes input file with pcm audio
-    outputs new file with pcm audio
-    '''
-    logger.info("re-encoding file with pcm audio")
-    out_file = in_file.with_stem(in_file.stem + "_pcm")
-    ffmpeg_cmd = "ffmpeg -i " + str(in_file) + " -c:v copy -c:a pcm_s24le -map -0:d? " \
-        "-y " + str(out_file) + kwvars.ffmpeg_suffix
-    output = run_ffmpeg(ffmpeg_cmd)
-    if not output:
-        logger.error("ffmpeg encountered an error during re-encoding")
-        return False
-    else:
-        return out_file
-
-
 def rewrap_single_file_accession(accession, input_file, kwvars):
     '''
     for single file accessions, we need to rewrap the files with correct timecode
@@ -253,7 +243,7 @@ def rewrap_single_file_accession(accession, input_file, kwvars):
     logger.info("rewrapping single video file accession with correct timecode")
     segment = accession.split("_")[-1]
     pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mxf")
-    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map -0:d? " \
+    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map 0 -map -0:d? " \
             '-timecode "' + segment[-2:] + ':00:00;00" -strict unofficial -y ' \
             + str(pres_file) + kwvars.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)

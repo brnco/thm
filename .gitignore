@@ -8,3 +8,4 @@ Thumbs.db
 *.pyc
 venv/
 video-post-processing.config
+tests/mxf_normalize/needs_none_cat/S2018_011_AEWKC_000_RAW_001/
