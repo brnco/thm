@@ -238,14 +238,26 @@ def detect_interlaced_video(file, kwvars):
 
 def rewrap_single_file_accession(accession, input_file, kwvars):
     '''
-    for single file accessions, we need to rewrap the files with correct timecode
+    for single file accessions, we need to rewrap the file with correct timecode
     '''
     logger.info("rewrapping single video file accession with correct timecode")
     segment = accession.split("_")[-1]
-    pres_file = input_file.parent / pathlib.Path(accession + "_pres" + ".mxf")
-    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map 0 -map -0:d? " \
-            '-timecode "' + segment[-2:] + ':00:00;00" -strict unofficial -y ' \
-            + str(pres_file) + kwvars.ffmpeg_suffix
+    pres_file = input_file.with_name(input_file.stem + "_pres.mxf")
+    if kwvars.special_collections:
+        ffmpeg_timecode = "-map 0:d? "
+        ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map 0:v -map 0:a? " + \
+            ffmpeg_timecode + '-strict unofficial -y ' + \
+            str(pres_file) + kwvars.ffmpeg_suffix
+        output = run_ffmpeg(ffmpeg_cmd)
+        if not output:
+            logger.warning("there was an issue rewrapping that file with source data/ timecode streams")
+            logger.warning("trying again and replacing data streams with new timecode")
+        else:
+            return pres_file
+    ffmpeg_timecode = '-map -0:d? -timecode "' + segment[-2:] + ':00:00;00" '
+    ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map 0:v -map 0:a? " + \
+        ffmpeg_timecode + '-strict unofficial -y ' + \
+        str(pres_file) + kwvars.ffmpeg_suffix
     output = run_ffmpeg(ffmpeg_cmd)
     if not output:
         logger.error("there was an issue rewrapping that file")
