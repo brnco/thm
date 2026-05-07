@@ -242,7 +242,7 @@ def rewrap_single_file_accession(accession, input_file, kwvars):
     '''
     logger.info("rewrapping single video file accession with correct timecode")
     segment = accession.split("_")[-1]
-    pres_file = input_file.with_name(input_file.stem + "_pres.mxf")
+    pres_file = input_file.with_name(accession + "_pres.mxf")
     if kwvars.special_collections:
         ffmpeg_timecode = "-map 0:d? "
         ffmpeg_cmd = "ffmpeg -i " + str(input_file) + " -c copy -map 0:v -map 0:a? " + \
