@@ -81,7 +81,8 @@ def get_files_for_ingest(kwvars):
         accessions = [x for x in accessions_path.iterdir() if x.is_dir()]
         logger.debug(accessions)
         if not accessions:
-            raise RuntimeError(f"Accessions directory {accessions_path} is empty")
+            logger.warning(f"Accessions directory {accessions_path} is empty")
+            exit()
         for accession in accessions:
             files_to_process = []
             lockfile = [path for path in accession.glob('processing.lock')]
