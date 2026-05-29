@@ -10,13 +10,17 @@ This repository contains scripts to process preservation files, generate checksu
 
 3. Clone this repo
 
-4. Install dependencies
+4. Install python dependencies
 
 5. Install and configure ODBC driver
 
-6. Get watermark files
+6. Install MediaConch
 
-7. Config
+7. Install ffmpeg
+
+8. Get watermark files
+
+9. Config
 
 # Configuration
 
@@ -182,64 +186,44 @@ these options can be strung together in a single command. the command below will
 
 # Script Descriptions
 
-## makevideos
+## ingest
 
-this script takes the raw video captures delivered by THM personnel and:
+This is the main script in this repository and it manages the ingest process.
 
-1. concatenates the < 4GB files into 1 long file
+Folders containing a single accession are located in one of two holding directories, one for HistoryMakers interviews and one for Special Collections. The script then examines each file in a single accession folder and determines which processing steps are necessary to create the final deliverables: audio and video streams may need to be transcoded to preservation codecs; a sequence of files may need to be concatenated to form a single preservation file.
 
-2. transcodes that file to flv, mp4, and mpeg
+The deliverables for this script are:
 
-3. embeds timecode and watermarks where appropriate
+1. A single preservation file, wrapped in MXF, containing PCM audio and video with a codec of either JPEG2000, ProRes, or DNxHD.
 
-4. hashmoves (see below) them to their destiantions
+2. Two derivates MP4 files, one with a watermark and one with burned-in timecode
 
-5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog
+3. Hashes for all of the above files, sent to FileMaker
 
-makevideos also checks to make sure that everything is plugged in and that all necessary files (like watermarks) are in their expected locations.
+## transcodes
 
-makevideos is triggered every 15minutes, M-F, 7am-9pm local time by cron
-
-makevideos can also be run manually by cd'ing into the repo directory (look for that in the config.txt file) and running "python makevideos.py"
+This script handles all of the ffmpeg calls and transcoding functions for the ingest process.
 
 ## startup
 
-this script checks the values in the config file against the configuration currently present on the workstation running the script. Predominantly, it verifies that filepaths specified in the config actually exist.
+This script runs at the beginning of th eingest process and ensures that things are set up correctly: that `ingest.py` is being run from within the virtual environment (`venv`); that the diectories containing raw accessions exist; that the drives where final deliverables are sent exist.
+
+It also is responsible for getting the list of files to process for each individual accession and adding/ removing lockfiles on individual accession direcotires, so that they're not processed by two instances of the script at the same time.
 
 ## file_validation
 
-this script uses [MediaConch](https://mediaarea.net/MediaConch) validation to ensure that only valid input files are passed to the script for preservation/ transcode. MediaConch policies are managed in the directory specified in the config file. For each input file, this script checks it against available file policies in the MediaConch policies folder - if a match is found, that policy is used to validate all other input and output files for the accession.
+This script uses [MediaConch](https://mediaarea.net/MediaConch) validation to detect the audio and video codecs present in the input files. Depending on the codecs, audio and video streams may or may not be transcoded during processing. 
 
-### MediaConch GUI
-
-if a file doesn't pass validation, follow these steps to find out why:
-
-1. open MediaConch
-
-2. in the "Checker" tab, use the dropdown menu to select the policy to check against -- see log for list of policies attempted
-
-3. still in the "Checker" tab, select a file to check against the policy from step 1
-
-4. select "check file"
-
-5. MediaConch will analyze the file and add it to a list at the bottom of the window
-
-6. to view pass/ fail for each field, click the eyeball icon
-
-for more info, see official how-to's at [this link](https://mediaarea.net/MediaConch/Documentation/HowToUse)
+This script was formally used to verify that HistoryMakers interview files were made according to the spec; however, since we've normalized to a single preservation filetype (JPEG2000), this functionality is no longer needed.
 
 ## filemaker_handler
 
-this script handles all calls to FileMaker database, requires ODBC
+This script handles all calls to FileMaker database. During processing it: checks that the script's connection to FileMaker is active; that a metadata record for the accession being processed exists; and it updates the checksum values for individual files.
 
 ## send_email
 
-this script sends emails per info in config file
+This script sends emails per the info in config file. Emails are sent at the conclusion of a run of the script, or after an error.
 
 ## util
 
-utility functions required by other scripts in this repository
-
-## venv
-
-This script uses Python's [venv](https://docs.python.org/3/library/venv.html) module to create a virutal environment, the venv folder contains configuration info for this virtual environment, and should not need to be modified
+Utility functions required by other scripts in this repository.
