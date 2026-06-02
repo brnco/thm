@@ -197,6 +197,10 @@ these options can be strung together in a single command. the command below will
 
 `python ingest.py -v --no_copy --no_email A2022_999_001_001 A2017_088_001_001`
 
+## Parallel Processing
+
+You can run multiple instances of the script at the same time. Open another terminal window and follow the steps in [Usage](https://github.com/brnco/thm/tree/dev#usage). 
+
 # Script Descriptions
 
 ## ingest
