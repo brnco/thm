@@ -2,6 +2,16 @@
 
 This repository contains scripts to process preservation files, generate checksums, and create and move derivatives of The History Makers oral history interviews.
 
+# Contents
+
+[Installation](https://github.com/brnco/thm/tree/dev#installation)
+
+[Configuration](https://github.com/brnco/thm/tree/dev#configuration)
+
+[Usage](https://github.com/brnco/thm/tree/dev#usage)
+
+[Script Descriptions]([https://github.com/brnco/thm/tree/dev#usage)
+
 # Installation
 
 1. Install Git
