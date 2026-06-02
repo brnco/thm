@@ -72,6 +72,9 @@ Example folder setup, tree view
 │   ├── 01275002.MOV
 │   ├── 01275003.MOV
 │   └── 01275004.MOV
+/special_collections
+├── S2023_012_001_001
+│   └── NINJAV_023_ABC_789.mp4
 ```
 
 ### File Destinations
