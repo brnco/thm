@@ -10,7 +10,7 @@ This repository contains scripts to process preservation files, generate checksu
 
 [Usage](https://github.com/brnco/thm/tree/dev#usage)
 
-[Script Descriptions]([https://github.com/brnco/thm/tree/dev#usage)
+[Script Descriptions](https://github.com/brnco/thm/tree/dev#script-descriptions)
 
 # Installation
 
