@@ -229,7 +229,7 @@ def process_accession(accession_number, files, kwvars):
             single file accession that is MXF
             '''
             pres_file = files[0]
-            _pres_file = pres_file.with_stem(pres_file.stem + "_pres")
+            _pres_file = pres_file.with_stem(pres_file.parent.name + "_pres")
             pres_file = pres_file.rename(_pres_file)
     '''
     make derivatives in transcode script
