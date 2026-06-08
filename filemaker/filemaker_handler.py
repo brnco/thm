@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
 handles all interactions with FileMaker
 uses ODBC driver for connections
@@ -28,6 +27,7 @@ def verify_record_exists(accession, cursor, kwvars):
         logger.error(msg)
         return False
 
+
 def query_hash(accession, cursor, kwvars):
     '''
     queries filemaker for hash of file
@@ -39,6 +39,7 @@ def query_hash(accession, cursor, kwvars):
     if output:
         #log(kwvars.logfile,"INFO: found hash for file " + kwvars.id + " = " + str(output))
         return output
+
 
 def update_hash(accession, cursor, filemaker_connection, kwvars):
     '''
@@ -54,6 +55,7 @@ def update_hash(accession, cursor, filemaker_connection, kwvars):
     filemaker_connection.commit()
     return True
 
+
 def init_connection(kwvars):
     '''
     initalizes connection to filemaker
@@ -64,6 +66,7 @@ def init_connection(kwvars):
     cursor = filemaker_connection.cursor()
     logger.info("connected to FileMaker successfully")
     return filemaker_connection, cursor
+
 
 def init():
     '''
@@ -81,6 +84,7 @@ def init():
     kwvars.format_digital = args.format_digital
     return kwvars
 
+
 def main():
     '''
     do the thing
@@ -94,6 +98,7 @@ def main():
     if kwvars.m == "query_record":
         verify_record_exists(kwvars.id,kwvars)
     return
+
 
 if __name__ == "__main__":
     main()

@@ -2,41 +2,45 @@
 
 This repository contains scripts to process preservation files, generate checksums, and create and move derivatives of The History Makers oral history interviews.
 
+# Contents
+
+[Installation](https://github.com/brnco/thm/tree/dev#installation)
+
+[Configuration](https://github.com/brnco/thm/tree/dev#configuration)
+
+[Usage](https://github.com/brnco/thm/tree/dev#usage)
+
+[Script Descriptions](https://github.com/brnco/thm/tree/dev#script-descriptions)
+
 # Installation
 
-## Prerequisites
+1. Install Git
 
-### Git
+2. Install Python
 
-Download official Windows build here: https://git-scm.com/download/win
+3. Clone this repo
 
-Install using the Git-[version].exe file, using the default/ pre-filled options
+4. Install python dependencies
 
-### Python
+5. Install and configure ODBC driver
 
-Download official Python 3.x build for Windows here: https://www.python.org/downloads/windows/
+6. Install MediaConch
 
-Open Downloads folder, locate python3.x.exe file, right-click and select "Run as Administrator" from pop-up menu
+7. Install ffmpeg
 
-IMPORTANT - during install, select "Add Python to environment variables" option
+8. Get watermark files
 
-#### test the Python install
-
-open a new instance of Powershell, type "python" and hit enter (type "exit()" and hit enter to exit the Python interperator shell that was opened)
-
-## connect to GitHub
-
-Git is version control software for developers - GitHub is a website that integrates Git with other features that developers find handy. The code for this project is hosted on GitHub, and we'll use Git to download a copy of that code to the machine running the video processing, and upload back to GitHub with any changes.
-
-GitHub only supports SSH authentication these days, follow thier guide for setting that up here: https://docs.github.com/en/authentication/connecting-to-github-with-ssh
-
-Once SSH is set up, do an SSH clone of the repo to the video processing machine.
+9. Config
 
 # Configuration
 
-1. open video-post-processing-config.txt in the text editor of your choice
+This repo ships with a template configuration file `template_video-post-processing.config`
 
-2. fill out fields per your local specifications
+To set up the configuration for the scripts:
+
+1. copy and paste the file, renaming it to `video-post-processing.config`
+
+2. fill out fields per the local specifications
 
 ## General Configuration Notes
 
@@ -47,32 +51,22 @@ general format is:
 variable_name = variable value
 ```
 
-do not enclose paths with quotes, even if they have spaces - do not escape whitespace either
+Do not enclose paths with quotes, even if they have spaces - do not escape whitespace (e.g. with `\`).
 
 ## Configuration Fields Reference
 
 ### Filetypes
 
-#### Input
+These are the file extensions which the script will process. If video files exist in an accession directory, and have a different extention than defined in this config file, then they will not be processed. `.dv` files are not processed by this script by default, for example (although you can add that!).
 
-comma-separated list of acceptable file extensions for input files, each extension is enclosed in quotes
+### Ingest
 
-e.g. ".mov",".MOV"
-
-### Transcode
-
-this section contains filepaths for assets which are required in order to transcode derivative files
-
-#### White Watermark
-
-#### raw_captures
-
-specifies the path to the main ingest directory. This directory can be considered "hot" in that any subfolders will be attempted to be processed when the script is run with no arguments. Individual accessions should be saved at this path in a folder named with the accession number - alternatively, folder can contain any name if an alternative accession number is supplied at runtime (see [Usage](https://github.com/brnco/thm#usage) section of this document)
+This section contains paths to the folders where the files to be transcoded are located. There are two folders, one for standard HistoryMakers interviews, and another for Special Collections. Individual accessions should be saved at these paths in a folder named with the accession number.
 
 Example folder setup, tree view
 
 ```
-/raw_captures
+/hm_interviews
 ├── A2022_034_001_001
 │   ├── DOH_HEJ_006_000.mov
 │   ├── DOH_HEJ_006_001.mov
@@ -88,168 +82,165 @@ Example folder setup, tree view
 │   ├── 01275002.MOV
 │   ├── 01275003.MOV
 │   └── 01275004.MOV
+/special_collections
+├── S2023_012_001_001
+│   └── NINJAV_023_ABC_789.mp4
 ```
 
 ### File Destinations
 
-This section describes folder paths for derivatives
+This section defines the paths to the folders where files are sent after processing.
 
 ### Email
 
-This section contains info for email notifications from the script
+This section defines the info for email notifications from the script.
 
 ### Logs
 
-This section contains folder paths for the directory containing the logs, as well as the path of the lockfile that makevideos creates in order to only one a single instance of the script at a time
+This section defines the folder path for the directory containing the logs.
 
 ### MediaConch
 
-This section delineates the folderpath for MediaConch policies
+This section defines the paths for MediaConch policies (for input file validation).
+
+### FileMaker
+
+This section defines the information for authenticating to FileMaker. When hashes are sent to FM, this is the user who will be shown to have made those changes.
 
 # Usage
 
-## General
+## tl;dr
 
-`ingest.py --options accession_number(s)`
+`(venv) C:\Users\archadmin\code\thm: python ingest.py`
 
 ## Help
 
-`ingest.py -h`
+To list all of the options available for the script, type `python ingest.py -h` and hit enter
 
-## virtual environment
+## General
 
-this script uses the `venv` python library to manage dependencies ("venv" is short for "virtual environment"). It must be enabled in order to be used, however. THM staff shouldn't have to do this too often, but after closing cmd.exe or after a restart it may be necessary.
+1. Open cmd.exe
 
-you can tell you're in the virtual environment by looking to the left of the command prompt. For the THM processing machine, the prompt is `D:\Users\archadmin\code\thm` - if that line is preceded by `(venv)`, you are in the virtual environment
+   - press `Windows key` and search 'cmd.exe' and hit enter
 
-This is what you want:
+   - right-click on the terminal icon in the menu bar, select 'cmd.exe'
+  
+2. Navigate to the scripts directory
 
-`(venv) D:\Users\archadmin\code\thm: `
+   - type `cd code\thm` and hit enter
+  
+3. Start the virtual environment
 
-This means you gotta activate it:
+   - type `venv\Scripts\activate.bat` and hit enter
 
-`D:\Users\archadmin\code\thm: `
+   - you should see `(venv)` at the start of your command prompt
 
-To activate the virtual environment, run the below command in cmd.exe:
+4. Run the script
 
-`venv\Scripts\activate.bat`
-
-once that command completes, you should be good to go
-
-the script will error and close if it is not being run in the virtual environment
+   - type `python ingest.py` and hit enter
 
 ## Examples
 
-ingest everything in raw_captures directory, as configured in config file
+### Ingest everything in the `hm_interviews` directory
 
-`ingest.py`
+as configured in the config file
 
-ingest a single accession, A2022_012_001_001
+`python ingest.py`
 
-`ingest.py A2022_012_001_001`
+### Ingest a single accession, A2022_012_001_001
 
-ingest multiple accessions
+the script will first check the `hm_interviews` folder then will check `special_collections`, as configured in the config file
 
-`ingest.py A2022_012_001_001 A2022_033_001_001`
+`python ingest.py A2022_012_001_001`
 
-### file validation
+### Ingest multiple accessions
 
-ingest without validating input files
+same rules as above
 
-`ingest.py --no_input_validation A2022_012_001_001`
+`python ingest.py A2022_012_001_001 A2022_033_001_001`
 
-### changing terminal output
+### Ingest special collections
 
-you can run this script with more or less output to the terminal
+You can specify that an accession is special collections using the flag (but you don't have to flag it)
 
-note that these setting don't change what is logged, just what is printed
+`python ingest.py --special_collections A2022_001_001_001`
 
-run in verbose mode
+Ingest every accession folder in `special_collections`
 
-`ingest.py -v A2022_012_001_001`
+`python ingest.py --special_collections`
 
-run in quiet mode
+### Change what is printed to terminal window
 
-`ingest.py -q A2022_012_001_001`
+Ingest in `verbose` mode, printing more to the terminal window
 
-### changing notification settings
+`python ingest.py -v`
 
-you can run this script without sending emails using the `--no_email` flag
+Ingest in `quiet` mode, printing less to the terminal window
 
-`ingest.py --no_email`
+`python ingest.py -q`
 
-### changing file copy setting
+note that `quiet` or `verbose` modes do not impact the logs, which always log in `verbose` mode, they only change what is printed to the terminal window
 
-you can run the script without copying files to the connected drives using the `--no_copy` flag
+### Other options
 
-`ingest.py --no_copy`
+Run the script without sending emails using the `--no_email` flag
 
-### using multiple flags
+`python ingest.py --no_email`
 
-these options can be strung together in a single command. the command below will process two accessions without input validation, printing every log entry to the terminal window, without copying files and without emailing anyone
+Run the script without copying files to the connected drives using the `--no_copy` flag
 
-`ingest.py -v --no_input_validation --no_copy --no_email A2022_999_001_001 A2017_088_001_001`
+`python ingest.py --no_copy`
+
+### Using multiple flags
+
+these options can be strung together in a single command. the command below will process two accessions, printing every log entry to the terminal window, without copying files and without emailing anyone
+
+`python ingest.py -v --no_copy --no_email A2022_999_001_001 A2017_088_001_001`
+
+## Parallel Processing
+
+You can run multiple instances of the script at the same time. Open another terminal window and follow the steps in [Usage](https://github.com/brnco/thm/tree/dev#usage). 
 
 # Script Descriptions
 
-## makevideos
+## ingest
 
-this script takes the raw video captures delivered by THM personnel and:
+This is the main script in this repository and it manages the ingest process.
 
-1. concatenates the < 4GB files into 1 long file
+Folders containing a single accession are located in one of two holding directories, one for HistoryMakers interviews and one for Special Collections. The script then examines each file in a single accession folder and determines which processing steps are necessary to create the final deliverables: audio and video streams may need to be transcoded to preservation codecs; a sequence of files may need to be concatenated to form a single preservation file.
 
-2. transcodes that file to flv, mp4, and mpeg
+The deliverables for this script are:
 
-3. embeds timecode and watermarks where appropriate
+1. A single preservation file, wrapped in MXF, containing PCM audio and video with a codec of either JPEG2000, ProRes, or DNxHD.
 
-4. hashmoves (see below) them to their destiantions
+2. Two derivates MP4 files, one with a watermark and one with burned-in timecode
 
-5. triggers script to embed those hashes into a Filemaker db named PBCore_Catalog
+3. Hashes for all of the above files, sent to FileMaker
 
-makevideos also checks to make sure that everything is plugged in and that all necessary files (like watermarks) are in their expected locations.
+## transcodes
 
-makevideos is triggered every 15minutes, M-F, 7am-9pm local time by cron
-
-makevideos can also be run manually by cd'ing into the repo directory (look for that in the config.txt file) and running "python makevideos.py"
+This script handles all of the ffmpeg calls and transcoding functions for the ingest process.
 
 ## startup
 
-this script checks the values in the config file against the configuration currently present on the workstation running the script. Predominantly, it verifies that filepaths specified in the config actually exist.
+This script runs at the beginning of th eingest process and ensures that things are set up correctly: that `ingest.py` is being run from within the virtual environment (`venv`); that the diectories containing raw accessions exist; that the drives where final deliverables are sent exist.
+
+It also is responsible for getting the list of files to process for each individual accession and adding/ removing lockfiles on individual accession direcotires, so that they're not processed by two instances of the script at the same time.
 
 ## file_validation
 
-this script uses [MediaConch](https://mediaarea.net/MediaConch) validation to ensure that only valid input files are passed to the script for preservation/ transcode. MediaConch policies are managed in the directory specified in the config file. For each input file, this script checks it against available file policies in the MediaConch policies folder - if a match is found, that policy is used to validate all other input and output files for the accession.
+This script uses [MediaConch](https://mediaarea.net/MediaConch) validation to detect the audio and video codecs present in the input files. Depending on the codecs, audio and video streams may or may not be transcoded during processing. 
 
-### MediaConch GUI
-
-if a file doesn't pass validation, follow these steps to find out why:
-
-1. open MediaConch
-
-2. in the "Checker" tab, use the dropdown menu to select the policy to check against -- see log for list of policies attempted
-
-3. still in the "Checker" tab, select a file to check against the policy from step 1
-
-4. select "check file"
-
-5. MediaConch will analyze the file and add it to a list at the bottom of the window
-
-6. to view pass/ fail for each field, click the eyeball icon
-
-for more info, see official how-to's at [this link](https://mediaarea.net/MediaConch/Documentation/HowToUse)
+This script was formally used to verify that HistoryMakers interview files were made according to the spec; however, since we've normalized to a single preservation filetype (JPEG2000), this functionality is no longer needed.
 
 ## filemaker_handler
 
-this script handles all calls to FileMaker database, requires ODBC
+This script handles all calls to FileMaker database. During processing it: checks that the script's connection to FileMaker is active; that a metadata record for the accession being processed exists; and it updates the checksum values for individual files.
 
 ## send_email
 
-this script sends emails per info in config file
+This script sends emails per the info in config file. Emails are sent at the conclusion of a run of the script, or after an error.
 
 ## util
 
-utility functions required by other scripts in this repository
-
-## venv
-
-This script uses Python's [venv](https://docs.python.org/3/library/venv.html) module to create a virutal environment, the venv folder contains configuration info for this virtual environment, and should not need to be modified
+Utility functions required by other scripts in this repository.
