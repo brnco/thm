@@ -28,7 +28,7 @@ def format_log_for_email(log_path):
         print(e)
         return False
 
-def send_email(subject,message,attachment_path,debug=False):
+def send_email(subject, message, attachment_path=None, debug=False):
     '''
     sends an email using config from video-post-processing
     '''

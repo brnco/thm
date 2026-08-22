@@ -49,12 +49,12 @@ def move_files(accession, files, kwvars):
                 copyto_parent = kwvars.config.xendata
                 copyto_file = kwvars.config.xendatacopyto / file.name
             if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
-                #sunnas
+                #thm-fs01
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
-                    str(kwvars.config.sunnascopyto) + " " + str(file.name)
-                copyto_parent = kwvars.config.sunnas
-                copyto_file = kwvars.config.sunnascopyto / file.name
+                    str(kwvars.config.thmfs01copyto) + " " + str(file.name)
+                copyto_parent = kwvars.config.thmfs01
+                copyto_file = kwvars.config.thmfs01copyto / file.name
             logger.info("copying %s", str(file))
             logger.debug(cmd)
             output = subprocess.run(cmd, capture_output=True)
@@ -370,8 +370,8 @@ def init_config(kwvars):
     kwvars.config.logs_path = pathlib.Path(config.get('logs','logs_path'))
     kwvars.config.hm_interviews_dir = pathlib.Path(config.get('ingest','HM_interviews'))
     kwvars.config.special_colls_dir = pathlib.Path(config.get('ingest','special_collections'))
-    kwvars.config.sunnascopyto = pathlib.Path(config.get('fileDestinations','sunnascopyto'))
-    kwvars.config.sunnas = pathlib.Path(config.get('fileDestinations','sunnas'))
+    kwvars.config.thmfs01copyto = pathlib.Path(config.get('fileDestinations','thmfs01copyto'))
+    kwvars.config.thmfs01 = pathlib.Path(config.get('fileDestinations','thmfs01'))
     kwvars.config.xendata = pathlib.Path(config.get('fileDestinations','xendata'))
     kwvars.config.xendatacopyto = pathlib.Path(config.get('fileDestinations','xendatacopyto'))
     #kwvars.config.xcluster = pathlib.Path(config.get('fileDestinations','xcluster'))
@@ -403,7 +403,7 @@ def init_kwvars():
     parser.add_argument('--sleep', default=0, \
             help="set script to run after n seconds, useful if file is copying")
     parser.add_argument('--no_copy', action='store_true', default=False, \
-        help="disable file copying to sunnas / xendata, useful for testing")
+        help="disable file copying to thm-fs01 / xendata, useful for testing")
     parser.add_argument('--no_email', action='store_true', default=False, \
         help="disable email notifications")
     parser.add_argument('--special_collections', action='store_true', default=False,\
@@ -444,7 +444,6 @@ def init():
     log_ok = init_log_full_run(kwvars)
     if not log_ok:
         print("log initialization failed. no log created for this run. quitting...")
-        accession_number = "startup"
         quit()
     if kwvars.sleep:
         logger.info("script will resume in " + str(kwvars.sleep) + " seconds")
@@ -627,9 +626,14 @@ def main():
         logger.error(f"processing of accession {accession_number} unsuccessful")
         logger.error("ingest.py encountered an error:")
         logger.error(traceback.format_exc())
+        try:
+            accession_log_filepath = str(accession_log_filepath)
+        except Exception:
+            accession_log_filepath = None
         if kwvars.send_email:
             send_email("ingest notification for " + accession_number, \
-                "processing unsuccessful for " + accession_number, str(accession_log_filepath))
+                "processing unsuccessful for " + accession_number, \
+                accession_log_filepath)
         try:
             accession_log.close()
             logger.removeHandler(accession_log)

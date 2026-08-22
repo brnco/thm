@@ -181,22 +181,22 @@ def verify_config_drivepaths(kwvars):
     verifies that drives defined in config file exist
     '''
     logger.info("verifying that drives are mounted")
-    if not kwvars.config.sunnas.is_dir():
-        logger.error("The video script is unable to run because SUNNAS is not mounted as expected. " \
-        "Please mount SUNNAS on XCluster at %s", str(kwvars.config.sunnas))
+    if not kwvars.config.thmfs01.is_dir():
+        logger.error("The video script is unable to run because thm-fs01 is not mounted as expected. " \
+        "Please mount thm-fs01 at %s", str(kwvars.config.sunnas))
         return False
-    if not kwvars.config.sunnascopyto.is_dir():
-        logger.error("The video script is unable to run because the 'copy to' folder on Sunnas cannot be found." \
-        "Please mount SUNNAS on XCluster and ensure this directory exists ", str(kwvars.config.sunnascopyto))
+    if not kwvars.config.thmfs01copyto.is_dir():
+        logger.error("The video script is unable to run because the 'copy to' folder on thm-fs01 cannot be found." \
+        "Please mount thm-fs01 and ensure this directory exists ", str(kwvars.config.sunnascopyto))
         return False
     if not kwvars.config.xendata.is_dir():
         logger.error("The video script is unable to run because Xendata is not mounted as expected. " \
-        "Please mount Xendata on XCluster at ", str(kwvars.config.xendata))
+        "Please mount Xendata at ", str(kwvars.config.xendata))
         return False
     if not kwvars.config.xendatacopyto.is_dir():
         logger.error("The video script is unable to run because \
             the 'copy to' folder on Xendata cannot be found." \
-            "Please mount Xendata on XCluster and ensure this directory exists %s", \
+            "Please mount Xendata and ensure this directory exists %s", \
             str(kwvars.config.xendatacopyto))
         return False
     logger.info("drives mounted ok")
