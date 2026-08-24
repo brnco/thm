@@ -604,10 +604,12 @@ def main():
             close the accession log file
             remove the handler
             delete (unlink) the accession log file from the OS
+            reset the ffmpeg_suffix
             '''
             accession_log.close()
             logger.removeHandler(accession_log)
             accession_log_filepath.unlink()
+            kwvars.ffmpeg_suffix = " 2> "
             logger.info(f"accession {accession_number} processed successfully")
             logger.info("---------------------------------------------------")
             '''
