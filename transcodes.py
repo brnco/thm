@@ -2,6 +2,7 @@
 '''
 handles all transcodes and concatenations
 '''
+import re
 import sys
 import os
 import asyncio
@@ -14,14 +15,30 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
-
-def format_ffmpeg_log():
+def get_ffmpeg_log_path(cmd):
     '''
-    formats ffmpeg.log for THM log file
+    gets the path to the ffmpeg.log from the command that ran ffmpeg
+    '''
+    cmd_rev = cmd[::-1]
+    match = ''
+    match = re.match(r"\S*", cmd_rev)
+    if not match:
+        raise RuntimeError("there was a problem identifying the ffmpeg log for this accession")
+    found_rev = match.group()
+    found = found_rev[::-1]
+    ffmpeg_log_path = pathlib.Path(found)
+    if not ffmpeg_log_path.is_file():
+        logger.error(f"could not find ffmpeg log at path {ffmpeg_log_path}")
+        raise RuntimeError("there was a problem locating the ffmpeg log for this accession")
+    return ffmpeg_log_path
+
+
+def format_ffmpeg_log(fflog_path):
+    '''
+    formats accession-number_ffmpeg.log for THM log file
     '''
     fflog_raw = []
     fflog_proc = ''
-    fflog_path = pathlib.Path("ffmpeg.log")
     try:
         with open(str(fflog_path),"r") as ffmpeg_log:
             while True:
@@ -53,7 +70,8 @@ def run_ffmpeg(cmd):
             logger.error("there was an error transcoding that file, see log for details")
             return False
         else:
-            format_ffmpeg_log()
+            ffmpeg_log_path = get_ffmpeg_log_path(cmd)
+            format_ffmpeg_log(ffmpeg_log_path)
             logger.info("ffmpeg ran successfully")
             return True
     except Exception as e:
