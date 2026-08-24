@@ -28,6 +28,7 @@ def format_log_for_email(log_path):
         print(e)
         return False
 
+
 def send_email(subject, message, attachment_path=None, debug=False):
     '''
     sends an email using config from video-post-processing
@@ -41,7 +42,7 @@ def send_email(subject, message, attachment_path=None, debug=False):
     '''
     scriptRepo = os.path.dirname(os.path.abspath(__file__))
     config = configparser.ConfigParser()
-    config.read(os.path.join(scriptRepo,"video-post-process-config.txt"))
+    config.read(os.path.join(scriptRepo,"video-post-processing.config"))
     if not debug:
         _recipients = config.get('email','recipientlist')
     else:
