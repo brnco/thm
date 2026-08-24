@@ -191,7 +191,7 @@ def verify_config_drivepaths(kwvars):
         return False
     if not kwvars.config.xendata.is_dir():
         logger.error("The video script is unable to run because Xendata is not mounted as expected. " \
-        "Please mount Xendata at ", str(kwvars.config.xendata))
+        "Please mount Xendata at %s", str(kwvars.config.xendata))
         return False
     if not kwvars.config.xendatacopyto.is_dir():
         logger.error("The video script is unable to run because \

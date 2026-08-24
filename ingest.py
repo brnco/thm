@@ -482,7 +482,7 @@ def main():
             drives_ok = startup.verify_config_drivepaths(kwvars)
             if not drives_ok:
                 logger.error("Drive paths from config unable to be located, please ensure they're mounted")
-                raise RuntimeError("The drives configured in the video-post-processing.txt could not be found")
+                raise RuntimeError("The drives configured in the video-post-processing.config could not be found")
             '''
             create ingest list
             technically ingests dictionary with list of full filepaths (as pathlib objects) for each accession folder
