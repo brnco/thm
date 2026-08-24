@@ -126,16 +126,16 @@ def reencode_accession(accession, files, kwvars):
         output_file = input_file.with_name(accession + "_pres.mxf")
         if kwvars.reencode_video and kwvars.reencode_audio:
             '''
-            ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le file.mxf
+            ffmpeg -i file -c:v jpeg2000 -c:a pcm_s24le -out_sample_rate 48k file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
-                    " -map 0:v -map 0:a? -c:v jpeg2000 -pred 1 -c:a pcm_s24le -strict unofficial -ignore_unknown "
+                    " -map 0:v -map 0:a? -c:v jpeg2000 -pred 1 -c:a pcm_s24le -out_sample_rate 48k -strict unofficial -ignore_unknown "
         elif kwvars.reencode_audio:
             '''
-            ffmpeg -i file -c:v copy -c:a pcm_s24le file.mxf
+            ffmpeg -i file -c:v copy -c:a pcm_s24le -out_sample_rate 48k file.mxf
             '''
             ffmpeg_cmd_base = "ffmpeg -i " + str(input_file) + \
-                    " -map 0:v -map 0:a? -c:v copy -c:a pcm_s24le -strict unofficial -ignore_unknown "
+                    " -map 0:v -map 0:a? -c:v copy -c:a pcm_s24le -out_sample_rate 48k -strict unofficial -ignore_unknown "
         elif kwvars.reencode_video:
             '''
             ffmpeg -i file -c:v jpeg2000 -c:a copy file.mxf
