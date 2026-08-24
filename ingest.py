@@ -302,11 +302,11 @@ def get_codecs_frameformat_size(accession_to_process, kwvars):
     return kwvars
 
 
-def init_log_accession(kwvars):
+def init_log_accession(accession_number, kwvars):
     '''
     initializes log for single accession
     '''
-    log_filename = pathlib.Path("log-most-recent-accession.txt")
+    log_filename = "log-" + accession_number + ".txt"
     log_filepath = kwvars.config.logs_path / log_filename
     if log_filepath.is_file():
         log_filepath.unlink()
@@ -511,7 +511,7 @@ def main():
             '''
             init logs for this accession
             '''
-            accession_log, accession_log_filepath = init_log_accession(kwvars)
+            accession_log, accession_log_filepath = init_log_accession(accession_number, kwvars)
             '''
             init lockfile
             '''
