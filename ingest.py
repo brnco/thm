@@ -306,7 +306,7 @@ def init_log_accession(accession_number, kwvars):
     '''
     initializes log for single accession
     '''
-    log_filename = "log-" + accession_number + ".txt"
+    log_filename = accession_number + "_log.txt"
     log_filepath = kwvars.config.logs_path / log_filename
     if log_filepath.is_file():
         log_filepath.unlink()
@@ -316,7 +316,7 @@ def init_log_accession(accession_number, kwvars):
     log_handler.setFormatter(message_format)
     log_handler.setLevel(logging.INFO)
     logger.addHandler(log_handler)
-    return log_handler, pathlib.Path(log_filepath)
+    return log_handler, log_filepath
 
 
 def init_log_full_run(kwvars):
@@ -416,7 +416,8 @@ def init_kwvars():
     kwvars.script_dir = pathlib.Path(__file__).parent.absolute()
     kwvars.input = args.input
     kwvars.sleep = int(args.sleep)
-    kwvars.ffmpeg_suffix = " 2> ffmpeg.log"
+    #old: kwvars.ffmpeg_suffix = " 2> ffmpeg.log"
+    kwvars.ffmpeg_suffix = " 2> "
     kwvars.special_collections = args.special_collections
     kwvars.copy_files = operator.not_(args.no_copy)
     kwvars.send_email = operator.not_(args.no_email)
@@ -512,6 +513,8 @@ def main():
             init logs for this accession
             '''
             accession_log, accession_log_filepath = init_log_accession(accession_number, kwvars)
+            ffmpeg_log_name = accession_log_filepath.with_name(accession_number + "_ffmpeg.log")
+            kwvars.ffmpeg_suffix += str(ffmpeg_log_name)
             '''
             init lockfile
             '''
