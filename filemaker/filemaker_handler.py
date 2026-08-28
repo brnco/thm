@@ -6,7 +6,10 @@ uses SQL syntax for queries
 import pyodbc
 import argparse
 import logging
+from pprint import pprint
+
 logger = logging.getLogger(__name__)
+
 
 def verify_record_exists(accession, cursor, kwvars):
     '''
@@ -54,6 +57,42 @@ def update_hash(accession, cursor, filemaker_connection, kwvars):
     cursor.execute(query)
     filemaker_connection.commit()
     return True
+
+
+def get_fields():
+    '''
+    this query sucks so I'm putting it in a different function
+    '''
+    fields = '"identifier","Barcodes and Box Numbers","LTO","LTOBOX01","LTOBOX01Location",\
+                "LTOBOX02","LTOBOX02Location","ShaDigest","filename","formatFileSize","formatLocation",\
+                "formatLocationPhysicalDigitalCombined"'
+    return fields
+
+
+def get_every_pres_file(mode, cursor, kwvars):
+    '''
+    prints PBC record for every _pres file, one by one
+    '''
+    fields = get_fields()
+    field_names = fields.split(',')
+    query = "select " + fields + "from PBCoreInstantiation where filename like '%_pres%'"
+    cursor.execute(query)
+    if mode == 'obo':
+        while True:
+            record_vals = cursor.fetchone()
+            record = dict(zip(field_names, record_vals))
+            pprint(record)
+            input("press any key to fetch the next record")
+    elif mode == 'all':
+        #records = [dict(zip(field_names, row)) for row in cursor.fetchall()]
+        for row in cursor.fetchall():
+            pprint(row)
+            input("yo")
+        print(f"found {len(records)} records")
+        for record in records:
+            pprint(record)
+            input("press any key for next record")
+    return output
 
 
 def init_connection(kwvars):
