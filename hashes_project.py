@@ -5,10 +5,10 @@ import sys
 import logging
 import pathlib
 import configparser
+from pprint import pprint, pformat
 import util
 import airtable
 import filemaker.filemaker_handler as fm
-
 
 
 def init_log():
@@ -53,6 +53,16 @@ def main():
     kwvars = init()
     init_log()
     fm_conn, cursor = fm.init_connection(kwvars)
+    cursor, field_names = fm.get_every_pres_file(cursor, kwvars)
+    logger.info("query completed")
+    while True:
+        fm_rec_vals = cursor.fetchone()
+        fm_rec = dict(zip(field_names, fm_rec_vals))
+        logger.debug(fm_rec)
+        atbl_rec = airtable.THMHashRecord().from_filemaker(fm_rec)
+        logger.info(pformat(atbl_rec.__dict__))
+        atbl_rec.send()
+        #input("press any key to fetch the next record")
 
 
 if __name__ == "__main__":

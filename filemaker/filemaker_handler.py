@@ -69,14 +69,23 @@ def get_fields():
     return fields
 
 
-def get_every_pres_file(mode, cursor, kwvars):
+def get_every_pres_file(cursor, kwvars):
     '''
     prints PBC record for every _pres file, one by one
     '''
     fields = get_fields()
-    field_names = fields.split(',')
+    _field_names = fields.split(',')
+    field_names = [x.strip().replace('"','') for x in _field_names]
     query = "select " + fields + "from PBCoreInstantiation where filename like '%_pres%'"
+    logger.info("querying FileMaker for every pres file...")
     cursor.execute(query)
+    return cursor, field_names
+
+
+def iterate_every_pres_file(mode, cursor):
+    '''
+    ay yi yi
+    '''
     if mode == 'obo':
         while True:
             record_vals = cursor.fetchone()

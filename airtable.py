@@ -31,6 +31,7 @@ def config() -> dict:
     this_dirpath = pathlib.Path(__file__).parent.absolute()
     with open(this_dirpath / 'airtable_config.json', 'r') as config_file:
         atbl_config = json.load(config_file)
+        pprint(atbl_config)
     return atbl_config
 
 
@@ -48,7 +49,7 @@ def get_field_map(obj_type: str) -> str:
     for specified object type, e.g. PhysicalAssetRecord
     '''
     module_dirpath = pathlib.Path(__file__).parent.parent.parent.absolute()
-    field_map_filepath = module_dirpath / 'field_mappings.json'
+    field_map_filepath = 'field_mappings.json'
     with open(field_map_filepath, 'r') as field_map_file:
         field_mapping = json.load(field_map_file)
     return field_mapping[obj_type]
@@ -62,12 +63,21 @@ class THMAirtableRecord:
     '''
     primary_field = None
 
+    def _fix_problem_attrs(self, attr_name: str, value: str) -> Any:
+        '''
+        for some of these we need an extra layer of formatting
+        '''
+        if attr_name == "filesize":
+            value = int(value)
+        return value
+
     @classmethod
     def from_filemaker(cls, row: dict, field_map: dict) -> Self:
         '''
         creates an Airtable record from a row of FileMaker data
         '''
         instance = cls()
+        problem_attrs = ['filesize']
         for attr_name, mapping in field_map.items():
             try:
                 assert mapping['fm']
@@ -84,9 +94,9 @@ class THMAirtableRecord:
             value = row[column]
             if not value:
                 continue
-            '''
             if attr_name in problem_attrs:
                 value = instance._fix_problem_attrs(attr_name, value)
+            '''
             if attr_name in link_field_attrs:
                 value = instance._set_link_field(attr_name, value)
             '''
@@ -218,3 +228,38 @@ class THMAirtableRecord:
             atbl_rec_remote = self
         atbl_rec_remote = self._save_rec(atbl_rec_remote)
         return atbl_rec_remote
+
+
+class THMHashRecord(Model, THMAirtableRecord):
+    '''
+    object class for Physical Assets at AVMPI
+    '''
+    field_map = get_field_map('HashRecord')
+    '''
+    add every key in the field map as an attribute to the class
+    each attribute is an Airtable field with a type
+    '''
+    for field, mapping in field_map.items():
+        try:
+            field_type = mapping['atbl']['type']
+            field_name = mapping['atbl']['name']
+            if field_type == 'integer':
+                vars()[field] = fields.IntegerField(field_name)
+        except (KeyError, TypeError) as exc:
+            vars()[field] = fields.TextField(mapping['atbl'])
+    
+        class Meta:
+            base_id = "appNqyF9ABHwSD9si"
+            table_name = "Hashes"
+            typecast = False
+
+            @staticmethod
+            def api_key():
+                return get_api_key()
+
+    def from_filemaker(self, row: dict) -> dict:
+        '''
+        creates an Airtable record from a row in an Excel file
+        using field mapping
+        '''
+        return super().from_filemaker(row, self.field_map)
