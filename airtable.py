@@ -31,7 +31,6 @@ def config() -> dict:
     this_dirpath = pathlib.Path(__file__).parent.absolute()
     with open(this_dirpath / 'airtable_config.json', 'r') as config_file:
         atbl_config = json.load(config_file)
-        pprint(atbl_config)
     return atbl_config
 
 
@@ -263,3 +262,13 @@ class THMHashRecord(Model, THMAirtableRecord):
         using field mapping
         '''
         return super().from_filemaker(row, self.field_map)
+
+
+def connect_to_table():
+    '''
+    returns table object
+    '''
+    conf = config()
+    api = Api(conf['main']['api_key'])
+    table = api.table("appNqyF9ABHwSD9si", "tblyrSUoZvArstkvj")
+    return table
