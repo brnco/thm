@@ -6,6 +6,11 @@ uses SQL syntax for queries
 import pyodbc
 import argparse
 import logging
+import configparser
+import sys
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+import util
 from pprint import pprint
 
 logger = logging.getLogger(__name__)
@@ -82,6 +87,25 @@ def get_every_pres_file(cursor, kwvars):
     return cursor, field_names
 
 
+def get_every_field_name(cursor):
+    '''
+    prints the name of every row in the db
+    '''
+    #query = "select * from PBCoreInstantiation where filename = 'A2017_088_001_006_pres.mov'"
+    logger.info("getting list of tables...")
+    pprint(cursor.__dir__())
+    query = "select * from Xendata_Database where 1 = 0"
+    logger.info("getting every field name...")
+    cursor.execute(query)
+    field_names = [column[0] for column in cursor.description]
+    pprint(field_names)
+    input("yo")
+    pprint(record)
+    pprint(cursor.columns())
+    field_names = [row.column_name for row in cursor.columns()]
+    pprint(field_names)
+
+
 def iterate_every_pres_file(mode, cursor):
     '''
     ay yi yi
@@ -116,13 +140,48 @@ def init_connection(kwvars):
     return filemaker_connection, cursor
 
 
+def init_log():
+    '''
+    initalizes log for whole run of script
+    '''
+    message_format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',\
+            datefmt='%Y-%m-%d %H:%M:%S')
+    global logger
+    logger = logging.getLogger()
+    '''
+    make a handler for printing to terminal screen, add to logger
+    '''
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(message_format)
+    stream_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stream_handler)
+    logger.setLevel(logging.DEBUG)
+    '''
+    do a test log output
+    '''
+    logger.info("initializing script and log")
+
+
+def init_config(kwvars):
+    '''
+    initalizes variables from config file
+    '''
+    kwvars.config = util.d({})
+    config = configparser.ConfigParser()
+    config.read(kwvars.script_dir / "video-post-processing.config")
+    kwvars.config.filemaker_user = config.get('filemaker','user')
+    kwvars.config.filemaker_pwd = config.get('filemaker','pwd')
+    return kwvars
+
+
 def init():
     '''
     initalize variables and config
     '''
     kwvars = util.d({})
     parser = argparse.ArgumentParser(description="handles Filemaker calls")
-    parser.add_argument('-m','--mode',choices=['query_record','update_hash','query_hash'])
+    parser.add_argument('-m','--mode', dest="m", 
+                choices=['query_record', 'update_hash', 'query_hash', 'get_every_field_name'])
     parser.add_argument("-id",help="filename of file that was hashed")
     parser.add_argument("-hash",help="SHA1 hash value of file")
     parser.add_argument('-fdigi','--format_digital',help="formatDigital, the file extension (without the '.') whose hash we have")
@@ -130,6 +189,7 @@ def init():
     kwvars.m = args.m
     kwvars.id = args.id
     kwvars.format_digital = args.format_digital
+    kwvars.script_dir = pathlib.Path(r"C:\Users\bcoates\code\thm")
     return kwvars
 
 
@@ -138,6 +198,8 @@ def main():
     do the thing
     '''
     kwvars = init()
+    kwvars = init_config(kwvars)
+    init_log()
     filemaker_connection, cursor = init_connection(kwvars)
     if kwvars.m == "update_hash":
         update_hash(kwvars.id,kwvars)
@@ -145,6 +207,8 @@ def main():
         query_hash(kwvars.id,kwvars)
     if kwvars.m == "query_record":
         verify_record_exists(kwvars.id,kwvars)
+    if kwvars.m == "get_every_field_name":
+        get_every_field_name(cursor)
     return
 
 
