@@ -68,9 +68,8 @@ def get_fields():
     '''
     this query sucks so I'm putting it in a different function
     '''
-    fields = '"identifier","Barcodes and Box Numbers","LTO","LTOBOX01","LTOBOX01Location",\
-                "LTOBOX02","LTOBOX02Location","ShaDigest","filename","formatFileSize","formatLocation",\
-                "formatLocationPhysicalDigitalCombined"'
+    fields = '"identifier","Barcodes and Box Numbers","ShaDigest",\
+                "filename","formatFileSize","formatLocation","Xendata_Filepath"'
     return fields
 
 
@@ -81,7 +80,7 @@ def get_every_pres_file(cursor, kwvars):
     fields = get_fields()
     _field_names = fields.split(',')
     field_names = [x.strip().replace('"','') for x in _field_names]
-    query = "select " + fields + "from PBCoreInstantiation where filename like '%_pres%'"
+    query = "select " + fields + " from PBCoreInstantiation where filename like '%_pres%'"
     logger.info("querying FileMaker for every pres file...")
     cursor.execute(query)
     return cursor, field_names

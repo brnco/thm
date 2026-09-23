@@ -270,5 +270,5 @@ def connect_to_table():
     '''
     conf = config()
     api = Api(conf['main']['api_key'])
-    table = api.table("appNqyF9ABHwSD9si", "tblyrSUoZvArstkvj")
+    table = api.table("appNqyF9ABHwSD9si", "tblY6r9PvN5aHCUay")
     return table

@@ -4,26 +4,6 @@
             "fm": "Barcodes and Box Numbers",
             "atbl": "Barcodes and Box Numbers"
         },
-        "LTO": {
-            "fm": "LTO",
-            "atbl": "LTO"
-        },
-        "LTOBOX01": {
-            "fm": "LTOBOX01",
-            "atbl": "LTOBOX01"
-        },
-        "LTOBOX01_Location": {
-            "fm": "LTOBOX01Location",
-            "atbl": "LTOBOX01 - Location"
-        },
-        "LTOBOX02": {
-            "fm": "LTOBOX02",
-            "atbl": "LTOBOX02"
-        },
-        "LTOBOX02_Location": {
-            "fm": "LTOBOX02Location",
-            "atbl": "LTOBOX02 - Location"
-        },
         "current_sha_hash": {
             "fm": "ShaDigest",
             "atbl": "SHA1 Hash - FileMaker"
@@ -31,6 +11,10 @@
         "filename": {
             "fm": "filename",
             "atbl": "Asset Name"
+        },
+        "filepath": {
+            "fm": "Xendata_Filepath",
+            "atbl": "Xendata Filepath"
         },
         "filesize": {
             "fm": "formatFileSize",

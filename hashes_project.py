@@ -46,12 +46,10 @@ def init():
     kwvars.config.filemaker_pwd = config.get('filemaker','pwd')
     return kwvars
 
+
 def main():
     '''
     do the thing
-
-    while true:
-        #fm_rec_vals = cursor.fetchone()
     '''
     kwvars = init()
     init_log()
@@ -59,7 +57,6 @@ def main():
     fm_conn, cursor = fm.init_connection(kwvars)
     cursor, field_names = fm.get_every_pres_file(cursor, kwvars)
     logger.info("query completed")
-
     while True:
         atbl_recs = []
         fm_recs = cursor.fetchmany(1000)
@@ -69,10 +66,7 @@ def main():
             fm_rec = dict(zip(field_names, fm_rec_vals))
             atbl_rec = airtable.THMHashRecord().from_filemaker(fm_rec)
             atbl_recs.append(atbl_rec.__dict__['_fields'])
-        atbl_tbl.batch_create(atbl_recs)
-        #input("yo")
-
-    
+        atbl_tbl.batch_create(atbl_recs)  
 
 
 if __name__ == "__main__":
