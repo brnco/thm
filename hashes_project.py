@@ -31,7 +31,7 @@ def hash_files(filepath):
 def verify_hashes(kwvars):
     '''
     loops through airtable view
-    for files where "SHA1 - Check" is empty
+    for files where "SHA1 Hash - Check" is empty
     hashes file at path with SHA1 hash
     sends hash to airtable
     '''
@@ -45,8 +45,7 @@ def verify_hashes(kwvars):
                 raise FileNotFoundError(f"python could not find file at path {filepath}")
             logger.info(f"hashing {filepath}")
             sha1_hash = hash_file(filepath)
-            atbl_tbl.update(atbl_rec['id'], {"SHA1 - Check": sha1_hash})
-        input("yo")
+            atbl_tbl.update(atbl_rec['id'], {"SHA1 Hash - Check": sha1_hash})
 
 
 def get_every_filemaker_record(kwvars):
