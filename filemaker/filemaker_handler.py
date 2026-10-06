@@ -69,7 +69,8 @@ def get_fields():
     this query sucks so I'm putting it in a different function
     '''
     fields = '"identifier","Barcodes and Box Numbers","ShaDigest",\
-                "filename","formatFileSize","formatLocation","Xendata_Filepath"'
+                "filename","formatLocation",\
+                "Xendata_Filepath","Xendata_Filesize"'
     return fields
 
 

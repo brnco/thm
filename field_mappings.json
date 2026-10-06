@@ -17,7 +17,7 @@
             "atbl": "Xendata Filepath"
         },
         "filesize": {
-            "fm": "formatFileSize",
+            "fm": "Xendata_Filesize",
             "atbl": {
                 "name": "Asset Size (bytes)",
                 "type": "integer"

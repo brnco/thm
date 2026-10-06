@@ -267,8 +267,9 @@ class THMHashRecord(Model, THMAirtableRecord):
 def connect_to_table():
     '''
     returns table object
+    for hashes project
     '''
     conf = config()
     api = Api(conf['main']['api_key'])
-    table = api.table("appNqyF9ABHwSD9si", "tblY6r9PvN5aHCUay")
+    table = api.table("appNqyF9ABHwSD9si", "tblPcAlZJnJU66e56")
     return table
