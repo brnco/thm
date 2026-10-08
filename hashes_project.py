@@ -5,6 +5,7 @@ import sys
 import logging
 import pathlib
 import configparser
+import subprocess
 from pprint import pprint, pformat
 import util
 import airtable
@@ -15,7 +16,7 @@ def hash_files(filepath):
     '''
     creates portable SHA256 hash for file
     '''
-    cmd = 'certutil -hashfile "' + file + '" SHA1'
+    cmd = 'certutil -hashfile "' + str(filepath) + '" SHA1'
     logger.debug(cmd)
     output = subprocess.run(cmd, capture_output=True)
     if output.returncode == 0:
@@ -46,7 +47,7 @@ def verify_hashes(kwvars):
             if not filepath.is_file():
                 raise FileNotFoundError(f"python could not find file at path {filepath}")
             logger.info(f"hashing {filepath}")
-            sha1_hash = hash_file(filepath)
+            sha1_hash = hash_files(filepath)
             atbl_tbl.update(atbl_rec['id'], {"SHA1 Hash - Check": sha1_hash})
 
 
