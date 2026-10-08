@@ -44,7 +44,7 @@ def verify_hashes(kwvars):
         for atbl_rec in atbl_results:
             _filepath = pathlib.Path(atbl_rec['fields']['Xendata Filepath'])
             filepath = pathlib.Path(r"\\X-40") / _filepath.relative_to(_filepath.anchor)
-            if not filepath.is_file():
+            if not filepath.exists():
                 raise FileNotFoundError(f"python could not find file at path {filepath}")
             logger.info(f"hashing {filepath}")
             sha1_hash = hash_files(filepath)
