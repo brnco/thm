@@ -21,6 +21,7 @@ def hash_files(filepath):
     if output.returncode == 0:
         lines = output.stdout.split(b"\r\n")
         sha_hash = lines[1].strip().decode("utf-8")
+        logger.info(f"{sha_hash}")
     else:
         logging.error(output.stderr)
         return False
