@@ -38,7 +38,7 @@ def verify_hashes(kwvars):
     sends hash to airtable
     '''
     atbl_tbl = airtable.connect_to_table()
-    atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=10)
+    atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=1)
     while True:
         atbl_results = next(atbl_tbl_iterator)
         for atbl_rec in atbl_results:
