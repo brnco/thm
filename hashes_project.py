@@ -4,6 +4,7 @@ manages the hashes project
 import sys
 import logging
 import pathlib
+import time
 import configparser
 import subprocess
 from pprint import pprint, pformat
@@ -36,16 +37,10 @@ def verify_hashes(kwvars):
     for files where "SHA1 Hash - Check" is empty
     hashes file at path with SHA1 hash
     sends hash to airtable
-    count exists because basically every X hours there's a timeout, so we need to keep connection alive
     '''
-    atbl_tbl = airtable.connect_to_table()
-    atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=1)
-    count = 0
     while True:
-        if count == 15:
-            atbl_tbl = airtable.connect_to_table()
-            atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=1)
-            count = 0  
+        atbl_tbl = airtable.connect_to_table()
+        atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=1)
         atbl_results = next(atbl_tbl_iterator)
         for atbl_rec in atbl_results:
             _filepath = pathlib.Path(atbl_rec['fields']['Xendata Filepath'])
@@ -55,7 +50,7 @@ def verify_hashes(kwvars):
             logger.info(f"hashing {filepath}")
             sha1_hash = hash_files(filepath)
             atbl_tbl.update(atbl_rec['id'], {"SHA1 Hash - Check": sha1_hash})
-            count += 1
+            time.sleep(1)
 
 
 def get_every_filemaker_record(kwvars):
