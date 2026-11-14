@@ -37,6 +37,7 @@ def verify_hashes(kwvars):
     hashes file at path with SHA1 hash
     sends hash to airtable
     count exists because basically every X hours there's a timeout, so we need to keep connection alive
+    --15 records processed is approx every hour, 4mins per file
     '''
     atbl_tbl = airtable.connect_to_table()
     atbl_tbl_iterator = atbl_tbl.iterate(view="Hashes to Verify", fields=["Xendata Filepath"], page_size=1)
