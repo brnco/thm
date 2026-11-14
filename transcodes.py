@@ -283,3 +283,39 @@ def rewrap_single_file_accession(accession, input_file, kwvars):
     else:
         return pres_file
 
+
+def detect_wav_pcm_audio():
+    '''
+    TO DO
+    detects if a file is PCM/ wave audio
+    '''
+
+
+def make_preservation_wave_file(file, accession, kwvars):
+    '''
+    creates wav file with preservation specs
+    '''
+    logger.info("creating preservation wav file")
+    wav = file.with_name(accession + "_pres.wav")
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
+            ' -map 0 -c:a pcm_s16le -ar 48000 '
+            str(wav) + kwvars.ffmpeg_suffix
+    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
+    if not ffmpeg_ok:
+        return False
+    return wav
+
+
+def make_access_mp3(file, accession, kwvars):
+    '''
+    creates mp3 file with access specs
+    '''
+    logger.info("creating access mp3 file")
+    mp3 = file.with_name(accession + "_access.mp3")
+    ffmpeg_cmd = 'ffmpeg -i ' + str(file) + \
+            ' -dither_method triangular -out_sample_rate 96000 -b:a 192k '
+            str(mp3) + kwvars.ffmpeg_suffix
+    ffmpeg_ok = run_ffmpeg(ffmpeg_cmd)
+    if not ffmpeg_ok:
+        return False
+    return mp3
