@@ -1,0 +1,12 @@
+(venv) PS C:\Users\archadmin\code\hashes_project> Get-FileHash "\\X-40\Archive\A2022\128\A2022_128_001_009_pres.mov"-Algorithm MD5
+Get-FileHash : The file '\\X-40\Archive\A2022\128\A2022_128_001_009_pres.mov' cannot be read: Access to the path
+'\\X-40\Archive\A2022\128\A2022_128_001_009_pres.mov' is denied.
+At line:1 char:1
++ Get-FileHash "\\X-40\Archive\A2022\128\A2022_128_001_009_pres.mov"-Al ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ReadError: (\\X-40\Archive\...01_009_pres.mov:PSObject) [Write-Error], WriteErrorExc
+   eption
+    + FullyQualifiedErrorId : FileReadError,Get-FileHash
+
+(venv) PS C:\Users\archadmin\code\hashes_project> Test-Path "\\X-40\Archive\A2022\128\A2022_128_001_009_pres.mov"
+True

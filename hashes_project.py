@@ -37,11 +37,8 @@ def verify_hashes(kwvars):
     for files where "SHA1 Hash - Check" is empty
     hashes file at path with SHA1 hash
     sends hash to airtable
-<<<<<<< HEAD
     count exists because basically every X hours there's a timeout, so we need to keep connection alive
     --15 records processed is approx every hour, 4mins per file
-=======
->>>>>>> 31c670392cedd71b86438c16aa15114cbb2933f6
     '''
     while True:
         atbl_tbl = airtable.connect_to_table()
