@@ -7,9 +7,36 @@ import util
 import subprocess
 import logging
 import time
+import traceback
 
 
 logger = logging.getLogger(__name__)
+
+
+def detect_video_stream(file):
+    '''
+    detects if a file has a video stream
+    '''
+    try:
+        logger.info("detecting if video stream exists in file")
+        cmd = "ffprobe -v error -select_streams v -show_entries stream=codec_type -of csv=p=0 " + str(file)
+        logger.info("running ffprobe with below command:")
+        logger.info(f"{cmd}")
+        output = subprocess.run(cmd, capture_output=True, shell=True)
+        if not output.returncode == 0:
+            logger.error("there was an error detecting video in that file...")
+            return False
+        else:
+            output = output.stdout.decode("utf-8")
+            if "video" in output:
+                return True
+            return False
+    except Exception as e:
+        logger.error("there was an issue running ffmpeg")
+        logger.error(traceback.format_exc())
+        return False
+
+
 
 
 def detect_video_codec(file, kwvars):

@@ -48,7 +48,7 @@ def move_files(accession, files, kwvars):
                     str(kwvars.config.xendatacopyto) + " " + str(file.name)
                 copyto_parent = kwvars.config.xendata
                 copyto_file = kwvars.config.xendatacopyto / file.name
-            if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name):
+            if "wm.mp4" in str(file.name) or "tc.mp4" in str(file.name) or "access.mp3" in str(file.name):
                 #thm-fs01
                 file = pathlib.Path(file)
                 cmd = "robocopy " + str(accession_fullpath) + " " + \
@@ -188,6 +188,20 @@ def make_derivatives(accession, input_file, kwvars):
     return [mp4_with_tc_ok, mp4_with_logo_ok]
 
 
+def process_audio_only_accession(accession_number, files, kwvars):
+    '''
+    manages the processing of an audio-only accession
+    '''
+    _files = []
+    for file in files:
+        _file = transcodes.make_preservation_wave_file(file, accession_number, kwvars)
+        _files.append(file)
+    for file in _files:
+        _file = transcodes.make_access_mp3(file, accession_number, kwvars)
+        _files.append(file)
+    return _files
+
+
 def process_accession(accession_number, files, kwvars):
     '''
     manages processing of single accession
@@ -203,6 +217,9 @@ def process_accession(accession_number, files, kwvars):
     output is also full path
     '''
     accession_fullpath = files[0].parent
+    if kwvars.audio_only:
+        files = process_audio_only_accession(accession_number, files, kwvars)
+        return files
     if kwvars.reencode_audio or kwvars.reencode_video:
         _files = transcodes.reencode_accession(accession_number, files, kwvars) 
         files = _files
@@ -256,7 +273,15 @@ def get_codecs_frameformat_size(accession_to_process, kwvars):
     h.264
     JPEG2000
     '''
-    logger.info("checking input files for valid preservation video codecs")
+    logger.info("checking input files for valid preservation codecs")
+    for file in accession_to_process[accession_number]:
+        logger.info(f"testing {file} for presence of video stream")
+        has_video_stream = file_validation_detect_video_stream(file)
+        if has_video_stream:
+            break
+        else:
+            kwvars.audio_only = True
+            return kwvars
     for file in accession_to_process[accession_number]:
         logger.info(f"testing {file} for valid preservation video codec")
         valid_video_in_file = file_validation.detect_video_codec(file, kwvars)
@@ -380,9 +405,9 @@ def init_config(kwvars):
     kwvars.config.filemaker_user = config.get('filemaker','user')
     kwvars.config.filemaker_pwd = config.get('filemaker','pwd')
     kwvars.config.mediaconch = util.d( \
-        {"input_policies": config.get('mediaconch','input_policies_dir'), \
-        'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'), \
-        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy'), \
+        {"input_policies": config.get('mediaconch','input_policies_dir'),
+        'mp4_pcm_policy': config.get('mediaconch','mp4_pcm_policy'),
+        'pcm_in_file_policy': config.get('mediaconch','pcm_in_file_policy'),
         'accepted_video_codecs_policy': config.get('mediaconch','accepted_video_codecs_policy')})
     return kwvars
 
@@ -394,23 +419,23 @@ def init_kwvars():
     "kwvars" = KeyWordArguments - this is a single object/ dictionary that stores most of our variables
     '''
     parser = argparse.ArgumentParser(description='Process videos for ingest')
-    parser.add_argument('-v','--verbose', action='store_true',default=False,\
-            help="verbose mode, print debug messages to terminal screen")
-    parser.add_argument('-q','--quiet',action='store_true',default=False,\
-            help="quiet mode, only report errors to terminal screen")
-    parser.add_argument('input', nargs='*',\
-            help='the input folder(s)')
-    parser.add_argument('--sleep', default=0, \
-            help="set script to run after n seconds, useful if file is copying")
-    parser.add_argument('--no_copy', action='store_true', default=False, \
-        help="disable file copying to thm-fs01 / xendata, useful for testing")
-    parser.add_argument('--no_email', action='store_true', default=False, \
-        help="disable email notifications")
-    parser.add_argument('--special_collections', action='store_true', default=False,\
-            help="runs the script in 'Special Collections' mode, "
+    parser.add_argument('-v','--verbose', action='store_true',default=False,
+                help="verbose mode, print debug messages to terminal screen")
+    parser.add_argument('-q','--quiet',action='store_true',default=False,
+                help="quiet mode, only report errors to terminal screen")
+    parser.add_argument('input', nargs='*',
+                help='the input folder(s)')
+    parser.add_argument('--sleep', default=0,
+                help="set script to run after n seconds, useful if file is copying")
+    parser.add_argument('--no_copy', action='store_true', default=False,
+                help="disable file copying to thm-fs01 / xendata, useful for testing")
+    parser.add_argument('--no_email', action='store_true', default=False,
+                help="disable email notifications")
+    parser.add_argument('--special_collections', action='store_true', default=False,
+                help="runs the script in 'Special Collections' mode, "
                         "where original file timecode is preserved")
-    parser.add_argument('--dev', action='store_true', default=False, \
-            help="runs the script in 'developer mode' (for testing)")
+    parser.add_argument('--dev', action='store_true', default=False,
+                help="runs the script in 'developer mode' (for testing)")
     args = parser.parse_args()
     kwvars = util.d({})
     kwvars.script_dir = pathlib.Path(__file__).parent.absolute()
@@ -419,6 +444,7 @@ def init_kwvars():
     #old: kwvars.ffmpeg_suffix = " 2> ffmpeg.log"
     kwvars.ffmpeg_suffix = " 2> "
     kwvars.special_collections = args.special_collections
+    kwvars.audio_only = False
     kwvars.copy_files = operator.not_(args.no_copy)
     kwvars.send_email = operator.not_(args.no_email)
     kwvars.dev_mode = args.dev

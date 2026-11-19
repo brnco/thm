@@ -284,13 +284,6 @@ def rewrap_single_file_accession(accession, input_file, kwvars):
         return pres_file
 
 
-def detect_wav_pcm_audio():
-    '''
-    TO DO
-    detects if a file is PCM/ wave audio
-    '''
-
-
 def make_preservation_wave_file(file, accession, kwvars):
     '''
     creates wav file with preservation specs
